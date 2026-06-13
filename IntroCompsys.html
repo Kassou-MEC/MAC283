@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC-283 · CH 01 · Introduction &amp; Basic Computer Hardware</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --panel:#111823; --panel-2:#0e141d; --line:#1e2a3a;
+  --trace:#22c55e; --trace-dim:#14532d; --amber:#f59e0b; --blue:#38bdf8;
+  --violet:#a78bfa; --red:#f87171; --teal:#2dd4bf;
+  --ink:#e6edf3; --muted:#8b9bb0; --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif; line-height:1.55; overflow:hidden;
+  background-image:
+    radial-gradient(circle at 12% 0%, rgba(34,197,94,.06), transparent 40%),
+    radial-gradient(circle at 88% 100%, rgba(56,189,248,.05), transparent 40%);
+}
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--trace);width:0;z-index:50;transition:width .35s ease;box-shadow:0 0 10px rgba(34,197,94,.7)}
+#hud{position:fixed;bottom:18px;left:0;right:0;z-index:40;display:flex;justify-content:center;gap:12px;align-items:center;pointer-events:none}
+#hud .pill{pointer-events:auto;display:flex;align-items:center;gap:14px;background:rgba(17,24,35,.92);border:1px solid var(--line);border-radius:999px;padding:8px 16px;backdrop-filter:blur(6px)}
+#hud button{background:none;border:1px solid var(--line);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:.85rem;width:34px;height:34px;border-radius:50%;cursor:pointer;transition:all .2s}
+#hud button:hover{border-color:var(--trace);color:var(--trace)}
+#counter{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);min-width:64px;text-align:center}
+#menuBtn{width:auto !important;padding:0 14px;border-radius:999px !important}
+#menu{position:fixed;inset:0;background:rgba(11,15,20,.96);z-index:60;display:none;overflow-y:auto;padding:60px 24px}
+#menu.open{display:block}
+#menu .m-wrap{max-width:680px;margin:0 auto}
+#menu h3{font-family:'Space Grotesk',sans-serif;margin-bottom:20px;font-size:1.4rem}
+#menu .m-item{display:flex;gap:14px;align-items:center;padding:11px 16px;border:1px solid var(--line);border-radius:10px;margin-bottom:7px;cursor:pointer;transition:border-color .2s}
+#menu .m-item:hover{border-color:var(--trace)}
+#menu .m-item .n{font-family:'JetBrains Mono',monospace;color:var(--trace);font-size:.75rem;min-width:30px}
+#menu .close{position:fixed;top:20px;right:26px;font-size:1.6rem;color:var(--muted);cursor:pointer;background:none;border:none}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;padding:48px 6.5vw 92px;overflow-y:auto}
+.slide.active{display:flex;animation:slideIn .45s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:var(--trace);margin-bottom:10px}
+h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.9rem,4.6vw,3.4rem);font-weight:700;line-height:1.06;letter-spacing:-.02em}
+h2{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.4rem,3vw,2.15rem);font-weight:600;letter-spacing:-.01em;margin-bottom:6px}
+h3.sub-h{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;margin-bottom:8px}
+.lede{color:var(--muted);max-width:760px;margin-top:8px;font-size:1rem}
+.def{background:rgba(34,197,94,.05);border:1px solid var(--trace-dim);border-radius:var(--radius);padding:16px 20px;margin-top:16px;max-width:860px}
+.def .term{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--trace);margin-bottom:6px}
+.def p{font-size:1rem}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:22px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+.k-label{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:'JetBrains Mono',monospace}
+.hl{color:var(--trace)} .hl-a{color:var(--amber)} .hl-b{color:var(--blue)} .hl-v{color:var(--violet)} .hl-t{color:var(--teal)} .hl-r{color:var(--red)}
+ul.clean{list-style:none}
+ul.clean li{padding:5px 0 5px 22px;position:relative;font-size:.95rem}
+ul.clean li::before{content:'▸';position:absolute;left:0;color:var(--trace);font-size:.8rem;top:7px}
+.kbd-hint{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);margin-top:auto;padding-top:30px}
+kbd{border:1px solid var(--line);border-radius:5px;padding:1px 7px;background:var(--panel)}
+svg text{font-family:'JetBrains Mono',monospace}
+.svg-frame{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:18px}
+.caption{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:.08em}
+table.t{width:100%;border-collapse:collapse;margin-top:14px;font-size:.9rem}
+table.t th{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--trace);text-align:left;padding:10px 12px;border-bottom:1px solid var(--trace-dim)}
+table.t td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.t tr:last-child td{border-bottom:none}
+table.t td:first-child{font-weight:600;white-space:nowrap}
+/* vocab cards */
+.vocab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:20px}
+.vocab{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .2s}
+.vocab:hover{border-color:var(--trace-dim);transform:translateY(-2px)}
+.vocab .abbr{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem}
+.vocab .full{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:2px 0 8px}
+.vocab .expl{font-size:.86rem;color:var(--ink)}
+/* clickable components */
+.comp{cursor:pointer;transition:opacity .2s}
+.comp:hover .comp-box{stroke:var(--ink)}
+.comp.sel .comp-box{stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(34,197,94,.5))}
+#compInfo,#mbInfo,#cpuInfo{min-height:130px}
+/* flip cards */
+.flip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:22px}
+.flip{perspective:1000px;height:195px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flip.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;justify-content:center}
+.flip-front{background:var(--panel);align-items:center;text-align:center;gap:8px}
+.flip-front .org{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700}
+.flip-front .tap{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.15em}
+.flip-back{background:var(--panel-2);transform:rotateY(180deg);font-size:.83rem;color:var(--ink)}
+.flip-back .k-label{margin-bottom:6px}
+/* timeline */
+.gen-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.gen-tab{font-family:'JetBrains Mono',monospace;font-size:.76rem;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);cursor:pointer;color:var(--muted);transition:all .2s}
+.gen-tab.active{border-color:var(--trace);color:var(--trace);box-shadow:0 0 10px rgba(34,197,94,.25)}
+.gen-stage{display:grid;grid-template-columns:300px 1fr;gap:24px;margin-top:18px;align-items:start}
+@media(max-width:860px){.gen-stage{grid-template-columns:1fr}}
+.gen-art{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;align-items:center;justify-content:center;min-height:230px}
+/* pyramid */
+.pyr-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:16px;align-items:start}
+@media(max-width:900px){.pyr-wrap{grid-template-columns:1fr}}
+.pyr-level{cursor:pointer;transition:filter .2s}
+.pyr-level:hover{filter:brightness(1.25)}
+.pyr-level.sel{filter:brightness(1.35) drop-shadow(0 0 8px rgba(34,197,94,.5))}
+/* FDE & walkthrough */
+.fde-wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;margin-top:16px;align-items:start}
+@media(max-width:920px){.fde-wrap{grid-template-columns:1fr}}
+.fde-btns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:10px 18px;border-radius:9px;border:1px solid var(--trace-dim);background:rgba(34,197,94,.08);color:var(--trace);cursor:pointer;transition:all .2s}
+.btn:hover{background:rgba(34,197,94,.18)}
+.btn.alt{border-color:var(--line);background:var(--panel);color:var(--muted)}
+.fde-log{font-family:'JetBrains Mono',monospace;font-size:.78rem;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px;min-height:90px;color:var(--trace);white-space:pre-wrap}
+.flow{opacity:0;transition:opacity .3s}
+.flow.on{opacity:1}
+.vn-block rect{transition:all .3s}
+.vn-block.lit rect{stroke:var(--amber);stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(245,158,11,.6))}
+/* bus width demo */
+.bw-tabs{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.wires{display:flex;flex-direction:column;gap:4px;margin-top:16px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:16px}
+.wire{height:5px;border-radius:3px;background:linear-gradient(90deg,var(--trace-dim),var(--trace));position:relative;overflow:hidden}
+.wire::after{content:'';position:absolute;top:0;left:-20%;width:18%;height:100%;background:rgba(255,255,255,.55);animation:pulseWire 1.6s linear infinite}
+@keyframes pulseWire{to{left:110%}}
+/* 5+7 walkthrough */
+.wt-step rect{transition:all .25s}
+.wt-step.lit rect{stroke:var(--amber);stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(245,158,11,.6))}
+.phase-pill{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.15em;padding:5px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.phase-pill.on{border-color:var(--amber);color:var(--amber)}
+/* quiz */
+.q-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-top:20px;max-width:760px}
+.q-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--trace);letter-spacing:.2em;margin-bottom:8px}
+.q-text{font-family:'Space Grotesk',sans-serif;font-size:1.12rem;font-weight:600;margin-bottom:16px}
+.q-opt{display:block;width:100%;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:9px;color:var(--ink);font-size:.92rem;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.q-opt:hover{border-color:var(--muted)}
+.q-opt.correct{border-color:var(--trace);background:rgba(34,197,94,.12);color:var(--trace)}
+.q-opt.wrong{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red)}
+.q-opt:disabled{cursor:default}
+.q-fb{font-family:'JetBrains Mono',monospace;font-size:.78rem;margin-top:8px;min-height:20px}
+.q-score{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;margin-top:14px}
+.title-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.chipx{font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.toggle-row{display:flex;gap:8px;margin-top:16px}
+.tg{font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);cursor:pointer;color:var(--muted);transition:all .2s}
+.tg.active{border-color:var(--trace);color:var(--trace)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<!-- ===== 0 TITLE ===== -->
+<section class="slide active">
+  <div class="eyebrow">MAC-283 // Lecture 1 // Chapter 01</div>
+  <h1><span class="hl">Introduction</span> to the<br>Computer System</h1>
+  <p class="lede">Everything a computer does — streaming video, running AI models, rendering games — reduces to a machine made of switches executing one simple cycle, billions of times per second. Today we open the box and name every part.</p>
+  <div class="title-meta">
+    <span class="chipx">Prof. Khalid Kassou</span>
+    <span class="chipx">LaGuardia CC · MEC</span>
+    <span class="chipx hl mono">Mo·We 8:00–12:45 · M-B41</span>
+  </div>
+  <div class="svg-frame" style="max-width:760px">
+    <svg viewBox="0 0 760 150" xmlns="http://www.w3.org/2000/svg" aria-label="Decorative circuit traces">
+      <g stroke="#1e2a3a" stroke-width="2" fill="none">
+        <path d="M0 75 H180 L210 45 H320"/><path d="M0 110 H140 L170 140 H360"/>
+        <path d="M760 40 H600 L570 70 H470"/><path d="M760 120 H640 L610 90 H520"/>
+      </g>
+      <g stroke="#22c55e" stroke-width="2" fill="none" opacity=".8">
+        <path d="M0 40 H220 L250 75 H330"/><path d="M760 75 H560 L530 110 H430"/>
+      </g>
+      <rect x="330" y="45" width="100" height="64" rx="8" fill="#0e141d" stroke="#22c55e" stroke-width="2"/>
+      <text x="380" y="73" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="700">CPU</text>
+      <text x="380" y="92" text-anchor="middle" fill="#8b9bb0" font-size="8">0x4D 0x41 0x43</text>
+      <circle cx="330" cy="75" r="4" fill="#22c55e"><animate attributeName="opacity" values="1;.2;1" dur="2s" repeatCount="indefinite"/></circle>
+      <circle cx="430" cy="75" r="4" fill="#38bdf8"><animate attributeName="opacity" values=".2;1;.2" dur="2s" repeatCount="indefinite"/></circle>
+    </svg>
+  </div>
+  <div class="kbd-hint">Navigate: <kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>M</kbd> menu · or use the controls below</div>
+</section>
+
+<!-- ===== 1 ROADMAP ===== -->
+<section class="slide">
+  <div class="eyebrow">// Roadmap</div>
+  <h2>Where We're Going Today</h2>
+  <div class="cols">
+    <div class="card">
+      <div class="k-label">Part A — Overview</div>
+      <ul class="clean" style="margin-top:10px">
+        <li>The vocabulary: <b>CPU, PC, CU, ALU, RAM, GHz</b></li>
+        <li>The <b>main components</b> — internal &amp; external</li>
+        <li>Inside the CPU; inside Memory; the Motherboard &amp; Bus</li>
+        <li><b>Standards organizations</b> &amp; <b>historical development</b></li>
+        <li>The <b>computer level hierarchy</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="k-label">Part B — Basic Computer Hardware</div>
+      <ul class="clean" style="margin-top:10px">
+        <li>How a computer actually runs: <b>5 + 7 = 12</b>, step by step</li>
+        <li>The <b>von Neumann</b> model + live fetch–decode–execute simulator</li>
+        <li><b>Non-von Neumann</b> models — Harvard, parallel, quantum</li>
+        <li>Knowledge check — 7 questions, no grade, all glory</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px;border-color:var(--trace-dim)">
+    <span class="mono hl" style="font-size:.8rem">OBJECTIVE 001 →</span> &nbsp;Explain hardware concepts of small and large computers. <span class="mono" style="color:var(--muted);font-size:.8rem">(from your syllabus)</span>
+  </div>
+</section>
+
+<!-- ===== 2 VOCABULARY ===== -->
+<section class="slide">
+  <div class="eyebrow">// The Vocabulary</div>
+  <h2>Abbreviations Explained — Learn These First</h2>
+  <p class="lede">These six abbreviations appear in every lecture this semester. They are the alphabet of computer architecture.</p>
+  <div class="vocab-grid">
+    <div class="vocab"><div class="abbr hl">CPU</div><div class="full">Central Processing Unit</div><div class="expl">The primary component that <b>executes instructions</b>. Every operation done with the computer is processed by the CPU.</div></div>
+    <div class="vocab"><div class="abbr hl-b">PC</div><div class="full">Program Counter</div><div class="expl">A register that stores the <b>memory address of the next instruction</b> to be executed — the CPU's bookmark.</div></div>
+    <div class="vocab"><div class="abbr hl-a">CU</div><div class="full">Control Unit</div><div class="expl"><b>Directs data flow</b> and coordinates instruction execution — the conductor of the orchestra.</div></div>
+    <div class="vocab"><div class="abbr hl-r">ALU</div><div class="full">Arithmetic Logic Unit</div><div class="expl">Performs <b>mathematical calculations</b> (add, subtract…) and <b>logical operations</b> (AND, OR, NOT).</div></div>
+    <div class="vocab"><div class="abbr hl-v">RAM</div><div class="full">Random Access Memory</div><div class="expl"><b>Volatile</b> memory for temporary data storage during processing. Power off → data gone.</div></div>
+    <div class="vocab"><div class="abbr hl-t">GHz</div><div class="full">Gigahertz</div><div class="expl"><b>Billions of clock cycles per second</b> — the unit that measures CPU clock speed. 3.5 GHz = 3.5 billion ticks/second.</div></div>
+  </div>
+  <div class="def" style="margin-top:20px">
+    <div class="term">Tip</div>
+    <p>These components work together in the <b>Fetch–Decode–Execute cycle</b> — we'll watch it run live in a few slides.</p>
+  </div>
+</section>
+
+<!-- ===== 3 BIG IDEA ===== -->
+<section class="slide">
+  <div class="eyebrow">// The Big Idea</div>
+  <h2>One Machine, Two Faces</h2>
+  <div class="def" style="max-width:820px">
+    <div class="term">Principle of Equivalence of Hardware &amp; Software</div>
+    <p style="font-size:1.1rem;font-family:'Space Grotesk',sans-serif">Any task done by software can also be done by hardware, and any operation performed directly by hardware can be done in software.*</p>
+    <p class="mono" style="font-size:.75rem;color:var(--muted);margin-top:8px">* assuming speed is not a concern</p>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <div class="k-label hl-a">What this means in plain language</div>
+      <p style="margin-top:8px;font-size:.95rem">A computer is a machine where the <b>physical parts (hardware)</b> and the <b>instructions (software)</b> are interchangeable ways of getting work done. Hardware is fast, expensive, and frozen at manufacture. Software is flexible, cheap to change, and slower. Engineering means choosing <b>where to draw the line</b>.</p>
+    </div>
+    <div class="card">
+      <div class="k-label hl-b">You'll see it again in…</div>
+      <ul class="clean" style="margin-top:8px">
+        <li>CH 3: an adder built from pure logic gates</li>
+        <li>CH 4: hardwired vs <b>microprogrammed</b> control</li>
+        <li>CH 4: extending MARIE's instruction set</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 4 MAIN COMPONENTS ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · Main Components</div>
+  <h2>Inside the Box — Click Each Component</h2>
+  <div class="def" style="margin-top:10px">
+    <div class="term">Definition · Computer System</div>
+    <p>A <b>computer system</b> consists of a number of components working together. Some are <b class="hl">internal</b> — mounted inside the computer casing — and some connect <b class="hl-a">externally</b> as peripheral devices.</p>
+  </div>
+  <div class="cols" style="grid-template-columns:1.25fr .75fr">
+    <div class="svg-frame" style="margin-top:0">
+      <svg id="board" viewBox="0 0 560 360" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive motherboard diagram">
+        <rect x="8" y="8" width="544" height="344" rx="14" fill="#0e141d" stroke="#1e2a3a" stroke-width="2"/>
+        <g stroke="#16331f" stroke-width="1.5" fill="none" opacity=".9">
+          <path d="M150 120 H250"/><path d="M150 160 H250"/><path d="M150 200 H250"/>
+          <path d="M390 120 H470"/><path d="M390 160 H470"/>
+          <path d="M210 250 V300"/><path d="M310 250 V300"/><path d="M410 230 V300"/>
+        </g>
+        <g class="comp" data-c="cpu">
+          <rect class="comp-box" x="250" y="80" width="140" height="140" rx="10" fill="#13251a" stroke="#22c55e" stroke-width="1.5"/>
+          <rect x="282" y="112" width="76" height="76" rx="6" fill="#0b0f14" stroke="#22c55e"/>
+          <text x="320" y="146" text-anchor="middle" fill="#22c55e" font-size="14" font-weight="700">CPU</text>
+          <text x="320" y="164" text-anchor="middle" fill="#8b9bb0" font-size="7.5">ALU + CU + REGS</text>
+          <g stroke="#22c55e" stroke-width="1.2"><path d="M258 92 h10"/><path d="M258 102 h10"/><path d="M372 92 h10"/><path d="M372 102 h10"/></g>
+        </g>
+        <g class="comp" data-c="mem">
+          <rect class="comp-box" x="44" y="80" width="106" height="150" rx="10" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="97" y="105" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="700">MEMORY</text>
+          <g fill="#0b0f14" stroke="#38bdf8" stroke-width=".8">
+            <rect x="58" y="118" width="78" height="16" rx="3"/><rect x="58" y="140" width="78" height="16" rx="3"/>
+            <rect x="58" y="162" width="78" height="16" rx="3"/><rect x="58" y="184" width="78" height="16" rx="3"/>
+          </g>
+          <text x="97" y="218" text-anchor="middle" fill="#8b9bb0" font-size="7.5">RAM + STORAGE</text>
+        </g>
+        <g class="comp" data-c="io">
+          <rect class="comp-box" x="430" y="80" width="106" height="150" rx="10" fill="#241a10" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="483" y="105" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">I/O</text>
+          <g fill="#0b0f14" stroke="#f59e0b" stroke-width=".8">
+            <rect x="446" y="118" width="74" height="20" rx="4"/><rect x="446" y="146" width="74" height="20" rx="4"/><rect x="446" y="174" width="74" height="20" rx="4"/>
+          </g>
+          <text x="483" y="131.5" text-anchor="middle" fill="#f59e0b" font-size="7">INPUT</text>
+          <text x="483" y="159.5" text-anchor="middle" fill="#f59e0b" font-size="7">OUTPUT</text>
+          <text x="483" y="187.5" text-anchor="middle" fill="#f59e0b" font-size="7">DISK / NET</text>
+        </g>
+        <g class="comp" data-c="bus">
+          <rect class="comp-box" x="44" y="262" width="492" height="46" rx="9" fill="#1c1530" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="290" y="290" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="700">SYSTEM BUS — ADDRESS · DATA · CONTROL</text>
+          <circle cx="70" cy="285" r="3.5" fill="#a78bfa"><animate attributeName="cx" values="70;510;70" dur="5s" repeatCount="indefinite"/></circle>
+        </g>
+        <g stroke="#1e2a3a" stroke-width="3"><path d="M97 230 V262"/><path d="M320 220 V262"/><path d="M483 230 V262"/></g>
+      </svg>
+      <div class="caption">FIG 1.1 — THE COMPONENTS + THE MOTHERBOARD &amp; BUS THAT UNITE THEM</div>
+    </div>
+    <div>
+      <div class="card" id="compInfo">
+        <div class="k-label">Component Inspector</div>
+        <p style="margin-top:8px;color:var(--muted);font-size:.92rem">Click the <span class="hl">CPU</span>, <span class="hl-b">Memory</span>, <span class="hl-a">I/O</span>, or the <span class="hl-v">Bus</span> for its full definition.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label">The five main components</div>
+        <ul class="clean" style="margin-top:6px;font-size:.88rem">
+          <li><b>Input devices</b> — keyboard, mouse, microphone, scanner</li>
+          <li><b>Output devices</b> — monitor, printer, speaker</li>
+          <li><b>Processor (CPU)</b> — executes instructions</li>
+          <li><b>Memory</b> — RAM (volatile) + storage (non-volatile)</li>
+          <li><b>Motherboard &amp; bus</b> — connects all components</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5 INTERNAL VS EXTERNAL ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · Main Components</div>
+  <h2>Internal vs External Components</h2>
+  <div class="cols">
+    <div class="card" style="border-color:var(--trace-dim)">
+      <div class="k-label hl">Internal — inside the casing</div>
+      <p style="margin-top:8px;font-size:.93rem">Components <b>mounted inside the computer case</b>, plugged directly into the motherboard:</p>
+      <ul class="clean" style="margin-top:8px">
+        <li><b>CPU</b> — the processor chip in its socket</li>
+        <li><b>RAM</b> — memory sticks in the DIMM slots</li>
+        <li><b>Hard disk / SSD</b> — long-term storage</li>
+        <li><b>Graphic card</b> — renders images to the display</li>
+        <li><b>Motherboard</b> — the board everything plugs into</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:rgba(245,158,11,.35)">
+      <div class="k-label hl-a">External — peripheral devices</div>
+      <p style="margin-top:8px;font-size:.93rem">Hardware connected to the system <b>externally</b>, usually through USB ports:</p>
+      <ul class="clean" style="margin-top:8px">
+        <li><b>Input peripherals</b> — keyboard, mouse, scanner, microphone: they <i>send data into</i> the computer</li>
+        <li><b>Output peripherals</b> — display monitor, printer, speakers, external storage: they <i>receive results from</i> the computer</li>
+      </ul>
+      <p style="margin-top:10px;font-size:.85rem;color:var(--muted)">Memory trick: <b>I</b>nput = <b>I</b>nto the computer. <b>Out</b>put = <b>Out</b> of the computer.</p>
+    </div>
+  </div>
+  <div class="def">
+    <div class="term">Why the distinction matters</div>
+    <p>Internal components talk to the CPU over fast, short buses measured in GB/s. External peripherals go through I/O controllers and slower buses like USB — which is why I/O is the slowest part of any system, and why interrupts exist (CH 4).</p>
+  </div>
+</section>
+
+<!-- ===== 6 CPU DEEP DIVE ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · The Processor</div>
+  <h2>CPU — The Brain <i>and</i> Heart of the Computer</h2>
+  <div class="def" style="margin-top:8px">
+    <div class="term">Definition · CPU (Central Processing Unit)</div>
+    <p>The CPU is a <b>small chip (microprocessor)</b> that resides in the computer and carries out instructions from programs by performing basic <b>arithmetic, logic, control, and input/output operations</b>. Every operation done with the computer is processed by the CPU. It fits into a <b>socket on the motherboard</b>.</p>
+  </div>
+  <div class="cols" style="grid-template-columns:.95fr 1.05fr">
+    <div class="svg-frame" style="margin-top:0">
+      <svg id="cpuSvg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" aria-label="Inside the CPU - clickable parts">
+        <rect x="20" y="16" width="360" height="288" rx="14" fill="#0e141d" stroke="#22c55e" stroke-width="2"/>
+        <text x="200" y="40" text-anchor="middle" fill="#8b9bb0" font-size="10" letter-spacing="2">INSIDE THE CPU — CLICK A PART</text>
+        <g class="comp" data-p="alu"><rect class="comp-box" x="40" y="56" width="155" height="64" rx="9" fill="#2a1414" stroke="#f87171" stroke-width="1.5"/><text x="117" y="84" text-anchor="middle" fill="#f87171" font-size="12" font-weight="700">ALU</text><text x="117" y="102" text-anchor="middle" fill="#8b9bb0" font-size="7.5">math + logic</text></g>
+        <g class="comp" data-p="cu"><rect class="comp-box" x="205" y="56" width="155" height="64" rx="9" fill="#241a10" stroke="#f59e0b" stroke-width="1.5"/><text x="282" y="84" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700">CONTROL UNIT</text><text x="282" y="102" text-anchor="middle" fill="#8b9bb0" font-size="7.5">the conductor</text></g>
+        <g class="comp" data-p="regs"><rect class="comp-box" x="40" y="136" width="155" height="64" rx="9" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/><text x="117" y="164" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="700">REGISTERS</text><text x="117" y="182" text-anchor="middle" fill="#8b9bb0" font-size="7.5">PC · AC · IR …</text></g>
+        <g class="comp" data-p="cache"><rect class="comp-box" x="205" y="136" width="155" height="64" rx="9" fill="#13251a" stroke="#22c55e" stroke-width="1.5"/><text x="282" y="164" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="700">CACHE</text><text x="282" y="182" text-anchor="middle" fill="#8b9bb0" font-size="7.5">L1 · L2 · L3</text></g>
+        <g class="comp" data-p="clock"><rect class="comp-box" x="40" y="216" width="320" height="64" rx="9" fill="#1c1530" stroke="#a78bfa" stroke-width="1.5"/><text x="200" y="244" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">CLOCK</text><text x="200" y="262" text-anchor="middle" fill="#8b9bb0" font-size="7.5">tick · tick · tick — measured in GHz</text>
+        <circle cx="62" cy="248" r="4" fill="#a78bfa"><animate attributeName="opacity" values="1;.1;1" dur="0.8s" repeatCount="indefinite"/></circle>
+        <circle cx="338" cy="248" r="4" fill="#a78bfa"><animate attributeName="opacity" values=".1;1;.1" dur="0.8s" repeatCount="indefinite"/></circle></g>
+      </svg>
+      <div class="caption">FIG 1.2 — THE FIVE PARTS OF EVERY CPU</div>
+    </div>
+    <div>
+      <div class="card" id="cpuInfo">
+        <div class="k-label">Part Inspector</div>
+        <p style="margin-top:8px;color:var(--muted);font-size:.92rem">Click each part of the CPU for its full definition.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label">Did you know?</div>
+        <p style="margin-top:6px;font-size:.9rem">Modern CPUs contain <b>billions of transistors</b> working together in these five components. The popular consumer brands are <b>Intel</b> and <b>AMD</b>, rated by price, power, and performance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 7 INSTRUCTION CYCLE ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · The Processor</div>
+  <h2>The Role of the CPU — The Instruction Cycle</h2>
+  <p class="lede">The CPU's entire job is one loop, repeated continuously at GHz speeds. Four stages:</p>
+  <div class="card" style="margin-top:16px;max-width:880px">
+    <table class="t">
+      <tr><th style="width:130px">Stage</th><th>What happens</th><th style="width:170px">Who does it</th></tr>
+      <tr><td class="hl-a">1 · FETCH</td><td>Retrieves the next instruction from memory (RAM) at the address stored in the <b>Program Counter (PC)</b></td><td class="mono" style="font-size:.8rem">PC + Memory</td></tr>
+      <tr><td class="hl-b">2 · DECODE</td><td>Interprets the instruction using the <b>Control Unit</b> and determines the required operations</td><td class="mono" style="font-size:.8rem">Control Unit</td></tr>
+      <tr><td class="hl">3 · EXECUTE</td><td>Performs the actual operation using the <b>ALU</b> or other components</td><td class="mono" style="font-size:.8rem">ALU</td></tr>
+      <tr><td class="hl-r">4 · STORE</td><td>Writes the result back to <b>registers or memory</b>, then updates the Program Counter</td><td class="mono" style="font-size:.8rem">Registers / Memory</td></tr>
+    </table>
+  </div>
+  <div class="def">
+    <div class="term">Note</div>
+    <p>This <b>Fetch–Decode–Execute–Store</b> cycle repeats continuously at GHz speeds in modern processors — a 3 GHz CPU completes roughly <b>3 billion cycles every second</b>. We'll run this cycle by hand in the simulator on slide 19.</p>
+  </div>
+</section>
+
+<!-- ===== 8 CPU TYPES & HISTORY ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · The Processor</div>
+  <h2>Types of CPUs &amp; a Little History</h2>
+  <div class="cols">
+    <div class="card">
+      <div class="k-label hl-b">Types of CPUs</div>
+      <table class="t" style="font-size:.86rem">
+        <tr><td>Single-core</td><td>One processing unit (older systems)</td></tr>
+        <tr><td>Dual / Quad / Octa-core</td><td>Multiple cores for <b>parallel processing</b></td></tr>
+        <tr><td>ARM CPUs</td><td>Used in mobile devices — battery-efficient (your phone, Apple M-series)</td></tr>
+        <tr><td>x86 / x64</td><td>Common in desktops &amp; laptops (Intel, AMD)</td></tr>
+        <tr><td>RISC vs CISC</td><td>Two instruction-set design philosophies — full story in CH 5</td></tr>
+        <tr><td>Server CPUs</td><td>Optimized for data centers (Intel Xeon, AMD EPYC)</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="card" style="border-color:var(--trace-dim)">
+        <div class="k-label hl">The first CPU — Intel 4004 (1971)</div>
+        <ul class="clean" style="margin-top:8px;font-size:.92rem">
+          <li>Generally considered the <b>first commercial CPU</b></li>
+          <li>Built for a <b>calculator</b> — the Busicom 141-PF</li>
+          <li>Only <b>2,300 transistors</b>, processing <b>4-bit</b> instructions</li>
+          <li>Today's chips: <b>billions</b> of transistors, 64-bit — same fundamental design</li>
+        </ul>
+      </div>
+      <div class="svg-frame">
+        <svg viewBox="0 0 360 130" xmlns="http://www.w3.org/2000/svg" aria-label="Intel 4004 vs modern chip comparison">
+          <rect x="30" y="30" width="80" height="70" rx="6" fill="#0b0f14" stroke="#f59e0b" stroke-width="2"/>
+          <text x="70" y="60" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">4004</text>
+          <text x="70" y="76" text-anchor="middle" fill="#8b9bb0" font-size="6.5">2,300 · 4-bit</text>
+          <text x="70" y="118" text-anchor="middle" fill="#8b9bb0" font-size="7">1971</text>
+          <text x="180" y="70" text-anchor="middle" fill="#22c55e" font-size="16">→</text>
+          <rect x="250" y="22" width="86" height="86" rx="6" fill="#0b0f14" stroke="#22c55e" stroke-width="2"/>
+          <g fill="#13251a" stroke="#22c55e" stroke-width=".5">
+            <rect x="258" y="30" width="16" height="16"/><rect x="278" y="30" width="16" height="16"/><rect x="298" y="30" width="16" height="16"/><rect x="318" y="30" width="10" height="16"/>
+            <rect x="258" y="50" width="16" height="16"/><rect x="278" y="50" width="16" height="16"/><rect x="298" y="50" width="16" height="16"/><rect x="318" y="50" width="10" height="16"/>
+            <rect x="258" y="70" width="16" height="16"/><rect x="278" y="70" width="16" height="16"/><rect x="298" y="70" width="16" height="16"/><rect x="318" y="70" width="10" height="16"/>
+            <rect x="258" y="90" width="70" height="10"/>
+          </g>
+          <text x="293" y="122" text-anchor="middle" fill="#8b9bb0" font-size="7">TODAY · 10B+ · 64-bit</text>
+        </svg>
+        <div class="caption">FIG 1.3 — 50 YEARS: 2,300 TRANSISTORS → 10,000,000,000+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 9 RAM VS STORAGE ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · Memory</div>
+  <h2>Computer Memory — RAM vs Storage <span class="mono" style="font-size:.55em;color:var(--muted)">(toggle)</span></h2>
+  <div class="toggle-row">
+    <button class="tg active" data-m="ram">⚡ RAM — Volatile</button>
+    <button class="tg" data-m="sto">🗄 Storage — Non-Volatile</button>
+    <button class="tg" data-m="vs">⇄ Side-by-Side</button>
+  </div>
+  <div id="memStage" style="margin-top:6px"></div>
+  <div class="def">
+    <div class="term">Where they live on the motherboard</div>
+    <p><b>RAM</b> is inserted into <b>DIMM slots</b> (Dual Inline Memory Module) near the CPU — it snaps vertically into the slot, often installed in pairs. <b>Storage</b> is mounted in a drive bay (HDD/SSD, connected via <b>SATA cable</b>) or directly into an <b>M.2 slot</b> on the motherboard. RAM holds all the data that is <b>actively being processed</b> by the CPU.</p>
+  </div>
+</section>
+
+<!-- ===== 10 MOTHERBOARD ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · The Motherboard</div>
+  <h2>The Motherboard — Where Everything Connects</h2>
+  <div class="def" style="margin-top:8px">
+    <div class="term">Definition · Motherboard</div>
+    <p>The motherboard is the <b>main printed circuit board (PCB)</b> of the computer. It <b>holds the CPU, RAM, storage, and expansion slots</b>; provides <b>power and communication paths</b> between components; and controls data flow with onboard <b>chipsets</b>. It serves as the base connecting all the components of the computer.</p>
+  </div>
+  <div class="cols" style="grid-template-columns:1.2fr .8fr">
+    <div class="svg-frame" style="margin-top:0">
+      <svg id="mbSvg" viewBox="0 0 560 330" xmlns="http://www.w3.org/2000/svg" aria-label="Motherboard anatomy - clickable parts">
+        <rect x="40" y="14" width="480" height="302" rx="12" fill="#0f2417" stroke="#22c55e" stroke-width="2"/>
+        <text x="280" y="34" text-anchor="middle" fill="#8b9bb0" font-size="9" letter-spacing="2">MOTHERBOARD (ATX) — CLICK EACH PART</text>
+        <g class="comp" data-m="socket"><rect class="comp-box" x="210" y="52" width="120" height="110" rx="8" fill="#0b0f14" stroke="#e6edf3" stroke-width="1.5"/><rect x="238" y="80" width="64" height="54" rx="5" fill="#13251a" stroke="#22c55e"/><text x="270" y="110" text-anchor="middle" fill="#22c55e" font-size="10" font-weight="700">CPU</text><text x="270" y="152" text-anchor="middle" fill="#8b9bb0" font-size="7">CPU SOCKET</text></g>
+        <g class="comp" data-m="dimm"><g stroke="#38bdf8" stroke-width="1.5" fill="#102030"><rect class="comp-box" x="370" y="50" width="14" height="120" rx="3"/><rect x="392" y="50" width="14" height="120" rx="3"/><rect x="414" y="50" width="14" height="120" rx="3"/></g><text x="400" y="184" text-anchor="middle" fill="#38bdf8" font-size="7.5">MEMORY SLOTS (DIMM)</text></g>
+        <g class="comp" data-m="pcie"><g stroke="#a78bfa" stroke-width="1.5" fill="#1c1530"><rect class="comp-box" x="70" y="200" width="190" height="14" rx="3"/><rect x="70" y="224" width="150" height="14" rx="3"/><rect x="70" y="248" width="190" height="14" rx="3"/></g><text x="165" y="280" text-anchor="middle" fill="#a78bfa" font-size="7.5">BUS / EXPANSION SLOTS (PCIe)</text></g>
+        <g class="comp" data-m="sata"><g stroke="#f59e0b" stroke-width="1.5" fill="#241a10"><rect class="comp-box" x="440" y="220" width="50" height="16" rx="3"/><rect x="440" y="244" width="50" height="16" rx="3"/><rect x="440" y="268" width="50" height="16" rx="3"/></g><text x="465" y="300" text-anchor="middle" fill="#f59e0b" font-size="7.5">SATA</text></g>
+        <g class="comp" data-m="usb"><g stroke="#2dd4bf" stroke-width="1.5" fill="#0c2422"><rect class="comp-box" x="46" y="56" width="22" height="30" rx="3"/><rect x="46" y="96" width="22" height="30" rx="3"/><rect x="46" y="136" width="22" height="30" rx="3"/></g><text x="58" y="182" text-anchor="middle" fill="#2dd4bf" font-size="7.5">USB</text></g>
+        <g class="comp" data-m="m2"><rect class="comp-box" x="300" y="226" width="110" height="20" rx="4" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/><text x="355" y="240" text-anchor="middle" fill="#38bdf8" font-size="7.5">M.2 SLOT (SSD)</text></g>
+      </svg>
+      <div class="caption">FIG 1.4 — MOTHERBOARD ANATOMY</div>
+    </div>
+    <div>
+      <div class="card" id="mbInfo">
+        <div class="k-label">Part Inspector</div>
+        <p style="margin-top:8px;color:var(--muted);font-size:.92rem">Click any part: <span class="hl">socket</span>, <span class="hl-b">DIMM</span>, <span class="hl-v">PCIe</span>, <span class="hl-a">SATA</span>, <span class="hl-t">USB</span>, <span class="hl-b">M.2</span>.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label">Role of motherboard &amp; bus</div>
+        <ul class="clean" style="margin-top:6px;font-size:.87rem">
+          <li>Connects and <b>powers</b> all components</li>
+          <li><b>Coordinates communication</b> between parts</li>
+          <li>Determines <b>upgrade potential</b> and compatibility</li>
+          <li>The bus allows quick, <b>synchronized</b> data flow</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 11 THE BUS ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · The Bus</div>
+  <h2>What Is a Bus? — Try the Bus Width Demo</h2>
+  <div class="def" style="margin-top:8px">
+    <div class="term">Definition · Computer Bus</div>
+    <p>A bus is a <b>pathway used to transfer data between components</b> — the network of electrical wires inside the computer that interconnects the hardware. Each bus is a <b>group of wires tied together</b>, and each wire carries <b>1 bit (binary 0 or 1) at a time</b>. Buses can be internal or external. Examples: USB, PCIe, SATA, Front-Side Bus.</p>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <div class="k-label hl">Bus width — why it matters</div>
+      <p style="margin-top:8px;font-size:.93rem">The <b>size of a bus is its bus width</b> — the number of wires. It determines <b>how much data (in bits) can be transmitted at one time</b>. A larger bus width significantly <b>improves processor performance</b>:</p>
+      <ul class="clean" style="margin-top:8px;font-size:.9rem">
+        <li>A <b>64-bit bus</b> has 64 wires → moves <b>64 bits at a time</b></li>
+        <li>A <b>32-bit bus</b> has 32 wires → moves <b>32 bits at a time</b></li>
+      </ul>
+      <div class="bw-tabs">
+        <button class="tg bw" data-w="8">8-bit</button>
+        <button class="tg bw" data-w="16">16-bit</button>
+        <button class="tg bw active" data-w="32">32-bit</button>
+        <button class="tg bw" data-w="64">64-bit</button>
+      </div>
+      <div class="wires" id="wireBox"></div>
+      <p class="mono" id="wireLabel" style="font-size:.75rem;color:var(--trace);margin-top:10px"></p>
+    </div>
+    <div class="card">
+      <div class="k-label hl-b">Three lanes inside the system bus</div>
+      <table class="t" style="font-size:.86rem">
+        <tr><td class="hl-b">Data bus</td><td>Transfers the <b>actual data</b> between CPU, RAM, and devices</td></tr>
+        <tr><td class="hl-a">Address bus</td><td>Carries <b>memory addresses</b> from CPU to RAM or storage — the "where"</td></tr>
+        <tr><td class="hl">Control bus</td><td>Sends <b>control signals</b> (read/write, clock) between parts — the "when &amp; how"</td></tr>
+      </table>
+      <div class="k-label" style="margin-top:16px">Other buses you already use</div>
+      <table class="t" style="font-size:.84rem">
+        <tr><td>PCI/PCIe</td><td>Connects expansion cards (graphics, WiFi, sound)</td></tr>
+        <tr><td>SATA</td><td>Connects storage devices — SSDs and HDDs</td></tr>
+        <tr><td>USB</td><td><b>Universal Serial Bus</b> — connects external I/O devices</td></tr>
+        <tr><td>FSB</td><td>Front-Side Bus — CPU↔memory hub on older boards</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 12 STANDARDS ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · Standards Organizations</div>
+  <h2>Who Decides the Rules? <span class="mono" style="font-size:.55em;color:var(--muted)">(tap each card to flip)</span></h2>
+  <p class="lede">Standards are why a USB drive from any vendor works in any machine, and why IEEE 754 floating point (Chapter 2!) behaves identically in Python, Java, and C++.</p>
+  <div class="flip-grid">
+    <div class="flip"><div class="flip-inner">
+      <div class="flip-face flip-front"><div class="org hl">IEEE</div><div class="k-label">Institute of Electrical &amp; Electronics Engineers</div><div class="tap">TAP TO FLIP ▸</div></div>
+      <div class="flip-face flip-back"><div class="k-label hl">Claim to fame</div>Sets standards for computers &amp; communications — including <b>IEEE 754</b> floating-point, the star of Chapter 2.</div>
+    </div></div>
+    <div class="flip"><div class="flip-inner">
+      <div class="flip-face flip-front"><div class="org hl-b">ITU-T</div><div class="k-label">International Telecommunication Union</div><div class="tap">TAP TO FLIP ▸</div></div>
+      <div class="flip-face flip-back"><div class="k-label hl-b">Claim to fame</div>Standards for telecommunications &amp; data systems worldwide — how networks interoperate across borders.</div>
+    </div></div>
+    <div class="flip"><div class="flip-inner">
+      <div class="flip-face flip-front"><div class="org hl-a">ANSI</div><div class="k-label">American National Standards Institute</div><div class="tap">TAP TO FLIP ▸</div></div>
+      <div class="flip-face flip-back"><div class="k-label hl-a">Claim to fame</div>The US national standards body — think ANSI C. National bodies like ANSI feed into ISO.</div>
+    </div></div>
+    <div class="flip"><div class="flip-inner">
+      <div class="flip-face flip-front"><div class="org hl-v">ISO</div><div class="k-label">International Organization for Standardization</div><div class="tap">TAP TO FLIP ▸</div></div>
+      <div class="flip-face flip-back"><div class="k-label hl-v">Claim to fame</div>The umbrella over national bodies — everything from camera film to programming languages. "ISO" isn't an acronym: it's Greek <i>isos</i>, "equal."</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ===== 13 GENERATIONS ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · Historical Development</div>
+  <h2>Five Generations of Hardware</h2>
+  <div class="gen-tabs" id="genTabs">
+    <button class="gen-tab active" data-g="0">GEN 0 · Mechanical</button>
+    <button class="gen-tab" data-g="1">GEN 1 · Vacuum Tubes</button>
+    <button class="gen-tab" data-g="2">GEN 2 · Transistors</button>
+    <button class="gen-tab" data-g="3">GEN 3 · Integrated Circuits</button>
+    <button class="gen-tab" data-g="4">GEN 4 · VLSI</button>
+  </div>
+  <div class="gen-stage">
+    <div class="gen-art" id="genArt"></div>
+    <div class="card" id="genInfo"></div>
+  </div>
+</section>
+
+<!-- ===== 14 MOORE ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · Historical Development</div>
+  <h2>Moore's Law — The Engine of Gen 4</h2>
+  <div class="cols" style="grid-template-columns:1.15fr .85fr">
+    <div class="svg-frame" style="margin-top:0">
+      <svg viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg" aria-label="Transistor count growth chart">
+        <line x1="60" y1="270" x2="490" y2="270" stroke="#1e2a3a" stroke-width="2"/>
+        <line x1="60" y1="30" x2="60" y2="270" stroke="#1e2a3a" stroke-width="2"/>
+        <g fill="#8b9bb0" font-size="9">
+          <text x="60" y="288" text-anchor="middle">1971</text><text x="167" y="288" text-anchor="middle">1985</text>
+          <text x="274" y="288" text-anchor="middle">2000</text><text x="381" y="288" text-anchor="middle">2012</text>
+          <text x="488" y="288" text-anchor="middle">2025</text>
+          <text x="52" y="273" text-anchor="end">10³</text><text x="52" y="213" text-anchor="end">10⁵</text>
+          <text x="52" y="153" text-anchor="end">10⁷</text><text x="52" y="93" text-anchor="end">10⁹</text>
+          <text x="52" y="40" text-anchor="end">10¹¹</text>
+        </g>
+        <g stroke="#1e2a3a" stroke-width="1" opacity=".5">
+          <line x1="60" y1="210" x2="490" y2="210"/><line x1="60" y1="150" x2="490" y2="150"/>
+          <line x1="60" y1="90" x2="490" y2="90"/><line x1="60" y1="37" x2="490" y2="37"/>
+        </g>
+        <path d="M65 265 L130 235 L200 195 L274 150 L345 105 L420 70 L480 45"
+          fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round"
+          stroke-dasharray="600" stroke-dashoffset="600">
+          <animate attributeName="stroke-dashoffset" from="600" to="0" dur="2.4s" fill="freeze"/>
+        </path>
+        <g font-size="8.5" fill="#e6edf3">
+          <circle cx="65" cy="265" r="4" fill="#f59e0b"/><text x="74" y="262">Intel 4004 · 2,300</text>
+          <circle cx="274" cy="150" r="4" fill="#38bdf8"/><text x="283" y="147">Pentium 4 · 42M</text>
+          <circle cx="480" cy="45" r="4" fill="#22c55e"/><text x="395" y="35">Apple M-class · 10B+</text>
+        </g>
+        <text x="275" y="312" text-anchor="middle" fill="#8b9bb0" font-size="9">LOG SCALE — A STRAIGHT LINE = EXPONENTIAL GROWTH</text>
+      </svg>
+      <div class="caption">FIG 1.5 — TRANSISTORS PER CHIP, ~1971 → TODAY (ILLUSTRATIVE)</div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="k-label hl">The observation (1965)</div>
+        <p style="margin-top:8px;font-size:.95rem">Gordon Moore noticed the density of transistors on a chip was <b>doubling roughly every two years</b> — and predicted it would continue. It held for 50+ years and drove every generation of faster, cheaper, smaller computers.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label hl-a">Feel the scale</div>
+        <ul class="clean" style="margin-top:6px;font-size:.92rem">
+          <li>Intel 4004 (1971): <span class="mono hl-a">2,300</span> transistors</li>
+          <li>A modern SoC: <span class="mono hl-a">tens of billions</span></li>
+          <li>That's why your phone outruns a 1990s supercomputer</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:14px;border-color:var(--trace-dim)">
+        <div class="k-label">Discussion ⚡ (participation = extra credit!)</div>
+        <p style="margin-top:6px;font-size:.92rem">Transistor gates are now only atoms wide — physics is pushing back. Is Moore's Law dead? What replaces it?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 15 HIERARCHY ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · The Computer Level Hierarchy</div>
+  <h2>Seven Levels of Abstraction <span class="mono" style="font-size:.55em;color:var(--muted)">(click a level)</span></h2>
+  <div class="def" style="margin-top:6px">
+    <div class="term">The key idea · Abstraction</div>
+    <p>Each level is a <b>virtual machine</b> for the level above it: it hides the messy details below and offers a cleaner interface above. A Python programmer never thinks about flip-flops — yet flip-flops execute every line.</p>
+  </div>
+  <div class="pyr-wrap">
+    <div class="svg-frame" style="margin-top:0">
+      <svg id="pyr" viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg" aria-label="Computer level hierarchy pyramid">
+        <g font-size="11" font-weight="600" text-anchor="middle">
+          <g class="pyr-level" data-l="6"><polygon points="240,18 290,62 190,62" fill="#22c55e" opacity=".95"/><text x="240" y="52" fill="#06270f">L6</text></g>
+          <g class="pyr-level" data-l="5"><polygon points="186,66 294,66 318,110 162,110" fill="#34d399" opacity=".9"/><text x="240" y="94" fill="#06270f">L5 · High-Level Lang</text></g>
+          <g class="pyr-level" data-l="4"><polygon points="158,114 322,114 346,158 134,158" fill="#38bdf8" opacity=".9"/><text x="240" y="142" fill="#06233a">L4 · Assembly</text></g>
+          <g class="pyr-level" data-l="3"><polygon points="130,162 350,162 374,206 106,206" fill="#60a5fa" opacity=".88"/><text x="240" y="190" fill="#06233a">L3 · System Software</text></g>
+          <g class="pyr-level" data-l="2"><polygon points="102,210 378,210 402,254 78,254" fill="#a78bfa" opacity=".88"/><text x="240" y="238" fill="#1d0f3a">L2 · Machine (ISA)</text></g>
+          <g class="pyr-level" data-l="1"><polygon points="74,258 406,258 430,302 50,302" fill="#f59e0b" opacity=".9"/><text x="240" y="286" fill="#3a2204">L1 · Control</text></g>
+          <g class="pyr-level" data-l="0"><polygon points="46,306 434,306 458,350 22,350" fill="#f87171" opacity=".9"/><text x="240" y="334" fill="#3a0a0a">L0 · Digital Logic</text></g>
+        </g>
+        <text x="240" y="12" text-anchor="middle" fill="#8b9bb0" font-size="9">L6 · USER — executable programs, you</text>
+      </svg>
+      <div class="caption">FIG 1.6 — EACH LEVEL IS A VIRTUAL MACHINE FOR THE LEVEL ABOVE IT</div>
+    </div>
+    <div>
+      <div class="card" id="pyrInfo" style="min-height:150px">
+        <div class="k-label">Level Inspector</div>
+        <p style="margin-top:8px;color:var(--muted);font-size:.92rem">Click any layer of the pyramid for its definition. Notice where <b>this course</b> lives…</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label hl">MAC-283's home turf</div>
+        <p style="margin-top:6px;font-size:.92rem">This course lives in <b>L0 → L4</b>: logic gates (CH 3), control &amp; microprogramming (CH 4), the ISA (CH 4–5), and assembly (CH 4). MAC-125 and MAC-286 live up at L5.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 16 LEVELS IN ACTION 8x6 ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part A · Hierarchy in Action</div>
+  <h2>Real-Life Example: 8 × 6 in a Calculator App</h2>
+  <p class="lede">One tap travels through every level of the hierarchy — and back. Follow the trip:</p>
+  <div class="card" style="margin-top:14px;max-width:900px">
+    <table class="t">
+      <tr><th style="width:175px">Level</th><th>What happens in the 8 × 6 scenario</th></tr>
+      <tr><td class="hl">L6 · User</td><td>You tap <b>8 × 6 =</b> on the calculator app on your phone or computer.</td></tr>
+      <tr><td class="hl">L5 · High-Level Language</td><td>The app logic is written in <b>Java, Python, or Swift</b>, defining how buttons and operations work.</td></tr>
+      <tr><td class="hl-b">L4 · Assembly</td><td>The high-level code is compiled into assembly instructions like <span class="mono">LOAD 8, MUL 6, STORE result</span>.</td></tr>
+      <tr><td class="hl-b">L2 · Machine</td><td>Assembly is translated into binary machine code, e.g. <span class="mono">10001011 01001000</span>.</td></tr>
+      <tr><td class="hl-a">L1 · Control</td><td>The CPU's control unit breaks the instruction into <b>micro-operations</b> and manages internal data movement and signals.</td></tr>
+      <tr><td class="hl-r">L0 · Digital Logic</td><td>Logic gates (AND, OR, XOR, NOT) in the <b>ALU</b> perform the binary multiplication and calculate <b>48</b>.</td></tr>
+      <tr><td>Back up ↑</td><td>The output controller lights up pixels on the screen to show the result: <b>48</b>.</td></tr>
+    </table>
+  </div>
+  <p class="mono" style="margin-top:14px;font-size:.75rem;color:var(--muted)">TOTAL TRIP TIME: A FEW NANOSECONDS. ABSTRACTION IS THE SUPERPOWER.</p>
+</section>
+
+<!-- ===== 17 HOW A COMPUTER WORKS: 5+7 ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part B · Putting It All Together</div>
+  <h2>Step-by-Step: A User Adds 5 + 7 <span class="mono" style="font-size:.55em;color:var(--muted)">(press STEP)</span></h2>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+    <span class="phase-pill" id="ph0">1 · INPUT PHASE</span>
+    <span class="phase-pill" id="ph1">2 · PROCESSING PHASE</span>
+    <span class="phase-pill" id="ph2">3 · OUTPUT PHASE</span>
+  </div>
+  <div class="fde-wrap">
+    <div class="svg-frame" style="margin-top:0">
+      <svg id="wtSvg" viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" aria-label="Data path of 5 plus 7 through the computer">
+        <g class="wt-step" id="w0"><rect x="20" y="30" width="100" height="50" rx="8" fill="#241a10" stroke="#f59e0b" stroke-width="1.5"/><text x="70" y="52" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">KEYBOARD</text><text x="70" y="68" text-anchor="middle" fill="#8b9bb0" font-size="7">types 5 + 7</text></g>
+        <g class="wt-step" id="w1"><rect x="160" y="30" width="100" height="50" rx="8" fill="#241a10" stroke="#f59e0b" stroke-width="1.5"/><text x="210" y="52" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">I/O CTRL</text><text x="210" y="68" text-anchor="middle" fill="#8b9bb0" font-size="7">keys → binary</text></g>
+        <g class="wt-step" id="w2"><rect x="300" y="30" width="100" height="50" rx="8" fill="#1c1530" stroke="#a78bfa" stroke-width="1.5"/><text x="350" y="52" text-anchor="middle" fill="#a78bfa" font-size="9" font-weight="700">SYSTEM BUS</text><text x="350" y="68" text-anchor="middle" fill="#8b9bb0" font-size="7">carries the bits</text></g>
+        <g class="wt-step" id="w3"><rect x="440" y="30" width="100" height="50" rx="8" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/><text x="490" y="52" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">RAM</text><text x="490" y="68" text-anchor="middle" fill="#8b9bb0" font-size="7">holds 5, +, 7</text></g>
+        <g class="wt-step" id="w4"><rect x="440" y="125" width="100" height="50" rx="8" fill="#13251a" stroke="#22c55e" stroke-width="1.5"/><text x="490" y="147" text-anchor="middle" fill="#22c55e" font-size="9" font-weight="700">CU</text><text x="490" y="163" text-anchor="middle" fill="#8b9bb0" font-size="7">fetches instr</text></g>
+        <g class="wt-step" id="w5"><rect x="300" y="125" width="100" height="50" rx="8" fill="#2a1414" stroke="#f87171" stroke-width="1.5"/><text x="350" y="147" text-anchor="middle" fill="#f87171" font-size="9" font-weight="700">ALU</text><text x="350" y="163" text-anchor="middle" fill="#8b9bb0" font-size="7">5 + 7 = 12</text></g>
+        <g class="wt-step" id="w6"><rect x="160" y="125" width="100" height="50" rx="8" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/><text x="210" y="147" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">REGISTER</text><text x="210" y="163" text-anchor="middle" fill="#8b9bb0" font-size="7">stores 12</text></g>
+        <g class="wt-step" id="w7"><rect x="160" y="220" width="100" height="50" rx="8" fill="#1c1530" stroke="#a78bfa" stroke-width="1.5"/><text x="210" y="242" text-anchor="middle" fill="#a78bfa" font-size="9" font-weight="700">SYSTEM BUS</text><text x="210" y="258" text-anchor="middle" fill="#8b9bb0" font-size="7">12 → output</text></g>
+        <g class="wt-step" id="w8"><rect x="300" y="220" width="100" height="50" rx="8" fill="#241a10" stroke="#f59e0b" stroke-width="1.5"/><text x="350" y="242" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">DISPLAY CTRL</text><text x="350" y="258" text-anchor="middle" fill="#8b9bb0" font-size="7">formats result</text></g>
+        <g class="wt-step" id="w9"><rect x="440" y="220" width="100" height="50" rx="8" fill="#0c2422" stroke="#2dd4bf" stroke-width="1.5"/><text x="490" y="242" text-anchor="middle" fill="#2dd4bf" font-size="9" font-weight="700">MONITOR</text><text x="490" y="258" text-anchor="middle" fill="#8b9bb0" font-size="7" id="monOut">shows: ?</text></g>
+        <g stroke="#1e2a3a" stroke-width="2.5" fill="none" marker-end="url(#arrW)">
+          <path d="M120 55 H160"/><path d="M260 55 H300"/><path d="M400 55 H440"/>
+          <path d="M490 80 V125"/><path d="M440 150 H400"/><path d="M300 150 H260"/>
+          <path d="M210 175 V220"/><path d="M260 245 H300"/><path d="M400 245 H440"/>
+        </g>
+        <defs><marker id="arrW" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#1e2a3a"/></marker></defs>
+      </svg>
+      <div class="caption">FIG 1.7 — THE FULL JOURNEY OF 5 + 7 THROUGH THE MACHINE</div>
+    </div>
+    <div>
+      <div class="fde-btns">
+        <button class="btn" id="wtStep">▶ STEP</button>
+        <button class="btn alt" id="wtReset">↺ RESET</button>
+      </div>
+      <div class="fde-log" id="wtLog">Ready. Press STEP to type "5 + 7" on the keyboard.</div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label">The pattern to remember</div>
+        <p style="margin-top:6px;font-size:.88rem"><b class="hl-a">INPUT</b> → held in <b class="hl-b">RAM</b> → <b class="hl">CPU</b> fetches &amp; executes → result to <b class="hl-t">OUTPUT</b> → may feed back to RAM for the next task. Every program ever written follows this loop.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 18 VON NEUMANN MODEL ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part B · The von Neumann Model</div>
+  <h2>The von Neumann Architecture — The Blueprint</h2>
+  <div class="def" style="margin-top:8px">
+    <div class="term">Definition · von Neumann Architecture</div>
+    <p>The foundation of nearly every modern computer: <b>one main memory holds both data AND instructions</b>, a CPU (Control Unit + ALU) accesses that memory over a <b>single shared system bus</b>, with input and output devices on either side. Instructions are processed <b>one at a time</b>, sequentially.</p>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <div class="k-label hl-b">The defining features</div>
+      <table class="t" style="font-size:.86rem">
+        <tr><td>Stored in</td><td>Instructions &amp; data share the <b>same memory</b></td></tr>
+        <tr><td>Accessed by</td><td>CU fetches instructions; ALU uses the data</td></tr>
+        <tr><td>Bus used</td><td>One <b>shared system bus</b></td></tr>
+        <tr><td>Access timing</td><td><b>One at a time</b> — can't fetch instruction and data simultaneously</td></tr>
+        <tr><td>Example</td><td><span class="mono">ADD A, B</span> fetched from memory; values of A and B fetched from the <i>same</i> memory</td></tr>
+      </table>
+    </div>
+    <div class="card" style="border-color:rgba(248,113,113,.4)">
+      <div class="k-label hl-r">The built-in traffic jam</div>
+      <p style="margin-top:8px;font-size:.95rem">Because everything shares <b>one path to memory</b>:</p>
+      <ul class="clean" style="margin-top:8px;font-size:.92rem">
+        <li>Instruction fetch <b>delays</b> data access</li>
+        <li>Data access <b>delays</b> instruction fetch</li>
+      </ul>
+      <p style="margin-top:10px;font-size:.95rem">This is the famous <b class="hl-r">von Neumann bottleneck</b> — and the reason non-von Neumann designs exist (two slides ahead).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 19 FDE SIMULATOR ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part B · The von Neumann Model</div>
+  <h2>The Heartbeat — Live Fetch–Decode–Execute</h2>
+  <p class="lede" style="margin-top:2px">Press <b>STEP</b> to watch a von Neumann machine run <span class="mono hl">Z = X + Y</span> one phase at a time.</p>
+  <div class="fde-wrap">
+    <div class="svg-frame" style="margin-top:0">
+      <svg id="vn" viewBox="0 0 540 330" xmlns="http://www.w3.org/2000/svg" aria-label="von Neumann architecture with animated fetch decode execute">
+        <rect x="18" y="16" width="300" height="250" rx="12" fill="#0e141d" stroke="#1e2a3a" stroke-width="2"/>
+        <text x="168" y="38" text-anchor="middle" fill="#8b9bb0" font-size="10" letter-spacing="2">CENTRAL PROCESSING UNIT</text>
+        <g class="vn-block" id="b-cu"><rect x="38" y="52" width="120" height="58" rx="8" fill="#13251a" stroke="#22c55e" stroke-width="1.5"/><text x="98" y="77" text-anchor="middle" fill="#22c55e" font-size="10" font-weight="700">CONTROL UNIT</text><text x="98" y="93" text-anchor="middle" fill="#8b9bb0" font-size="7.5">decodes &amp; directs</text></g>
+        <g class="vn-block" id="b-alu"><rect x="178" y="52" width="120" height="58" rx="8" fill="#13251a" stroke="#22c55e" stroke-width="1.5"/><text x="238" y="77" text-anchor="middle" fill="#22c55e" font-size="10" font-weight="700">ALU</text><text x="238" y="93" text-anchor="middle" fill="#8b9bb0" font-size="7.5">arithmetic &amp; logic</text></g>
+        <g class="vn-block" id="b-pc"><rect x="38" y="130" width="120" height="44" rx="8" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/><text x="98" y="149" text-anchor="middle" fill="#38bdf8" font-size="9.5" font-weight="700">PC</text><text x="98" y="164" text-anchor="middle" fill="#8b9bb0" font-size="7.5" id="pcVal">next addr: 100</text></g>
+        <g class="vn-block" id="b-ir"><rect x="178" y="130" width="120" height="44" rx="8" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/><text x="238" y="149" text-anchor="middle" fill="#38bdf8" font-size="9.5" font-weight="700">IR</text><text x="238" y="164" text-anchor="middle" fill="#8b9bb0" font-size="7.5" id="irVal">instruction: —</text></g>
+        <g class="vn-block" id="b-regs"><rect x="38" y="192" width="260" height="48" rx="8" fill="#102030" stroke="#38bdf8" stroke-width="1.5"/><text x="168" y="212" text-anchor="middle" fill="#38bdf8" font-size="9.5" font-weight="700">REGISTERS</text><text x="168" y="228" text-anchor="middle" fill="#8b9bb0" font-size="7.5" id="acVal">AC = 0</text></g>
+        <g class="vn-block" id="b-mem">
+          <rect x="392" y="16" width="130" height="250" rx="12" fill="#0e141d" stroke="#38bdf8" stroke-width="2"/>
+          <text x="457" y="38" text-anchor="middle" fill="#38bdf8" font-size="10" letter-spacing="2">MEMORY</text>
+          <g font-size="8.5" fill="#e6edf3">
+            <rect id="m100" x="404" y="50" width="106" height="22" rx="4" fill="#0b0f14" stroke="#1e2a3a"/><text x="410" y="64" fill="#8b9bb0">100:</text><text x="436" y="64">LOAD X</text>
+            <rect id="m101" x="404" y="78" width="106" height="22" rx="4" fill="#0b0f14" stroke="#1e2a3a"/><text x="410" y="92" fill="#8b9bb0">101:</text><text x="436" y="92">ADD Y</text>
+            <rect id="m102" x="404" y="106" width="106" height="22" rx="4" fill="#0b0f14" stroke="#1e2a3a"/><text x="410" y="120" fill="#8b9bb0">102:</text><text x="436" y="120">STORE Z</text>
+            <rect x="404" y="150" width="106" height="22" rx="4" fill="#0b0f14" stroke="#1e2a3a"/><text x="410" y="164" fill="#8b9bb0">X:</text><text x="436" y="164">5</text>
+            <rect x="404" y="178" width="106" height="22" rx="4" fill="#0b0f14" stroke="#1e2a3a"/><text x="410" y="192" fill="#8b9bb0">Y:</text><text x="436" y="192">7</text>
+            <rect x="404" y="206" width="106" height="22" rx="4" fill="#0b0f14" stroke="#1e2a3a"/><text x="410" y="220" fill="#8b9bb0">Z:</text><text x="436" y="220" id="zVal">?</text>
+          </g>
+          <text x="457" y="252" text-anchor="middle" fill="#8b9bb0" font-size="7.5">PROGRAM + DATA, ONE MEMORY</text>
+        </g>
+        <rect x="18" y="286" width="504" height="34" rx="8" fill="#1c1530" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="270" y="307" text-anchor="middle" fill="#a78bfa" font-size="9.5" font-weight="700">SYSTEM BUS — ONE SHARED PATH</text>
+        <g stroke="#1e2a3a" stroke-width="3"><path d="M168 266 V286"/><path d="M457 266 V286"/></g>
+        <g id="flowFetch" class="flow"><path d="M318 90 H392" stroke="#f59e0b" stroke-width="3" fill="none" marker-end="url(#arrA)"/><path d="M392 110 H318" stroke="#f59e0b" stroke-width="3" fill="none" marker-end="url(#arrA)"/></g>
+        <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b"/></marker></defs>
+      </svg>
+      <div class="caption">FIG 1.8 — VON NEUMANN MACHINE RUNNING&nbsp; Z = X + Y</div>
+    </div>
+    <div>
+      <div class="fde-btns">
+        <button class="btn" id="stepBtn">▶ STEP</button>
+        <button class="btn" id="runBtn">⏩ RUN ALL</button>
+        <button class="btn alt" id="resetBtn">↺ RESET</button>
+      </div>
+      <div class="fde-log" id="fdeLog">Ready. PC = 100. Press STEP to fetch the first instruction.</div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label">The cycle, formally</div>
+        <ul class="clean" style="margin-top:6px;font-size:.86rem">
+          <li><b class="hl-a">FETCH</b> — copy instruction at PC into IR; PC++</li>
+          <li><b class="hl-b">DECODE</b> — control unit reads the opcode, fetches operands</li>
+          <li><b class="hl">EXECUTE</b> — ALU does the work</li>
+          <li><b class="hl-r">STORE</b> — result written to registers/memory</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 20 NON-VON NEUMANN ===== -->
+<section class="slide">
+  <div class="eyebrow">// Part B · Non-von Neumann Models</div>
+  <h2>Breaking the Blueprint</h2>
+  <div class="def" style="margin-top:8px">
+    <div class="term">Definition · Non-von Neumann Architecture</div>
+    <p>Computer designs that <b>differ from the standard von Neumann model</b> — most notably by <b>separating data and instruction memory</b>, or by <b>breaking the sequential flow of execution</b> to support parallelism, faster access, or specialized computing.</p>
+  </div>
+  <div class="cols" style="grid-template-columns:1fr 1fr">
+    <div>
+      <div class="svg-frame" style="margin-top:0">
+        <svg viewBox="0 0 480 230" xmlns="http://www.w3.org/2000/svg" aria-label="von Neumann vs Harvard architecture">
+          <text x="120" y="22" text-anchor="middle" fill="#8b9bb0" font-size="10" letter-spacing="2">VON NEUMANN</text>
+          <rect x="40" y="40" width="160" height="50" rx="8" fill="#13251a" stroke="#22c55e"/><text x="120" y="69" text-anchor="middle" fill="#22c55e" font-size="10" font-weight="700">CPU</text>
+          <rect x="40" y="150" width="160" height="50" rx="8" fill="#102030" stroke="#38bdf8"/><text x="120" y="174" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">MEMORY</text><text x="120" y="189" text-anchor="middle" fill="#8b9bb0" font-size="7">program + data</text>
+          <path d="M120 90 V150" stroke="#f87171" stroke-width="6"/><text x="132" y="125" fill="#f87171" font-size="8">1 path = bottleneck</text>
+          <text x="360" y="22" text-anchor="middle" fill="#8b9bb0" font-size="10" letter-spacing="2">HARVARD</text>
+          <rect x="280" y="40" width="160" height="50" rx="8" fill="#13251a" stroke="#22c55e"/><text x="360" y="69" text-anchor="middle" fill="#22c55e" font-size="10" font-weight="700">CPU</text>
+          <rect x="280" y="150" width="72" height="50" rx="8" fill="#102030" stroke="#38bdf8"/><text x="316" y="174" text-anchor="middle" fill="#38bdf8" font-size="8" font-weight="700">PROGRAM</text><text x="316" y="188" text-anchor="middle" fill="#8b9bb0" font-size="7">instruction bus</text>
+          <rect x="368" y="150" width="72" height="50" rx="8" fill="#241a10" stroke="#f59e0b"/><text x="404" y="174" text-anchor="middle" fill="#f59e0b" font-size="8" font-weight="700">DATA</text><text x="404" y="188" text-anchor="middle" fill="#8b9bb0" font-size="7">data bus</text>
+          <path d="M316 90 V150" stroke="#22c55e" stroke-width="5"/><path d="M404 90 V150" stroke="#22c55e" stroke-width="5"/>
+          <text x="360" y="222" text-anchor="middle" fill="#22c55e" font-size="8">2 dedicated buses — fetch instruction AND data at once</text>
+        </svg>
+        <div class="caption">FIG 1.9 — ONE BUS vs TWO</div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label hl">Harvard architecture — the fix</div>
+        <p style="margin-top:6px;font-size:.88rem">Instructions live in <b>instruction memory</b> (fetched by the CU via a dedicated instruction bus); data lives in <b>data memory</b> (accessed by the ALU via a dedicated data bus). Both can be accessed <b>simultaneously</b> — no interference, no delay. Most microcontrollers and DSP chips work this way.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card"><div class="k-label hl-b">Parallel processing</div><p style="margin-top:6px;font-size:.9rem">Many CPUs/cores attack one problem together, breaking the one-instruction-at-a-time rule. Every modern multicore chip and every GPU — thousands of small processors — lives here.</p></div>
+      <div class="card" style="margin-top:12px"><div class="k-label hl-v">Neural networks &amp; dataflow</div><p style="margin-top:6px;font-size:.9rem">Computation organized like neurons, or driven by <b>data availability</b> instead of a program counter. The hardware behind today's AI accelerators.</p></div>
+      <div class="card" style="margin-top:12px"><div class="k-label hl-a">Quantum computers</div><p style="margin-top:6px;font-size:.9rem">Qubits exploit superposition — not 0 <i>or</i> 1, but both at once. A fundamentally different machine, still cooled to near absolute zero.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 21 QUIZ ===== -->
+<section class="slide">
+  <div class="eyebrow">// Knowledge Check</div>
+  <h2>Boot Sequence Check — 7 Questions</h2>
+  <div id="quizHost"></div>
+</section>
+
+<!-- ===== 22 SUMMARY ===== -->
+<section class="slide">
+  <div class="eyebrow">// Summary</div>
+  <h2>Chapter 1 — Committed to Memory</h2>
+  <div class="cols">
+    <div class="card">
+      <div class="k-label hl">Today's core ideas</div>
+      <ul class="clean" style="margin-top:8px;font-size:.92rem">
+        <li>Vocabulary: <b>CPU · PC · CU · ALU · RAM · GHz</b></li>
+        <li>Components: input · output · CPU · memory · motherboard &amp; bus</li>
+        <li>Inside the CPU: ALU, CU, registers, cache, clock</li>
+        <li>Cycle: <b>Fetch → Decode → Execute → Store</b>, at GHz speeds</li>
+        <li>RAM = volatile working memory; storage = non-volatile</li>
+        <li>Bus = group of wires; <b>width</b> = bits moved at once</li>
+        <li>Gen 0→4: gears → tubes → transistors → ICs → VLSI</li>
+        <li><b>von Neumann</b>: one memory, one bus, one bottleneck</li>
+        <li>Non-vN: Harvard, parallel, neural, quantum</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card" style="border-color:var(--trace-dim)">
+        <div class="k-label hl-a">🧪 This week's lab</div>
+        <p style="margin-top:6px;font-size:.95rem">Hands-on with the components &amp; hierarchy — labs run <b>every week</b> and feed your 20% Labs &amp; Quizzes grade.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label hl-b">📖 Read before next class</div>
+        <p style="margin-top:6px;font-size:.95rem">Null &amp; Lobur, <b>Chapter 2</b> — Data Representation. Binary, octal, hex, and the legendary IEEE 754.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="k-label">⚡ Extra credit reminder</div>
+        <p style="margin-top:6px;font-size:.95rem">Participation opportunities every class — show up, speak up, build up your grade.</p>
+      </div>
+      <p class="mono" style="margin-top:18px;font-size:.72rem;color:var(--muted)">Prof. Khalid Kassou · kkassou@lagcc.cuny.edu · Office hours Mo/We 1:00–3:00 PM</p>
+    </div>
+  </div>
+</section>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="pill">
+    <button id="prevBtn" aria-label="Previous slide">←</button>
+    <span id="counter">1 / 23</span>
+    <button id="nextBtn" aria-label="Next slide">→</button>
+    <button id="menuBtn">MENU</button>
+  </div>
+</div>
+<div id="menu">
+  <button class="close" id="menuClose">✕</button>
+  <div class="m-wrap"><h3>Jump to Slide</h3><div id="menuItems"></div></div>
+</div>
+
+<script>
+/* ===== DECK ENGINE ===== */
+const slides=[...document.querySelectorAll('.slide')];
+const titles=['Title','Roadmap','Abbreviations Explained','The Big Idea','Main Components','Internal vs External','CPU Deep Dive','The Instruction Cycle','CPU Types & History','RAM vs Storage','The Motherboard','The Bus & Bus Width','Standards Organizations','Five Generations','Moore\u2019s Law','Level Hierarchy','Hierarchy in Action: 8\u00D76','Step-by-Step: 5 + 7','von Neumann Model','FDE Simulator','Non-von Neumann','Knowledge Check','Summary'];
+let cur=0;
+function show(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,j)=>s.classList.toggle('active',j===cur));
+  document.getElementById('counter').textContent=(cur+1)+' / '+slides.length;
+  document.getElementById('progress').style.width=((cur+1)/slides.length*100)+'%';
+}
+document.getElementById('nextBtn').onclick=()=>show(cur+1);
+document.getElementById('prevBtn').onclick=()=>show(cur-1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')show(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')show(cur-1);
+  if(e.key.toLowerCase()==='m')document.getElementById('menu').classList.toggle('open');
+  if(e.key==='Escape')document.getElementById('menu').classList.remove('open');
+});
+let tx=null;
+document.addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{
+  if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>60)show(cur+(dx<0?1:-1));tx=null;
+});
+const mi=document.getElementById('menuItems');
+titles.forEach((t,i)=>{
+  const d=document.createElement('div');d.className='m-item';
+  d.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span><span>'+t+'</span>';
+  d.onclick=()=>{show(i);document.getElementById('menu').classList.remove('open');};
+  mi.appendChild(d);
+});
+document.getElementById('menuBtn').onclick=()=>document.getElementById('menu').classList.add('open');
+document.getElementById('menuClose').onclick=()=>document.getElementById('menu').classList.remove('open');
+show(0);
+
+/* ===== SLIDE 4: COMPONENT INSPECTOR ===== */
+const compData={
+  cpu:{t:'CPU \u2014 Central Processing Unit',c:'var(--trace)',b:'The "brain and heart" of the computer \u2014 a small chip (microprocessor) that carries out instructions from programs by performing basic <b>arithmetic, logic, control, and I/O operations</b>. Every operation done with the computer is processed by the CPU. Full anatomy on slide 7.'},
+  mem:{t:'Memory',c:'var(--blue)',b:'Two kinds: <b>RAM</b> (volatile \u2014 temporary workspace for running programs, erased at power-off) and <b>storage</b> (non-volatile \u2014 HDD/SSD that keeps files, software, and the OS permanently). Full comparison on slide 10.'},
+  io:{t:'Input / Output',c:'var(--amber)',b:'<b>Input devices</b> (keyboard, mouse, microphone, scanner) send data INTO the computer. <b>Output devices</b> (monitor, printer, speaker) deliver results OUT. They are the computer\u2019s senses and voice \u2014 and wildly slower than the CPU, which is why interrupts exist (CH 4).'},
+  bus:{t:'System Bus',c:'var(--violet)',b:'The shared highway: a group of wires where each wire carries <b>1 bit at a time</b>. Three lanes: <b>address</b> (where), <b>data</b> (what), <b>control</b> (when/how). Full definition + width demo on slide 12.'}
+};
+document.querySelectorAll('#board .comp').forEach(g=>{
+  g.addEventListener('click',()=>{
+    document.querySelectorAll('#board .comp').forEach(x=>x.classList.remove('sel'));
+    g.classList.add('sel');
+    const d=compData[g.dataset.c];
+    document.getElementById('compInfo').innerHTML=
+      '<div class="k-label" style="color:'+d.c+'">'+d.t+'</div><p style="margin-top:8px;font-size:.9rem">'+d.b+'</p>';
+  });
+});
+
+/* ===== SLIDE 6: CPU PARTS ===== */
+const cpuParts={
+  alu:{t:'ALU \u2014 Arithmetic Logic Unit',c:'var(--red)',b:'Performs <b>all mathematical calculations</b> (addition, subtraction\u2026) and <b>logical operations</b> (AND, OR, NOT). When you compute 5 + 7, the ALU is the part that actually adds. In CH 3 you will build one from logic gates.'},
+  cu:{t:'CU \u2014 Control Unit',c:'var(--amber)',b:'<b>Coordinates all processor activities</b>, manages instruction execution, and controls data flow between components. The conductor of the orchestra \u2014 it plays no instrument but nothing happens without it.'},
+  regs:{t:'Registers',c:'var(--blue)',b:'<b>Ultra-fast storage locations</b> (typically 32\u201364 bits) holding data being actively processed. Famous residents: the <b>accumulator (AC)</b> for results and the <b>program counter (PC)</b> for the next instruction\u2019s address.'},
+  cache:{t:'Cache',c:'var(--trace)',b:'A <b>high-speed memory hierarchy (L1, L2, L3)</b> inside the CPU that stores frequently accessed data to reduce latency. L1 is tiny and nearly instant; L3 is bigger and slower \u2014 but all are far faster than RAM.'},
+  clock:{t:'Clock',c:'var(--violet)',b:'<b>Synchronizes all CPU operations</b>. Speed measured in <b>GHz \u2014 billions of cycles per second</b>. Every tick, the CPU advances one step of its work. A 3.5 GHz CPU ticks 3.5 billion times each second.'}
+};
+document.querySelectorAll('#cpuSvg .comp').forEach(g=>{
+  g.addEventListener('click',()=>{
+    document.querySelectorAll('#cpuSvg .comp').forEach(x=>x.classList.remove('sel'));
+    g.classList.add('sel');
+    const d=cpuParts[g.dataset.p];
+    document.getElementById('cpuInfo').innerHTML=
+      '<div class="k-label" style="color:'+d.c+'">'+d.t+'</div><p style="margin-top:8px;font-size:.9rem">'+d.b+'</p>';
+  });
+});
+
+/* ===== SLIDE 9: RAM VS STORAGE ===== */
+const memViews={
+ram:'<div class="card"><div class="k-label hl-v">RAM \u2014 Random Access Memory (volatile)</div><ul class="clean" style="margin-top:8px"><li><b>Temporarily stores data and instructions</b> for running programs</li><li>Data is <b>erased when power is turned off</b> \u2014 that\u2019s what "volatile" means</li><li>Key for <b>multitasking and fast access</b> \u2014 more RAM = more apps open smoothly</li><li>Types include <b>DRAM, SRAM, DDR4, DDR5</b></li><li>Physically: long, thin sticks (5\u20136") that snap into DIMM slots</li></ul></div>',
+sto:'<div class="card"><div class="k-label hl-a">Storage \u2014 Non-Volatile Memory</div><ul class="clean" style="margin-top:8px"><li><b>Data remains after power is off</b> \u2014 that\u2019s "non-volatile"</li><li>Stores <b>files, software, and the OS permanently</b></li><li>Examples: <b>HDD, SSD, USB drive, SD card</b></li><li><b>SSDs are faster and more durable</b> than HDDs (no moving parts)</li><li>Higher capacity than RAM \u2014 terabytes vs gigabytes</li><li>Physically: boxy 2.5"/3.5" drives, or thin M.2 chips</li></ul></div>',
+vs:'<div class="card"><table class="t"><tr><th>Feature</th><th>RAM</th><th>Storage</th></tr><tr><td>Volatility</td><td>Volatile</td><td>Non-volatile</td></tr><tr><td>Speed</td><td><b class="hl">Very fast</b></td><td>Slower</td></tr><tr><td>Use</td><td>Active programs</td><td>Long-term files, OS</td></tr><tr><td>Capacity</td><td>Smaller (e.g. 8\u201332 GB)</td><td>Larger (e.g. 1 TB)</td></tr><tr><td>Data retention</td><td class="hl-r">Lost on shutdown</td><td class="hl">Retained after shutdown</td></tr><tr><td>Located</td><td>DIMM slots near CPU</td><td>Drive bay / M.2 slot</td></tr></table></div>'
+};
+const memStage=document.getElementById('memStage');
+document.querySelectorAll('.tg[data-m]').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tg[data-m]').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');memStage.innerHTML=memViews[t.dataset.m];
+  };
+});
+memStage.innerHTML=memViews.ram;
+
+/* ===== SLIDE 10: MOTHERBOARD PARTS ===== */
+const mbParts={
+  socket:{t:'CPU Socket',c:'var(--trace)',b:'Where the <b>CPU fits into the motherboard</b>. The socket type determines which processors are compatible \u2014 you can\u2019t put an AMD chip in an Intel socket.'},
+  dimm:{t:'Memory Slots (DIMM)',c:'var(--blue)',b:'<b>DIMM = Dual Inline Memory Module.</b> The RAM sticks snap vertically into these slots, located near the CPU for speed, and are often installed in pairs for better performance.'},
+  pcie:{t:'Bus / Expansion Slots (PCIe)',c:'var(--violet)',b:'<b>PCI/PCIe slots connect expansion cards</b>: graphics cards, WiFi cards, sound cards, Ethernet cards. This is how you upgrade a computer\u2019s capabilities after purchase.'},
+  sata:{t:'SATA Connectors',c:'var(--amber)',b:'<b>SATA connects storage devices</b> \u2014 SSDs and hard drives \u2014 to the motherboard via SATA cables. The drive itself is screwed into a drive bay in the case.'},
+  usb:{t:'USB Ports',c:'var(--teal)',b:'<b>USB = Universal Serial Bus.</b> The input and output devices (keyboard, mouse, printer, external drives) plug into these ports using USB cables. One standard, every vendor \u2014 thanks to standards organizations!'},
+  m2:{t:'M.2 Slot',c:'var(--blue)',b:'A modern slot where a thin <b>M.2 SSD chip</b> mounts directly onto the motherboard \u2014 no cables, much faster than SATA.'}
+};
+document.querySelectorAll('#mbSvg .comp').forEach(g=>{
+  g.addEventListener('click',()=>{
+    document.querySelectorAll('#mbSvg .comp').forEach(x=>x.classList.remove('sel'));
+    g.classList.add('sel');
+    const d=mbParts[g.dataset.m];
+    document.getElementById('mbInfo').innerHTML=
+      '<div class="k-label" style="color:'+d.c+'">'+d.t+'</div><p style="margin-top:8px;font-size:.9rem">'+d.b+'</p>';
+  });
+});
+
+/* ===== SLIDE 11: BUS WIDTH DEMO ===== */
+const wireBox=document.getElementById('wireBox'),wireLabel=document.getElementById('wireLabel');
+function setWires(n){
+  wireBox.innerHTML='';
+  const shown=Math.min(n,32);
+  for(let i=0;i<shown;i++){const w=document.createElement('div');w.className='wire';w.style.animationDelay=(i*0.04)+'s';wireBox.appendChild(w);}
+  wireLabel.textContent=n+'-BIT BUS = '+n+' WIRES = '+n+' BITS TRANSMITTED AT A TIME'+(n>32?' (showing 32)':'');
+}
+document.querySelectorAll('.tg.bw').forEach(t=>{
+  t.onclick=()=>{document.querySelectorAll('.tg.bw').forEach(x=>x.classList.remove('active'));t.classList.add('active');setWires(+t.dataset.w);};
+});
+setWires(32);
+
+/* ===== FLIP CARDS ===== */
+document.querySelectorAll('.flip').forEach(f=>f.addEventListener('click',()=>f.classList.toggle('flipped')));
+
+/* ===== SLIDE 13: GENERATIONS ===== */
+const gens=[
+ {era:'1642\u20131945',name:'Generation 0 \u2014 Mechanical & Electromechanical',
+  art:'<svg viewBox="0 0 240 200"><g fill="none" stroke="#8b9bb0" stroke-width="3"><circle cx="90" cy="90" r="44"/><circle cx="90" cy="90" r="20"/><circle cx="165" cy="130" r="30"/><circle cx="165" cy="130" r="13"/></g><g stroke="#8b9bb0" stroke-width="3">'+
+   Array.from({length:12},(_,i)=>{const a=i*30*Math.PI/180;return '<line x1="'+(90+44*Math.cos(a))+'" y1="'+(90+44*Math.sin(a))+'" x2="'+(90+54*Math.cos(a))+'" y2="'+(90+54*Math.sin(a))+'"/>';}).join('')+
+   Array.from({length:10},(_,i)=>{const a=i*36*Math.PI/180;return '<line x1="'+(165+30*Math.cos(a))+'" y1="'+(130+30*Math.sin(a))+'" x2="'+(165+38*Math.cos(a))+'" y2="'+(130+38*Math.sin(a))+'"/>';}).join('')+
+   '</g><text x="120" y="190" text-anchor="middle" fill="#8b9bb0" font-size="10">GEARS &amp; RELAYS</text></svg>',
+  pts:['Computing with <b>gears, levers, and relays</b> \u2014 no electronics yet','Babbage\u2019s Difference & Analytical Engines; programs on punched cards','Zuse\u2019s Z1/Z3 \u2014 electromechanical relay machines','Speed: <b>seconds per operation</b>']},
+ {era:'1945\u20131953',name:'Generation 1 \u2014 Vacuum Tubes',
+  art:'<svg viewBox="0 0 240 200"><g><path d="M120 30 q40 0 40 50 v60 q0 24 -40 24 q-40 0 -40 -24 v-60 q0 -50 40 -50" fill="#102030" stroke="#f59e0b" stroke-width="2.5"/><line x1="104" y1="164" x2="104" y2="186" stroke="#f59e0b" stroke-width="3"/><line x1="120" y1="164" x2="120" y2="186" stroke="#f59e0b" stroke-width="3"/><line x1="136" y1="164" x2="136" y2="186" stroke="#f59e0b" stroke-width="3"/><path d="M108 120 q12 -16 24 0" stroke="#f87171" stroke-width="2.5" fill="none"><animate attributeName="opacity" values="1;.3;1" dur="1.4s" repeatCount="indefinite"/></path><circle cx="120" cy="60" r="5" fill="#f59e0b" opacity=".8"/></g><text x="120" y="198" text-anchor="middle" fill="#8b9bb0" font-size="10">VACUUM TUBE \u2014 A GLOWING SWITCH</text></svg>',
+  pts:['A vacuum tube is an <b>electronic switch</b> \u2014 no moving parts, far faster than relays','<b>ENIAC</b>: ~17,468 tubes, 30 tons, a room-sized machine','Tubes ran hot and burned out constantly \u2014 uptime measured in hours','First true general-purpose <b>electronic</b> computers']},
+ {era:'1954\u20131965',name:'Generation 2 \u2014 Transistors',
+  art:'<svg viewBox="0 0 240 200"><circle cx="120" cy="95" r="55" fill="#13251a" stroke="#22c55e" stroke-width="2.5"/><line x1="92" y1="95" x2="120" y2="95" stroke="#22c55e" stroke-width="3"/><line x1="120" y1="68" x2="120" y2="122" stroke="#22c55e" stroke-width="4"/><line x1="120" y1="80" x2="150" y2="58" stroke="#22c55e" stroke-width="3"/><line x1="120" y1="110" x2="150" y2="132" stroke="#22c55e" stroke-width="3"/><polygon points="143,124 152,133 139,136" fill="#22c55e"/><line x1="60" y1="95" x2="92" y2="95" stroke="#22c55e" stroke-width="3"/><line x1="150" y1="58" x2="150" y2="30" stroke="#22c55e" stroke-width="3"/><line x1="150" y1="132" x2="150" y2="162" stroke="#22c55e" stroke-width="3"/><text x="120" y="192" text-anchor="middle" fill="#8b9bb0" font-size="10">TRANSISTOR \u2014 SMALL \u00B7 COOL \u00B7 RELIABLE</text></svg>',
+  pts:['The transistor (Bell Labs, 1948) is a <b>solid-state switch</b>: tiny, cool, and reliable','Replaced vacuum tubes \u2192 computers became smaller and dependable','Era of IBM 7094, DEC PDP-1 \u2014 and the first supercomputers','The single most important invention of the 20th century?  Discuss \u26A1']},
+ {era:'1965\u20131980',name:'Generation 3 \u2014 Integrated Circuits',
+  art:'<svg viewBox="0 0 240 200"><rect x="70" y="55" width="100" height="80" rx="8" fill="#0b0f14" stroke="#38bdf8" stroke-width="2.5"/><text x="120" y="92" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="700">IC</text><text x="120" y="108" text-anchor="middle" fill="#8b9bb0" font-size="7">100s of transistors</text>'+
+   Array.from({length:5},(_,i)=>'<line x1="'+(82+i*19)+'" y1="55" x2="'+(82+i*19)+'" y2="38" stroke="#38bdf8" stroke-width="3"/><line x1="'+(82+i*19)+'" y1="135" x2="'+(82+i*19)+'" y2="152" stroke="#38bdf8" stroke-width="3"/>').join('')+
+   '<text x="120" y="186" text-anchor="middle" fill="#8b9bb0" font-size="10">MANY TRANSISTORS, ONE CHIP</text></svg>',
+  pts:['Kilby &amp; Noyce: <b>entire circuits printed on one silicon chip</b>','Hundreds of transistors per chip \u2014 wiring by photography, not by hand','IBM System/360 \u2014 one <b>family</b> of compatible machines','Minicomputers bring computing to small businesses']},
+ {era:'1980\u2013today',name:'Generation 4 \u2014 VLSI & Beyond',
+  art:'<svg viewBox="0 0 240 200"><rect x="55" y="40" width="130" height="130" rx="10" fill="#0b0f14" stroke="#22c55e" stroke-width="2.5"/>'+
+   Array.from({length:6},(_,r)=>Array.from({length:6},(_,c)=>'<rect x="'+(67+c*18)+'" y="'+(52+r*18)+'" width="13" height="13" rx="2" fill="#13251a" stroke="#22c55e" stroke-width=".7"/>').join('')).join('')+
+   '<circle cx="120" cy="105" r="6" fill="#22c55e"><animate attributeName="opacity" values="1;.2;1" dur="1.2s" repeatCount="indefinite"/></circle><text x="120" y="188" text-anchor="middle" fill="#8b9bb0" font-size="10">VLSI \u2014 BILLIONS OF TRANSISTORS</text></svg>',
+  pts:['<b>VLSI = Very Large-Scale Integration</b>: millions \u2192 billions of transistors per chip','The microprocessor: a whole CPU on one chip (Intel 4004, 1971)','1981 IBM PC \u2014 computing for everyone; then phones, watches, cars','Moore\u2019s Law drives 40+ years of exponential growth \u2192 next slide']}
+];
+const genTabs=document.querySelectorAll('.gen-tab');
+function setGen(i){
+  genTabs.forEach((t,j)=>t.classList.toggle('active',j===i));
+  const g=gens[i];
+  document.getElementById('genArt').innerHTML=g.art;
+  document.getElementById('genInfo').innerHTML=
+    '<div class="k-label hl">'+g.era+'</div><h3 style="font-family:\'Space Grotesk\',sans-serif;margin:6px 0 10px;font-size:1.12rem">'+g.name+'</h3><ul class="clean">'+g.pts.map(p=>'<li>'+p+'</li>').join('')+'</ul>';
+}
+genTabs.forEach((t,i)=>t.onclick=()=>setGen(i));
+setGen(0);
+
+/* ===== SLIDE 15: PYRAMID ===== */
+const lv={
+ 6:{t:'Level 6 \u2014 User',b:'<b>Executable programs</b>: browsers, games, calculator apps. Users interact with applications and never need to know what\u2019s below \u2014 that\u2019s the point of abstraction.'},
+ 5:{t:'Level 5 \u2014 High-Level Language',b:'<b>C++, Java, Python, Swift, FORTRAN.</b> Code written by humans, then compiled or interpreted down to lower levels. MAC-125 and MAC-286 live here.'},
+ 4:{t:'Level 4 \u2014 Assembly Language',b:'<b>Human-readable machine instructions</b>: LOAD X, ADD Y, MUL 6. One assembly instruction \u2248 one machine instruction. CH 4 takes us here.'},
+ 3:{t:'Level 3 \u2014 System Software',b:'<b>Operating system &amp; library code</b>: memory protection, multitasking, system calls. The bouncer between your code and the hardware.'},
+ 2:{t:'Level 2 \u2014 Machine (ISA)',b:'The <b>Instruction Set Architecture</b> \u2014 raw binary instructions the CPU understands, e.g. 10110000 01100001. The contract between hardware and software. CH 5 explores ISAs.'},
+ 1:{t:'Level 1 \u2014 Control',b:'The <b>control unit</b> makes the ISA real: it breaks each instruction into micro-operations using either hardwired circuits or a <b>microprogram</b>. CH 4\u2019s big design decision.'},
+ 0:{t:'Level 0 \u2014 Digital Logic',b:'<b>Gates, wires, flip-flops, circuits.</b> AND, OR, XOR, NOT \u2014 transistors and physical hardware. Everything above is an illusion built on this level. CH 3 builds it from Boolean algebra up.'}
+};
+document.querySelectorAll('.pyr-level').forEach(p=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('.pyr-level').forEach(x=>x.classList.remove('sel'));
+    p.classList.add('sel');
+    const d=lv[p.dataset.l];
+    document.getElementById('pyrInfo').innerHTML='<div class="k-label hl">'+d.t+'</div><p style="margin-top:8px;font-size:.92rem">'+d.b+'</p>';
+  });
+});
+
+/* ===== SLIDE 17: 5+7 WALKTHROUGH ===== */
+const wtSteps=[
+ {b:'w0',ph:0,log:'STEP 1 \u00B7 KEYBOARD\nUser presses \u20185\u2019, \u2018+\u2019, and \u20187\u2019.'},
+ {b:'w1',ph:0,log:'STEP 2 \u00B7 I/O CONTROLLER\nConverts keystrokes into binary codes\n(physical key press \u2192 0s and 1s).'},
+ {b:'w2',ph:0,log:'STEP 3 \u00B7 SYSTEM BUS\nControl, address, and data buses transmit\nthe binary codes toward memory.'},
+ {b:'w3',ph:0,log:'STEP 4 \u00B7 RAM\nMemory controller places the data at a\nspecific RAM address. Held until CPU fetches it.'},
+ {b:'w4',ph:1,log:'STEP 5 \u00B7 CPU (CONTROL UNIT)\nFetches the instruction (5 + 7) from RAM.'},
+ {b:'w5',ph:1,log:'STEP 6 \u00B7 CPU (ALU)\nPerforms the addition: 5 + 7 = 12.'},
+ {b:'w6',ph:1,log:'STEP 7 \u00B7 CPU REGISTER\nStores the result (12) temporarily for output.'},
+ {b:'w7',ph:2,log:'STEP 8 \u00B7 SYSTEM BUS\nSends the result (12) from CPU to the\noutput controller.'},
+ {b:'w8',ph:2,log:'STEP 9 \u00B7 DISPLAY CONTROLLER\nFormats the result for screen display.'},
+ {b:'w9',ph:2,log:'STEP 10 \u00B7 MONITOR (OUTPUT DEVICE)\nDisplays \u201C12\u201D as the final answer. \u2713\nResult may also feed back to RAM for the next task.'}
+];
+let wt=0;
+function wtPh(p){[0,1,2].forEach(i=>document.getElementById('ph'+i).classList.toggle('on',i===p));}
+document.getElementById('wtStep').onclick=()=>{
+  if(wt>=wtSteps.length){document.getElementById('wtLog').textContent='Journey complete: 5 + 7 = 12 on screen.\nPress RESET to run it again.';return;}
+  document.querySelectorAll('.wt-step').forEach(x=>x.classList.remove('lit'));
+  const s=wtSteps[wt];
+  document.getElementById(s.b).classList.add('lit');
+  document.getElementById('wtLog').textContent=s.log;
+  wtPh(s.ph);
+  if(s.b==='w9')document.getElementById('monOut').textContent='shows: 12';
+  wt++;
+};
+document.getElementById('wtReset').onclick=()=>{
+  wt=0;document.querySelectorAll('.wt-step').forEach(x=>x.classList.remove('lit'));
+  wtPh(-1);document.getElementById('monOut').textContent='shows: ?';
+  document.getElementById('wtLog').textContent='Ready. Press STEP to type "5 + 7" on the keyboard.';
+};
+
+/* ===== SLIDE 19: FDE SIMULATOR ===== */
+const prog=[
+ {addr:'100',asm:'LOAD X',mem:'m100',exec:s=>{s.ac=5;return 'EXECUTE: AC \u2190 M[X]  \u2192  AC = 5\nSTORE:   result kept in AC register';}},
+ {addr:'101',asm:'ADD Y', mem:'m101',exec:s=>{s.ac=12;return 'EXECUTE: AC \u2190 AC + M[Y]  \u2192  AC = 12\nSTORE:   result kept in AC register';}},
+ {addr:'102',asm:'STORE Z',mem:'m102',exec:s=>{s.z=12;return 'EXECUTE/STORE: M[Z] \u2190 AC  \u2192  Z = 12  \u2713 done!';}}
+];
+let st={i:0,phase:0,ac:0,z:'?'};
+const lit=ids=>{document.querySelectorAll('.vn-block').forEach(b=>b.classList.remove('lit'));ids.forEach(id=>document.getElementById(id).classList.add('lit'));};
+const litMem=id=>{['m100','m101','m102'].forEach(m=>document.getElementById(m).setAttribute('stroke',m===id?'#f59e0b':'#1e2a3a'));};
+function fdeStep(){
+  const log=document.getElementById('fdeLog');
+  if(st.i>=prog.length){log.textContent='Program complete. Z = 12. Press RESET to run again.';lit([]);return;}
+  const ins=prog[st.i];
+  if(st.phase===0){
+    lit(['b-pc','b-mem','b-ir']);litMem(ins.mem);
+    document.getElementById('flowFetch').classList.add('on');
+    document.getElementById('irVal').textContent='instruction: '+ins.asm;
+    document.getElementById('pcVal').textContent='next addr: '+(parseInt(ins.addr)+1);
+    log.textContent='FETCH:   IR \u2190 M['+ins.addr+'] = "'+ins.asm+'"\n         PC \u2190 '+(parseInt(ins.addr)+1);
+    st.phase=1;
+  }else if(st.phase===1){
+    lit(['b-cu','b-ir']);document.getElementById('flowFetch').classList.remove('on');
+    log.textContent='DECODE:  Control Unit reads opcode "'+ins.asm.split(' ')[0]+'"\n         operand: '+ins.asm.split(' ')[1];
+    st.phase=2;
+  }else{
+    lit(['b-alu','b-regs']);
+    log.textContent=ins.exec(st);
+    document.getElementById('acVal').textContent='AC = '+st.ac;
+    document.getElementById('zVal').textContent=st.z;
+    litMem(null);st.phase=0;st.i++;
+  }
+}
+document.getElementById('stepBtn').onclick=fdeStep;
+document.getElementById('runBtn').onclick=()=>{
+  let n=(prog.length-st.i)*3-st.phase;
+  const t=setInterval(()=>{fdeStep();if(--n<=0)clearInterval(t);},700);
+};
+document.getElementById('resetBtn').onclick=()=>{
+  st={i:0,phase:0,ac:0,z:'?'};lit([]);litMem(null);
+  document.getElementById('flowFetch').classList.remove('on');
+  document.getElementById('irVal').textContent='instruction: \u2014';
+  document.getElementById('pcVal').textContent='next addr: 100';
+  document.getElementById('acVal').textContent='AC = 0';
+  document.getElementById('zVal').textContent='?';
+  document.getElementById('fdeLog').textContent='Ready. PC = 100. Press STEP to fetch the first instruction.';
+};
+
+/* ===== SLIDE 21: QUIZ ===== */
+const quiz=[
+ {q:'PC stands for Program Counter. What does it store?',o:['The result of the last calculation','The memory address of the next instruction','The current clock speed','The number of programs installed'],a:1,fb:'The PC is the CPU\u2019s bookmark \u2014 it always points at the next instruction\u2019s address.'},
+ {q:'Which CPU component performs calculations like 5 + 7 and logical operations like AND/OR?',o:['Control Unit','Cache','ALU','Clock'],a:2,fb:'The Arithmetic Logic Unit does all math and logic. The CU directs; the ALU computes.'},
+ {q:'Your computer shuts down unexpectedly. What happens to data in RAM vs data on the SSD?',o:['Both survive','Both are lost','RAM is lost, SSD survives','SSD is lost, RAM survives'],a:2,fb:'RAM is volatile (erased at power-off); storage is non-volatile (retained after shutdown).'},
+ {q:'A 64-bit bus is faster than a 32-bit bus because…',o:['Its wires are physically thicker','It has 64 wires, moving 64 bits at a time','It runs at double the voltage','It uses fiber optics'],a:1,fb:'Bus width = number of wires = bits transmitted at one time. Each wire carries 1 bit.'},
+ {q:'Which component holds BOTH the program and its data in a von Neumann machine?',o:['The ALU','A single main memory','Separate program & data memories','The control unit'],a:1,fb:'One unified memory for program + data is THE von Neumann signature.'},
+ {q:'The "von Neumann bottleneck" refers to…',o:['Slow vacuum tubes','One shared path between CPU and memory','Limited register count','Overheating ALUs'],a:1,fb:'Instruction fetch delays data access and vice versa \u2014 Harvard architecture splits them onto two dedicated buses.'},
+ {q:'Generation 2 computers replaced vacuum tubes with…',o:['Integrated circuits','Relays','Transistors','Microprocessors'],a:2,fb:'Transistors (Bell Labs, 1948): smaller, cooler, far more reliable. ICs came in Gen 3.'}
+];
+let qi=0,qScore=0;
+function renderQ(){
+  const host=document.getElementById('quizHost');
+  if(qi>=quiz.length){
+    const pct=Math.round(qScore/quiz.length*100);
+    host.innerHTML='<div class="q-card" style="text-align:center"><div class="q-num">RESULT</div>'+
+      '<div class="q-score" style="color:'+(pct>=80?'var(--trace)':pct>=60?'var(--amber)':'var(--red)')+'">'+qScore+' / '+quiz.length+' \u2014 '+pct+'%</div>'+
+      '<p style="color:var(--muted);margin-top:8px;font-size:.92rem">'+(pct>=80?'All systems go \uD83D\uDE80 You\u2019re ready for Chapter 2.':pct>=60?'Solid boot \u2014 review the slides you missed.':'Kernel panic \uD83D\uDE05 \u2014 re-run the deck, then retry.')+'</p>'+
+      '<button class="btn" style="margin-top:14px" onclick="qi=0;qScore=0;renderQ()">\u21BA RETRY QUIZ</button></div>';
+    return;
+  }
+  const Q=quiz[qi];
+  host.innerHTML='<div class="q-card"><div class="q-num">QUESTION '+(qi+1)+' / '+quiz.length+'</div><div class="q-text">'+Q.q+'</div>'+
+    Q.o.map((o,i)=>'<button class="q-opt" data-i="'+i+'">'+o+'</button>').join('')+
+    '<div class="q-fb" id="qfb"></div></div>';
+  host.querySelectorAll('.q-opt').forEach(b=>{
+    b.onclick=()=>{
+      const i=+b.dataset.i;
+      host.querySelectorAll('.q-opt').forEach(x=>x.disabled=true);
+      if(i===Q.a){b.classList.add('correct');qScore++;document.getElementById('qfb').innerHTML='<span style="color:var(--trace)">\u2713 CORRECT \u2014 '+Q.fb+'</span>';}
+      else{b.classList.add('wrong');host.querySelector('[data-i="'+Q.a+'"]').classList.add('correct');document.getElementById('qfb').innerHTML='<span style="color:var(--red)">\u2717 '+Q.fb+'</span>';}
+      setTimeout(()=>{qi++;renderQ();},2600);
+    };
+  });
+}
+renderQ();
+</script>
+</body>
+</html>
