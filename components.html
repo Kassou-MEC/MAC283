@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC-283 &middot; CH 01 &middot; Illustrated Hardware Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0f14;--panel:#111823;--panel-2:#0e141d;--line:#1e2a3a;--trace:#22c55e;--trace-dim:#14532d;--amber:#f59e0b;--blue:#38bdf8;--violet:#a78bfa;--red:#f87171;--teal:#2dd4bf;--ink:#e6edf3;--muted:#8b9bb0;--radius:16px;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.6;background-image:radial-gradient(circle at 12% 0%,rgba(34,197,94,.06),transparent 38%),radial-gradient(circle at 88% 100%,rgba(56,189,248,.05),transparent 38%);}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px 90px}
+header{padding:60px 0 34px;border-bottom:1px solid var(--line)}
+.hexstrip{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.34em;color:var(--trace);text-transform:uppercase;margin-bottom:14px}
+h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:700;line-height:1.07;letter-spacing:-.02em}
+h1 .hl{color:var(--trace)}
+.sub{color:var(--muted);max-width:680px;margin-top:12px;font-size:1.05rem}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.chip.hl{color:var(--trace)}
+.toc{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px}
+.toc .k{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--trace);margin-bottom:12px}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 22px}
+.toc a{color:var(--ink);text-decoration:none;font-size:.92rem;padding:5px 0;display:flex;gap:10px;align-items:baseline;transition:color .15s}
+.toc a:hover{color:var(--trace)}
+.toc a .n{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--muted);min-width:24px}
+section{margin-top:56px;scroll-margin-top:20px}
+.sec-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.3em;text-transform:uppercase;color:var(--trace);margin-bottom:8px}
+h2{font-family:'Space Grotesk',sans-serif;font-size:1.75rem;font-weight:600;letter-spacing:-.01em;margin-bottom:6px}
+.lede{color:var(--muted);max-width:780px;margin-bottom:6px}
+.def{background:rgba(34,197,94,.05);border:1px solid var(--trace-dim);border-radius:var(--radius);padding:16px 20px;margin:18px 0}
+.def .term{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--trace);margin-bottom:6px}
+.def p{font-size:1rem}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-top:22px}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+.fig .imgwrap{position:relative;background:#05080c;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.fig img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.fig:hover img{transform:scale(1.05)}
+.fig .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.74rem;text-align:center;padding:18px;background:repeating-linear-gradient(45deg,#0a0f15,#0a0f15 10px,#0d1420 10px,#0d1420 20px)}
+.fig .ph .ico{font-size:1.6rem}
+.fig figcaption{padding:14px 16px}
+.fig figcaption .t{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.02rem;margin-bottom:4px}
+.fig figcaption .t .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:5px;margin-left:8px;vertical-align:middle}
+.tag.int{color:var(--trace);border:1px solid var(--trace-dim)}
+.tag.ext{color:var(--amber);border:1px solid rgba(245,158,11,.4)}
+.tag.hist{color:var(--violet);border:1px solid rgba(167,139,250,.4)}
+.fig figcaption .d{font-size:.88rem;color:var(--muted)}
+.fig.wide{grid-column:1/-1;flex-direction:row;align-items:stretch}
+.fig.wide .imgwrap{flex:0 0 46%;aspect-ratio:auto;min-height:280px}
+.fig.wide figcaption{flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px}
+@media(max-width:720px){.fig.wide{flex-direction:column}.fig.wide .imgwrap{flex:0 0 auto;aspect-ratio:16/9;min-height:0}}
+ul.clean{list-style:none;margin-top:8px}
+ul.clean li{padding:5px 0 5px 22px;position:relative;font-size:.95rem}
+ul.clean li::before{content:'\25B8';position:absolute;left:0;color:var(--trace);font-size:.8rem;top:7px}
+.hl{color:var(--trace)} .hl-a{color:var(--amber)} .hl-b{color:var(--blue)} .hl-r{color:var(--red)}
+table.t{width:100%;border-collapse:collapse;margin-top:16px;font-size:.92rem;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+table.t th{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;color:var(--trace);text-align:left;padding:12px 14px;border-bottom:1px solid var(--trace-dim);background:var(--panel-2)}
+table.t td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+table.t tr:last-child td{border-bottom:none}
+table.t td:first-child{font-weight:600;white-space:nowrap}
+.backtop{display:inline-block;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);text-decoration:none}
+.backtop:hover{color:var(--trace)}
+footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--muted)}
+footer a{color:var(--trace);text-decoration:none}
+.credit{font-size:.66rem;color:#56627a;margin-top:8px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header id="top">
+  <div class="hexstrip">MAC-283 // Chapter 01 // Illustrated Hardware Reference</div>
+  <h1>See the <span class="hl">Real</span> Hardware</h1>
+  <p class="sub">Every component from Chapter 1 &mdash; shown with a real photograph and its definition, so you can recognize the actual part when you open a computer. Use this alongside the interactive lecture deck.</p>
+  <div class="chips">
+    <span class="chip">Prof. Khalid Kassou</span>
+    <span class="chip">LaGuardia CC &middot; MEC</span>
+    <span class="chip hl">Companion to IntroCompsys</span>
+  </div>
+  <div class="toc">
+    <div class="k">// On this page</div>
+    <div class="toc-grid">
+      <a href="#cpu"><span class="n">01</span> CPU &mdash; The Processor</a>
+      <a href="#socket"><span class="n">02</span> CPU Socket</a>
+      <a href="#ram"><span class="n">03</span> RAM &mdash; Memory</a>
+      <a href="#storage"><span class="n">04</span> Storage: SSD &amp; HDD</a>
+      <a href="#motherboard"><span class="n">05</span> The Motherboard</a>
+      <a href="#gpu"><span class="n">06</span> Graphics Card</a>
+      <a href="#usb"><span class="n">07</span> USB &amp; the Bus</a>
+      <a href="#io"><span class="n">08</span> Input &amp; Output</a>
+      <a href="#history"><span class="n">09</span> History You Can See</a>
+    </div>
+  </div>
+</header>
+
+<section id="cpu">
+  <div class="sec-label">// 01 &middot; The Processor</div>
+  <h2>CPU &mdash; The Brain and Heart</h2>
+  <div class="def">
+    <div class="term">Definition &middot; CPU (Central Processing Unit)</div>
+    <p>A small chip (<b>microprocessor</b>) that carries out instructions by performing <b>arithmetic, logic, control, and I/O operations</b>. Every operation done with the computer is processed by the CPU. It seats into a <b>socket on the motherboard</b>. Inside it: the ALU, Control Unit, Registers, Cache, and Clock.</p>
+  </div>
+  <div class="figs">
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Top of a modern Intel Core i7 CPU" src="CPUTop.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>CPU &mdash; top side<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">CPU &mdash; top side <span class="tag int">internal</span></div><div class="d">The silver metal lid is the heat spreader. The actual silicon die &mdash; with billions of transistors &mdash; sits underneath it.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Underside of a CPU showing gold contact pads" src="CPUContactSide.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>CPU &mdash; contact side<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">CPU &mdash; contact side <span class="tag int">internal</span></div><div class="d">Hundreds of gold pads line up with pins in the motherboard socket &mdash; that's how data and power get in and out.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Magnified chip layout of a microprocessor" src="CPULayout.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>The chip layout<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">The chip layout <span class="tag int">internal</span></div><div class="d">Magnified, a processor reveals its internal blocks &mdash; the ALU, control logic, registers, and cache we name in the lecture.</div></figcaption>
+    </figure>
+  </div>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="socket">
+  <div class="sec-label">// 02 &middot; Where the CPU Lives</div>
+  <h2>The CPU Socket</h2>
+  <p class="lede">The CPU doesn't solder onto the board &mdash; it drops into a <b>socket</b>. The socket type decides which processors are compatible (you can't put an AMD chip in an Intel socket).</p>
+  <div class="figs">
+    <figure class="fig wide">
+      <div class="imgwrap">
+        <img loading="lazy" alt="A motherboard CPU socket and expansion slots" src="CPUSocket.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>CPU socket on a motherboard<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">CPU socket on a motherboard <span class="tag int">internal</span></div><div class="d">The square socket is where the CPU seats. When you install a CPU you align hundreds of contacts at once, then clamp the lever down. Beside it you can also see the long expansion (bus) slots.</div></figcaption>
+    </figure>
+  </div>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="ram">
+  <div class="sec-label">// 03 &middot; Memory &middot; Volatile</div>
+  <h2>RAM &mdash; Random Access Memory</h2>
+  <div class="def">
+    <div class="term">Definition &middot; RAM</div>
+    <p><b>Volatile</b> memory for temporary storage while programs run. It holds the data the CPU is <b>actively processing</b>. <b>Power off &#8594; data gone.</b> Key for multitasking and fast access. Types: DRAM, SRAM, DDR4, DDR5. It snaps vertically into <b>DIMM slots</b> near the CPU, often in pairs.</p>
+  </div>
+  <div class="figs">
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="A DDR4 RAM memory module" src="RAMDDR4.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>A RAM module (DDR4)<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">A RAM module (DDR4) <span class="tag int">internal</span></div><div class="d">Long and thin. The black squares are the memory chips; the gold edge is the contact strip that slots into the motherboard.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Several types of RAM modules" src="RAMTypes.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>RAM module types<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">RAM module types <span class="tag int">internal</span></div><div class="d">RAM has evolved through many form factors &mdash; SIMM, DIMM, DDR. They all snap into <b>DIMM (Dual Inline Memory Module)</b> slots, often in pairs.</div></figcaption>
+    </figure>
+  </div>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="storage">
+  <div class="sec-label">// 04 &middot; Memory &middot; Non-Volatile</div>
+  <h2>Storage &mdash; SSD &amp; HDD</h2>
+  <div class="def">
+    <div class="term">Definition &middot; Storage</div>
+    <p><b>Non-volatile</b> memory: data <b>remains after power is off</b>. Stores files, software, and the OS permanently. Examples: HDD, SSD, USB, SD card. <b>SSDs are faster and more durable</b> than HDDs. Higher capacity than RAM. Mounted in a drive bay (SATA cable) or an <b>M.2 slot</b>.</p>
+  </div>
+  <div class="figs">
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="An Intel solid state drive" src="SSD.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>SSD &mdash; solid state drive<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">SSD &mdash; solid state drive <span class="tag int">internal</span></div><div class="d">No moving parts &mdash; just memory chips on a board. That's why it's fast and durable. Mounts in a drive bay or M.2 slot.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="A disassembled hard disk drive next to an SSD" src="HDDvsSSD.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>HDD vs SSD &mdash; opened up<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">HDD vs SSD &mdash; opened up <span class="tag int">internal</span></div><div class="d">The HDD's shiny circle is a spinning <b>platter</b> with a read/write arm. The SSD beside it has no moving parts &mdash; mechanical vs solid-state.</div></figcaption>
+    </figure>
+  </div>
+  <table class="t">
+    <tr><th>Feature</th><th>RAM</th><th>Storage</th></tr>
+    <tr><td>Volatility</td><td>Volatile</td><td>Non-volatile</td></tr>
+    <tr><td>Speed</td><td class="hl">Very fast</td><td>Slower</td></tr>
+    <tr><td>Use</td><td>Active programs</td><td>Long-term files, OS</td></tr>
+    <tr><td>Capacity</td><td>Smaller (8&ndash;32 GB)</td><td>Larger (1 TB+)</td></tr>
+    <tr><td>On power-off</td><td class="hl-r">Erased</td><td class="hl">Retained</td></tr>
+  </table>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="motherboard">
+  <div class="sec-label">// 05 &middot; The Connector of Everything</div>
+  <h2>The Motherboard</h2>
+  <div class="def">
+    <div class="term">Definition &middot; Motherboard</div>
+    <p>The <b>main printed circuit board (PCB)</b> of the computer. It <b>holds the CPU, RAM, storage, and expansion slots</b>, provides <b>power and communication paths</b> between components, and controls data flow with onboard <b>chipsets</b>. It is the base that connects everything.</p>
+  </div>
+  <div class="figs">
+    <figure class="fig wide">
+      <div class="imgwrap">
+        <img loading="lazy" alt="A real computer motherboard" src="Motherboard.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>A real motherboard<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">A real motherboard <span class="tag int">internal</span></div><div class="d">Find the landmarks you now know: the square CPU socket, the long DIMM slots for RAM, the horizontal PCIe expansion slots, SATA ports along the edge, and the chipsets that route all the data.</div></figcaption>
+    </figure>
+  </div>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="gpu">
+  <div class="sec-label">// 06 &middot; Expansion</div>
+  <h2>Graphics Card</h2>
+  <p class="lede">PCIe slots let you <b>add capabilities</b> after purchase &mdash; most famously the <span class="hl">graphics card</span>, which renders images to the display. A GPU is itself a non-von-Neumann machine: thousands of small processors working in parallel.</p>
+  <div class="figs">
+    <figure class="fig wide">
+      <div class="imgwrap">
+        <img loading="lazy" alt="A computer graphics card" src="GPU.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Graphics card (GPU)<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Graphics card (GPU) <span class="tag int">internal</span></div><div class="d">The heatsink and fan cool the GPU chip &mdash; its own processor with many cores. The gold edge connector slides into a PCIe slot, and the back panel carries the display outputs (HDMI, etc.).</div></figcaption>
+    </figure>
+  </div>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="usb">
+  <div class="sec-label">// 07 &middot; The Bus</div>
+  <h2>USB Ports &amp; the System Bus</h2>
+  <div class="def">
+    <div class="term">Definition &middot; Bus</div>
+    <p>A <b>pathway that transfers data between components</b> &mdash; a group of wires where <b>each wire carries 1 bit (0 or 1) at a time</b>. <b>Bus width</b> = number of wires = bits moved at once (a 64-bit bus moves 64 bits per trip). <b>USB = Universal Serial Bus</b>, the external bus your peripherals plug into.</p>
+  </div>
+  <div class="figs">
+    <figure class="fig wide">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Computer back-panel ports including USB" src="ExternalBuses.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Computer ports (USB and more)<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Computer ports (USB and more) <span class="tag ext">external bus</span></div><div class="d">The back panel exposes the buses to the outside world: USB, video, audio, network. USB &mdash; Universal Serial Bus &mdash; is the one every vendor follows, so any device fits any port.</div></figcaption>
+    </figure>
+  </div>
+  <table class="t">
+    <tr><th>Bus lane</th><th>Carries</th></tr>
+    <tr><td class="hl-b">Data bus</td><td>The actual data between CPU, RAM, and devices</td></tr>
+    <tr><td class="hl-a">Address bus</td><td>Memory addresses &mdash; the "where"</td></tr>
+    <tr><td class="hl">Control bus</td><td>Signals like read/write and the clock &mdash; the "when &amp; how"</td></tr>
+  </table>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="io">
+  <div class="sec-label">// 08 &middot; Peripherals</div>
+  <h2>Input &amp; Output Devices</h2>
+  <p class="lede"><span class="hl-a">Input</span> peripherals send data <i>into</i> the computer; <span class="hl-a">output</span> peripherals carry results <i>out</i>. Memory trick: <b>I</b>nput = <b>I</b>nto, <b>Out</b>put = <b>Out</b>.</p>
+  <div class="figs">
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="A computer keyboard" src="Key.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Keyboard<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Keyboard <span class="tag ext">input</span></div><div class="d">Converts your key presses into binary signals the I/O controller sends to RAM.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="A computer mouse" src="Mouse.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Mouse<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Mouse <span class="tag ext">input</span></div><div class="d">Translates motion and clicks into input signals &mdash; another way data gets <i>into</i> the system.</div></figcaption>
+    </figure>
+  </div>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<section id="history">
+  <div class="sec-label">// 09 &middot; Five Generations</div>
+  <h2>History You Can Actually See</h2>
+  <p class="lede">Each generation is defined by its <b>switching technology</b>. Here are the real things that did the switching.</p>
+  <div class="figs">
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Electronic vacuum tubes" src="GEN1.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Gen 1 &middot; Vacuum Tubes<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Gen 1 &middot; Vacuum Tubes <span class="tag hist">1945&ndash;53</span></div><div class="d">Glowing glass switches. ENIAC used ~17,000 of them, weighed 30 tons, and they burned out constantly.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Assorted discrete transistors" src="GEN2.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Gen 2 &middot; Transistors<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Gen 2 &middot; Transistors <span class="tag hist">1954&ndash;65</span></div><div class="d">The solid-state switch (Bell Labs, 1948): tiny, cool, reliable. It replaced the tube and changed everything.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="Assorted discrete transistors" src="GEN3.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Gen 2 &middot; Transistors<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Gen 3 &middot; The integrated circuit <span class="tag hist">1966&ndash;71</span></div><div class="d">The integrated circuit, multiple transistors, resistors, and capacitors built on one silicon die, marked the GEN 3 shift from bulky discrete components to compact logic chips, minimizing size, cost, and heat while powering the minicomputer age.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="The Intel 4004 on a Busicom calculator board" src="GEN4.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Gen 4 &middot; The Intel 4004<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Gen 4 &middot; The Intel 4004 <span class="tag hist">1971</span></div><div class="d">The first commercial CPU &mdash; a whole processor on one chip. 2,300 transistors, 4-bit, built for the Busicom calculator. Today's chips: billions of transistors, same idea.</div></figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="imgwrap">
+        <img loading="lazy" alt="The Intel 4004 on a Busicom calculator board" src="GEN5.png"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="ph" style="display:none"><span class="ico">&#128247;</span>Gen 5 &middot; The Intel 4004<br>(image didn't load &mdash; check connection)</div>
+      </div>
+      <figcaption><div class="t">Gen 5 &middot; System on a chip & Ai Integration <span class="tag hist">1971&ndash;to present</span></div><div class="d">The integration of entire system architectures—CPU, GPU, memory controllers, and neural processing units—onto a single silicon die, enabling vast performance in compact form factors and powering the AI revolution.</div></figcaption>
+    </figure>
+  </div>
+  <a class="backtop" href="#top">&#8593; back to top</a>
+</section>
+
+<footer>
+  <div>MAC-283 &middot; Computer Architecture &amp; Assembler Language &middot; Chapter 1 Illustrated Reference</div>
+  <div>Prof. Khalid Kassou &middot; kkassou@lagcc.cuny.edu &middot; Office hours Mo/We 1:00&ndash;3:00 PM</div>
+  <div style="margin-top:8px">Interactive deck: <a href="https://kassou-mec.github.io/MAC283/IntroCompsys.html">IntroCompsys.html</a></div>
+  <div class="credit">Photographs are from Wikimedia Commons (public domain / Creative Commons licenses), used for educational purposes. Images load live from Wikimedia; an internet connection is needed to display them. If any photo fails to load, a labeled placeholder appears in its place.</div>
+</footer>
+
+</div>
+</body>
+</html>
