@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC-283 · Lecture 1 Part 2 — Introduction to Computer System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* --- IMPROVED COLOR PALETTE FOR CONTRAST --- */
+  --bg:#1E2421;          /* Darkened substrate for better panel contrast */
+  --bg2:#181D1B;
+  --panel:#343D39;       /* Slightly lighter panels */
+  --panel2:#2C3430;
+  --edge:#58665E;
+  --edge2:#6E8075;
+  --copper:#ECAE5D;
+  --copper-bright:#FFCC80;
+  --data:#4AE3A5;        /* Brighter data bus  */
+  --addr:#6FC2FD;        /* Brighter address bus */
+  --ctrl:#FF9EAF;        /* Brighter control bus */
+  
+  --text:#FFFFFF;        /* Pure white for primary text */
+  --text-dim:#C7D6CF;    /* Brighter secondary text (previously hard to read) */
+  --text-faint:#9AAC9F;  /* Brighter faint text */
+  
+  --glow-data:rgba(74,227,165,.45);
+  --glow-addr:rgba(111,194,253,.40);
+  --glow-ctrl:rgba(255,158,175,.40);
+  --shadow:0 2px 6px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.4);
+  --display:'Orbitron',sans-serif;
+  --body:'Space Grotesk',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.substrate{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(70,210,154,.08), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgba(95,180,238,.07), transparent 60%),
+    var(--bg);
+}
+.substrate svg{position:absolute;inset:0;width:100%;height:100%;opacity:.3}
+
+/* ---------- DECK ---------- */
+#deck{position:relative;z-index:2;height:100vh;width:100vw}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(20px,5vw,90px);
+  opacity:0;visibility:hidden;
+  transform:translateY(28px) scale(.99);
+  transition:opacity .5s ease, transform .5s ease, visibility .5s;
+  overflow-y:auto;
+}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.slide.exit-up{transform:translateY(-28px) scale(.99)}
+.wrap{width:100%;max-width:1180px;margin:0 auto}
+
+.eyebrow{
+  font-family:var(--mono);font-size:.78rem;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--copper-bright);
+  display:flex;align-items:center;gap:.7rem;margin-bottom:1.2rem;
+  font-weight:700;
+}
+.eyebrow::before{content:"";width:34px;height:2px;background:linear-gradient(90deg,var(--copper-bright),transparent)}
+h1.deck-title{
+  font-family:var(--display);font-weight:900;line-height:.98;
+  font-size:clamp(2.4rem,7vw,5.6rem);letter-spacing:-.01em;text-transform:uppercase;
+}
+h2{
+  font-family:var(--display);font-weight:700;
+  font-size:clamp(1.6rem,4vw,3rem);line-height:1.04;letter-spacing:-.01em;margin-bottom:.4rem;
+}
+h2 .accent{color:var(--copper-bright)}
+.lede{color:var(--text-dim);font-size:clamp(1.05rem,1.6vw,1.25rem);max-width:65ch;font-weight:400;line-height:1.6}
+.mono{font-family:var(--mono)}
+
+/* ---------- HERO ---------- */
+#s-hero .wrap{display:flex;flex-direction:column;gap:1.6rem}
+.hero-chip{
+  align-self:flex-start;display:flex;align-items:center;gap:.6rem;
+  border:1px solid var(--edge);border-radius:999px;
+  padding:.5rem 1.1rem;font-family:var(--mono);font-size:.8rem;
+  color:var(--text);background:var(--panel);letter-spacing:.12em;box-shadow:var(--shadow);
+  font-weight:700;
+}
+.hero-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--data);box-shadow:0 0 12px var(--glow-data);animation:blink 1.6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.hero-sub{font-family:var(--display);font-weight:700;letter-spacing:.2em;color:var(--copper);text-transform:uppercase;font-size:clamp(.95rem,1.6vw,1.2rem)}
+.hero-meta{display:flex;flex-wrap:wrap;gap:1.6rem;margin-top:.6rem;font-family:var(--mono);font-size:.9rem;color:var(--text-dim)}
+.hero-meta b{color:var(--text);font-weight:700}
+.begin{margin-top:1.2rem;align-self:flex-start;cursor:pointer;display:flex;align-items:center;gap:.8rem;color:var(--text);background:none;border:none;font-family:var(--body);font-size:1.1rem;font-weight:600}
+.begin .ring{
+  width:46px;height:46px;border-radius:50%;border:2px solid var(--copper);
+  display:grid;place-items:center;color:var(--copper-bright);
+  transition:.3s;box-shadow:inset 0 0 0 0 var(--copper);background:var(--panel);
+}
+.begin:hover .ring{box-shadow:inset 0 0 0 24px rgba(226,166,89,.30);transform:translateX(5px)}
+
+/* ---------- feature grid ---------- */
+.grid{display:grid;gap:1.2rem;margin-top:1.8rem}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{
+  background:linear-gradient(160deg,var(--panel),var(--panel2));
+  border:1px solid var(--edge);border-radius:14px;padding:1.4rem 1.6rem;
+  position:relative;overflow:hidden;box-shadow:var(--shadow);
+}
+.card::before{content:"";position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,var(--copper),transparent 70%)}
+.card .k{font-family:var(--mono);font-size:.78rem;font-weight:700;color:var(--copper-bright);letter-spacing:.18em;margin-bottom:.6rem;text-transform:uppercase}
+.card p{color:var(--text);font-size:1.08rem;line-height:1.5;font-weight:400}
+
+/* ---------- MOTHERBOARD ---------- */
+.board-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:2rem;align-items:center;margin-top:1.5rem}
+.mb-stage{position:relative}
+.mb-comp{cursor:pointer;transition:.25s}
+.mb-comp .hit{fill:transparent}
+.mb-comp .body{transition:.25s}
+.mb-comp:hover .body,.mb-comp.sel .body{filter:drop-shadow(0 0 8px var(--copper-bright))}
+.mb-comp .lbl{font-family:var(--mono);font-size:12px;fill:var(--text-dim);transition:.25s;letter-spacing:.04em;font-weight:500}
+.mb-comp:hover .lbl,.mb-comp.sel .lbl{fill:var(--copper-bright);font-weight:700}
+.mb-info{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--edge);border-radius:14px;padding:1.8rem;min-height:230px;box-shadow:var(--shadow)}
+.mb-info .tag{font-family:var(--mono);font-size:.78rem;font-weight:700;letter-spacing:.2em;color:var(--copper-bright);text-transform:uppercase}
+.mb-info h3{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:.6rem 0 1rem;color:var(--text)}
+.mb-info p{color:var(--text-dim);line-height:1.6;font-size:1.05rem;font-weight:400}
+.mb-hint{margin-top:1.2rem;font-family:var(--mono);font-size:.8rem;color:var(--text-faint)}
+
+/* ---------- BUS WIDTH ---------- */
+.busbox{margin-top:1.4rem;background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--edge);border-radius:16px;padding:1.8rem 2rem;box-shadow:var(--shadow)}
+.bw-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem}
+.bw-val{font-family:var(--display);font-weight:900;font-size:clamp(2.4rem,5vw,3.8rem);color:var(--copper-bright);line-height:1}
+.bw-val span{font-family:var(--mono);font-size:1.1rem;color:var(--text-dim);font-weight:500;margin-left:.6rem}
+.bw-seg{display:flex;gap:.5rem}
+.bw-seg button{font-family:var(--mono);font-size:.9rem;padding:.6rem 1rem;border-radius:8px;cursor:pointer;background:var(--bg2);border:1px solid var(--edge);color:var(--text-dim);transition:.2s;font-weight:500}
+.bw-seg button.on{background:var(--copper);color:#2a1d08;border-color:var(--copper);font-weight:700}
+.lanes{display:flex;flex-direction:column;gap:6px;margin:1.2rem 0 .8rem;background:var(--bg2);border:1px solid var(--edge);border-radius:10px;padding:14px;overflow:hidden}
+.lane{height:10px;border-radius:6px;background:rgba(74,227,165,.15);position:relative;overflow:hidden}
+.lane::after{content:"";position:absolute;top:0;left:-30%;width:30%;height:100%;background:linear-gradient(90deg,transparent,var(--data),transparent);animation:flow 1.4s linear infinite}
+@keyframes flow{to{left:130%}}
+.bw-note{color:var(--text-dim);font-size:1rem;font-weight:400;line-height:1.5}
+.bw-note b{color:var(--copper-bright);font-weight:600}
+
+/* ---------- TABLE ---------- */
+.tbl{margin-top:1.6rem;border:1px solid var(--edge);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.tbl .row{display:grid;grid-template-columns:1fr 2fr 1.4fr;border-top:1px solid var(--edge)}
+.tbl .row:first-child{border-top:none}
+.tbl .row>div{padding:1rem 1.2rem;font-size:1.02rem;line-height:1.45}
+.tbl .head{background:var(--copper);color:#1A1205}
+.tbl .head>div{font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;font-size:.85rem;font-weight:700}
+.tbl .row:not(.head):nth-child(even){background:var(--panel2)}
+.tbl .row:not(.head):nth-child(odd){background:var(--panel)}
+.tbl .bt{font-family:var(--mono);color:var(--copper-bright);font-weight:700}
+.tbl .where{color:var(--text-dim);font-size:.95rem} /* Fixed visibility here */
+.tbl .row:not(.head):hover{background:rgba(226,166,89,.15)}
+
+/* ---------- PIPELINE 5+7 ---------- */
+.pipe-controls{display:flex;align-items:center;gap:1.2rem;margin-top:1.4rem;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;cursor:pointer;background:var(--copper);color:#1A1205;border:none;border-radius:9px;padding:.8rem 1.4rem;font-weight:700;transition:.2s;box-shadow:var(--shadow)}
+.btn:hover{background:var(--copper-bright);transform:translateY(-2px)}
+.btn.ghost{background:var(--panel);border:1px solid var(--edge);color:var(--text);box-shadow:none}
+.btn.ghost:hover{background:var(--panel2);border-color:var(--copper)}
+.pipe-eq{font-family:var(--display);font-weight:900;font-size:clamp(1.5rem,3vw,2.2rem);color:var(--text)}
+.pipe-eq #res{color:var(--text-faint);transition:.3s}
+.pipe-eq #res.done{color:var(--data);text-shadow:0 0 20px var(--glow-data)}
+
+.bin-readout{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap;margin-top:1.2rem;font-family:var(--mono)}
+.bin-readout .bin{display:flex;flex-direction:column;gap:.25rem;background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:.6rem 1rem;transition:.3s}
+.bin-readout .bk{font-size:.7rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim)} /* Fixed visibility here */
+.bin-readout code{font-size:1.05rem;font-weight:700;color:var(--data);letter-spacing:.1em}
+.bin-readout .bin.res code{color:var(--text-faint)}
+.bin-readout .bin.res.lit code{color:var(--copper-bright)}
+.bin-readout .bin.res.lit{border-color:var(--copper);box-shadow:0 0 0 2px var(--copper)}
+.bin-readout .op{font-family:var(--display);font-weight:700;font-size:1.4rem;color:var(--text-dim)}
+
+.pipe-stage{margin-top:1.6rem;display:grid;grid-template-columns:1fr 1fr;gap:.8rem 1.6rem}
+@media(max-width:760px){.pipe-stage{grid-template-columns:1fr}}
+.pnode{display:flex;gap:.85rem;align-items:flex-start;padding:.75rem .9rem;border-radius:11px;border:1px solid transparent;transition:.35s;opacity:.65} /* Fixed overall opacity */
+.pnode.on{opacity:1;border-color:var(--copper);background:rgba(236,174,93,.15);box-shadow:0 4px 18px rgba(0,0,0,.3)}
+.pnode.passed{opacity:.85} /* Brighter past nodes */
+.pnode .ix{font-family:var(--display);font-weight:700;width:34px;height:34px;flex:0 0 34px;border-radius:8px;display:grid;place-items:center;background:var(--bg2);border:1px solid var(--edge);color:var(--text-dim);font-size:.9rem}
+.pnode.on .ix{background:var(--copper);color:#1A1205;border-color:var(--copper)}
+.pnode .r1{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.25rem}
+.pnode .r1 b{font-family:var(--mono);font-size:.95rem;color:var(--text);font-weight:700;letter-spacing:.02em}
+.pnode .txt span{color:var(--text-dim);font-size:.92rem;font-weight:400;line-height:1.5;display:block} /* Brighter text inside nodes */
+.bus-chip{font-family:var(--mono);font-weight:700;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.15rem .5rem;border-radius:5px;border:1px solid}
+.bus-chip.data{color:var(--data);border-color:var(--data);background:rgba(74,227,165,.15)}
+.bus-chip.addr{color:var(--addr);border-color:var(--addr);background:rgba(111,194,253,.15)}
+.bus-chip.ctrl{color:var(--ctrl);border-color:var(--ctrl);background:rgba(255,158,175,.15)}
+.bus-chip.none{color:var(--text-dim);border-color:var(--edge);background:transparent} /* Brighter null chip */
+.phase-tag{grid-column:1/-1;font-family:var(--mono);font-size:.75rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin:1.2rem 0 .2rem;padding-left:.8rem;border-left:3px solid currentColor}
+.phase-tag.input{color:var(--addr)}.phase-tag.proc{color:var(--data)}.phase-tag.out{color:var(--ctrl)}
+
+/* ---------- PYRAMID ---------- */
+.pyr-layout{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center;margin-top:1.4rem}
+.pyramid{display:flex;flex-direction:column;align-items:center;gap:10px}
+.pyr-row{cursor:pointer;border-radius:10px;padding:.8rem 1.2rem;transition:.22s;background:var(--panel);border:2px solid var(--edge);display:flex;align-items:center;justify-content:center;gap:.75rem;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.pyr-row .badge{font-family:var(--mono);font-size:.75rem;font-weight:700;letter-spacing:.04em;background:var(--accent);border-radius:6px;padding:.2rem .5rem;flex:0 0 auto}
+.pyr-row .nm{font-family:var(--body);font-weight:700;font-size:1.05rem;color:var(--text)}
+.pyr-row:hover,.pyr-row.sel{transform:scale(1.04);border-color:var(--accent);background:var(--panel2);box-shadow:0 8px 22px rgba(0,0,0,.4)}
+.pyr-info{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--edge);border-radius:14px;padding:1.8rem;min-height:260px;box-shadow:var(--shadow)}
+.pyr-info .tag{font-family:var(--mono);font-size:.78rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+.pyr-info h3{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:.6rem 0 .8rem;color:var(--text)}
+.pyr-info p{color:var(--text-dim);line-height:1.6;font-size:1.05rem;font-weight:400;margin-bottom:1.2rem}
+.pyr-info .ex{background:var(--bg2);border-left:4px solid var(--copper);border-radius:0 8px 8px 0;padding:1rem 1.2rem}
+.pyr-info .ex .exk{font-family:var(--mono);font-size:.75rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--copper-bright);margin-bottom:.4rem}
+.pyr-info .ex .exv{font-size:1.02rem;line-height:1.5;color:var(--text)}
+.pyr-info .ex code{font-family:var(--mono);font-weight:700;color:var(--data);background:rgba(74,227,165,.15);padding:.1rem .4rem;border-radius:4px}
+
+/* ---------- VON NEUMANN ---------- */
+.vn-toggle{display:inline-flex;background:var(--panel);border:1px solid var(--edge);border-radius:999px;padding:6px;margin-top:1.4rem;gap:6px;box-shadow:var(--shadow)}
+.vn-toggle button{font-family:var(--mono);font-weight:500;font-size:.9rem;cursor:pointer;border:none;background:none;color:var(--text-dim);padding:.6rem 1.4rem;border-radius:999px;transition:.25s;letter-spacing:.04em}
+.vn-toggle button.on{background:var(--copper);color:#1A1205;font-weight:700}
+.vn-stage{margin-top:1.6rem;display:grid;grid-template-columns:1.3fr .9fr;gap:2rem;align-items:center}
+.vn-diagram{background:var(--panel2);border:1px solid var(--edge);border-radius:14px;padding:1.2rem;box-shadow:var(--shadow)}
+.vn-info .badge{display:inline-block;font-family:var(--mono);font-weight:700;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;padding:.35rem .8rem;border-radius:6px;margin-bottom:1rem}
+.vn-info .badge.bottleneck{background:rgba(255,158,175,.15);color:var(--ctrl);border:1px solid rgba(255,158,175,.5)}
+.vn-info .badge.parallel{background:rgba(74,227,165,.15);color:var(--data);border:1px solid rgba(74,227,165,.5)}
+.vn-info h3{font-family:var(--display);font-weight:700;font-size:1.6rem;margin-bottom:.8rem;color:var(--text)}
+.vn-info ul{list-style:none;display:flex;flex-direction:column;gap:.8rem}
+.vn-info li{display:flex;gap:.7rem;color:var(--text-dim);font-size:1.05rem;line-height:1.5;font-weight:400}
+.vn-info li::before{content:"▸";color:var(--copper);flex:0 0 auto}
+.vn-info li b{color:var(--text);font-weight:700}
+
+/* ---------- NAV ---------- */
+.progress{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--data),var(--copper-bright));z-index:20;transition:width .5s ease;box-shadow:0 0 12px var(--glow-data)}
+.rail{position:fixed;right:clamp(14px,2.4vw,34px);top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:14px}
+.rail .node{width:12px;height:12px;border-radius:50%;border:2px solid var(--edge2);cursor:pointer;transition:.25s;position:relative;background:var(--panel)}
+.rail .node:hover{border-color:var(--copper)}
+.rail .node.on{background:var(--copper);border-color:var(--copper);box-shadow:0 0 12px rgba(236,174,93,.6)}
+.rail .node .tip{position:absolute;right:26px;top:50%;transform:translateY(-50%);white-space:nowrap;font-family:var(--mono);font-size:.75rem;font-weight:700;color:var(--text);background:var(--panel);border:1px solid var(--edge);padding:.35rem .65rem;border-radius:5px;opacity:0;pointer-events:none;transition:.2s;box-shadow:var(--shadow)}
+.rail .node:hover .tip{opacity:1}
+.foot{position:fixed;left:clamp(20px,5vw,90px);bottom:26px;z-index:20;display:flex;align-items:center;gap:1.2rem;font-family:var(--mono);font-size:.8rem;font-weight:600;color:var(--text-faint)}
+.foot .nav-btn{cursor:pointer;width:42px;height:42px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--text);display:grid;place-items:center;transition:.2s;box-shadow:var(--shadow);font-size:1.1rem}
+.foot .nav-btn:hover{border-color:var(--copper);color:var(--copper-bright);background:var(--panel2)}
+.foot .count b{color:var(--text)}
+.brand{position:fixed;top:24px;left:clamp(20px,5vw,90px);z-index:20;font-family:var(--mono);font-size:.8rem;font-weight:700;letter-spacing:.18em;color:var(--text-dim);text-transform:uppercase}
+.brand b{color:var(--copper-bright)}
+
+@media(max-width:860px){
+  .board-layout,.pyr-layout,.vn-stage{grid-template-columns:1fr;gap:1.2rem}
+  .g2,.g3{grid-template-columns:1fr}
+  .tbl .row{grid-template-columns:1fr}
+  .tbl .row>div{border-top:1px solid var(--edge)}
+  .tbl .head{display:none}
+  .rail{display:none}
+  .slide{padding:75px 20px 90px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:opacity .2s!important}.lane::after{display:none}}
+</style>
+</head>
+<body>
+
+<div class="substrate" aria-hidden="true">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <defs><pattern id="pads" width="90" height="90" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="1.6" fill="#58665E"/></pattern></defs>
+    <rect width="1440" height="900" fill="url(#pads)"/>
+    <g stroke="#ECAE5D" stroke-width="1.5" fill="none" opacity="0.35">
+      <path d="M0 160 H420 L470 210 H820"/><path d="M1440 300 H980 L930 350 H560"/>
+      <path d="M0 540 H300 L350 590 H700 L760 530 H1440"/><path d="M200 0 V260 L260 320 V900"/>
+      <path d="M1100 0 V420 L1050 470 V900"/><path d="M720 0 V120 L660 180 V480"/>
+    </g>
+    <g fill="#ECAE5D" opacity="0.45">
+      <circle cx="470" cy="210" r="3.5"/><circle cx="930" cy="350" r="3.5"/><circle cx="350" cy="590" r="3.5"/>
+      <circle cx="260" cy="320" r="3.5"/><circle cx="1050" cy="470" r="3.5"/><circle cx="660" cy="180" r="3.5"/>
+    </g>
+  </svg>
+</div>
+
+<div class="progress" id="prog" style="width:9%"></div>
+<div class="brand"><b>MAC-283</b> · COMPUTER ARCHITECTURE &amp; ASSEMBLER</div>
+
+<div id="deck">
+
+  <section class="slide active" id="s-hero" data-name="Title">
+    <div class="wrap">
+      <div class="hero-chip"><span class="dot"></span> LECTURE 01 · PART 2 · SYSTEM INITIALIZED</div>
+      <div class="eyebrow">Introduction</div>
+      <h1 class="deck-title">Introduction<br>to the<br><span style="color:var(--copper-bright)">Computer System</span></h1>
+      <p class="hero-sub">Motherboard · Bus · Data Flow · Architecture</p>
+      <div class="hero-meta">
+        <span><b>Topics</b> — Motherboard &amp; Bus, the System Bus, Computer Levels, Von Neumann</span>
+        <span><b>Format</b> — Interactive deck</span>
+      </div>
+      <button class="begin" onclick="go(1)"><span class="ring">→</span><span>Enter the board <span style="color:var(--text-faint);font-family:var(--mono);font-size:.85rem;font-weight:400">· press → to advance</span></span></button>
+    </div>
+  </section>
+
+  <section class="slide" id="s-mb-intro" data-name="Motherboard">
+    <div class="wrap">
+      <div class="eyebrow">Component 01</div>
+      <h2>What is a <span class="accent">Motherboard?</span></h2>
+      <p class="lede">The main printed circuit board that everything else plugs into — the foundation that connects, powers, and coordinates every part of the machine.</p>
+      <div class="grid g2">
+        <div class="card"><div class="k">Foundation</div><p>The main <b>printed circuit board (PCB)</b> of the computer.</p></div>
+        <div class="card"><div class="k">Holds</div><p>Holds the <b>CPU, RAM, storage,</b> and expansion slots.</p></div>
+        <div class="card"><div class="k">Connects</div><p>Provides <b>power</b> and <b>communication paths</b> between components.</p></div>
+        <div class="card"><div class="k">Controls</div><p>Controls <b>data flow</b> through its onboard chipsets.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-mb-map" data-name="Board map">
+    <div class="wrap">
+      <div class="eyebrow">Anatomy · interactive</div>
+      <h2>Map the <span class="accent">board</span></h2>
+      <div class="board-layout">
+        <div class="mb-stage">
+          <svg viewBox="0 0 520 400" style="width:100%;height:auto">
+            <rect x="20" y="20" width="480" height="360" rx="14" fill="#2C3430" stroke="#58665E" stroke-width="2"/>
+            <rect x="20" y="20" width="480" height="360" rx="14" fill="url(#pads2)"/>
+            <defs><pattern id="pads2" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.2" fill="#424D48"/></pattern></defs>
+            <g stroke="#ECAE5D" stroke-width="2" fill="none" opacity=".65">
+              <path d="M150 130 H230 V200"/><path d="M150 150 H210 V230"/><path d="M310 130 H360"/>
+              <path d="M310 150 H380 V210"/><path d="M120 300 H230"/><path d="M420 240 V300 H460"/>
+            </g>
+            <g class="mb-comp" data-comp="cpu">
+              <rect class="hit" x="100" y="95" width="110" height="90"/>
+              <rect class="body" x="115" y="105" width="80" height="70" rx="5" fill="#3D4742" stroke="#ECAE5D" stroke-width="2"/>
+              <g class="body" fill="none" stroke="#9AAC9F" stroke-width="1.6"><rect x="128" y="118" width="54" height="44" rx="3"/><line x1="128" y1="130" x2="182" y2="130"/><line x1="128" y1="142" x2="182" y2="142"/></g>
+              <text class="lbl" x="155" y="195" text-anchor="middle">CPU SOCKET</text>
+            </g>
+            <g class="mb-comp" data-comp="ram">
+              <rect class="hit" x="300" y="80" width="170" height="120"/>
+              <rect class="body" x="320" y="92" width="14" height="96" rx="2" fill="#2C3833" stroke="#4AE3A5" stroke-width="2"/>
+              <rect class="body" x="342" y="92" width="14" height="96" rx="2" fill="#2C3833" stroke="#4AE3A5" stroke-width="2"/>
+              <rect class="body" x="364" y="92" width="14" height="96" rx="2" fill="#2C3833" stroke="#4AE3A5" stroke-width="2"/>
+              <rect class="body" x="386" y="92" width="14" height="96" rx="2" fill="#2C3833" stroke="#4AE3A5" stroke-width="2"/>
+              <text class="lbl" x="415" y="125" text-anchor="start">MEMORY</text><text class="lbl" x="415" y="140" text-anchor="start">SLOTS</text>
+            </g>
+            <g class="mb-comp" data-comp="bus">
+              <rect class="hit" x="80" y="240" width="200" height="120"/>
+              <rect class="body" x="95" y="255" width="150" height="10" rx="2" fill="#403338" stroke="#FF9EAF" stroke-width="1.6"/>
+              <rect class="body" x="95" y="275" width="170" height="10" rx="2" fill="#403338" stroke="#FF9EAF" stroke-width="1.6"/>
+              <rect class="body" x="95" y="295" width="130" height="10" rx="2" fill="#2F3E49" stroke="#6FC2FD" stroke-width="1.6"/>
+              <rect class="body" x="95" y="315" width="170" height="10" rx="2" fill="#2F3E49" stroke="#6FC2FD" stroke-width="1.6"/>
+              <text class="lbl" x="95" y="348" text-anchor="start">BUS / PCIe SLOTS</text>
+            </g>
+            <g class="mb-comp" data-comp="sata">
+              <rect class="hit" x="410" y="230" width="90" height="130"/>
+              <rect class="body" x="430" y="245" width="40" height="11" rx="2" fill="#3D4742" stroke="#ECAE5D" stroke-width="1.6"/>
+              <rect class="body" x="430" y="262" width="40" height="11" rx="2" fill="#3D4742" stroke="#ECAE5D" stroke-width="1.6"/>
+              <rect class="body" x="430" y="279" width="40" height="11" rx="2" fill="#3D4742" stroke="#ECAE5D" stroke-width="1.6"/>
+              <rect class="body" x="430" y="296" width="40" height="11" rx="2" fill="#3D4742" stroke="#ECAE5D" stroke-width="1.6"/>
+              <text class="lbl" x="450" y="328" text-anchor="middle">SATA</text>
+            </g>
+            <g class="mb-comp" data-comp="usb">
+              <rect class="hit" x="20" y="60" width="55" height="140"/>
+              <rect class="body" x="30" y="75" width="34" height="22" rx="3" fill="#3D4742" stroke="#9AAC9F" stroke-width="1.6"/>
+              <rect class="body" x="30" y="105" width="34" height="22" rx="3" fill="#3D4742" stroke="#9AAC9F" stroke-width="1.6"/>
+              <rect class="body" x="30" y="135" width="34" height="22" rx="3" fill="#3D4742" stroke="#9AAC9F" stroke-width="1.6"/>
+              <text class="lbl" x="47" y="178" text-anchor="middle">I/O</text>
+            </g>
+          </svg>
+        </div>
+        <div class="mb-info" id="mbInfo">
+          <div class="tag">Select a component</div>
+          <h3>The board, decoded</h3>
+          <p>Click any highlighted part of the motherboard to see what it does and what plugs into it.</p>
+          <div class="mb-hint">↳ CPU socket · memory slots · bus slots · SATA · I/O ports</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-bus-def" data-name="What is a Bus">
+    <div class="wrap">
+      <div class="eyebrow">Component 02</div>
+      <h2>What is a <span class="accent">Bus?</span></h2>
+      <p class="lede">A bus is a <b style="color:var(--text)">pathway used to transfer data between components</b> — the network of electrical wires inside the system that interconnects the hardware.</p>
+      <div class="grid g3">
+        <div class="card"><div class="k" style="color:var(--data)">Data Bus</div><p>Carries the actual information being moved.</p></div>
+        <div class="card"><div class="k" style="color:var(--addr)">Address Bus</div><p>Carries the location the data is going to.</p></div>
+        <div class="card"><div class="k" style="color:var(--ctrl)">Control Bus</div><p>Carries the timing &amp; command signals.</p></div>
+      </div>
+      <div class="grid g2" style="margin-top:1rem">
+        <div class="card"><div class="k">Scope</div><p>Can be <b>internal</b> (inside the chassis) or <b>external</b>.</p></div>
+        <div class="card"><div class="k">Examples</div><p class="mono" style="font-size:1.05rem;font-weight:700;color:var(--copper-bright)">USB · PCIe · SATA · Front-Side Bus</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-bus-width" data-name="Bus width">
+    <div class="wrap">
+      <div class="eyebrow">Bus width · interactive</div>
+      <h2>One wire, <span class="accent">one bit</span></h2>
+      <p class="lede">A bus is a group of cables tied together. Each cable carries <span class="mono" style="color:var(--data);font-weight:700">1 bit</span> (binary 0 or 1) at a time — so a wider bus moves more bits per cycle. Bus width directly drives processor performance.</p>
+      <div class="busbox">
+        <div class="bw-head">
+          <div class="bw-val" id="bwVal">8<span>cables / bits per cycle</span></div>
+          <div class="bw-seg" id="bwSeg">
+            <button data-w="8" class="on">8-bit</button><button data-w="16">16-bit</button><button data-w="32">32-bit</button><button data-w="64">64-bit</button>
+          </div>
+        </div>
+        <div class="lanes" id="lanes"></div>
+        <p class="bw-note" id="bwNote">An <b>8-bit bus</b> has 8 cables, so it can transmit <b>8 bits</b> of data at one time.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-bus-types" data-name="Bus types">
+    <div class="wrap">
+      <div class="eyebrow">Reference</div>
+      <h2>Roles &amp; the <span class="accent">bus system</span></h2>
+      <p class="lede">Together, the motherboard and its buses connect and power components, coordinate communication, determine upgrade potential, and keep data flow fast and synchronized.</p>
+      <div class="tbl" role="table">
+        <div class="row head"><div>Bus Type</div><div>Function</div><div>Found Where</div></div>
+        <div class="row"><div class="bt">Data Bus</div><div>Transfers actual data between CPU, RAM, and devices</div><div class="where">Embedded in motherboard layers</div></div>
+        <div class="row"><div class="bt">Address Bus</div><div>Carries memory addresses from CPU to RAM or storage</div><div class="where">Integrated in CPU–RAM channel</div></div>
+        <div class="row"><div class="bt">Control Bus</div><div>Sends control signals (read/write, clock) between parts</div><div class="where">Shared with data/address buses</div></div>
+        <div class="row"><div class="bt">Front-Side Bus</div><div>Connects CPU to memory controller / hub</div><div class="where">Older motherboards</div></div>
+        <div class="row"><div class="bt">PCI / PCIe</div><div>Connects expansion cards (graphics, WiFi, sound)</div><div class="where">Physical expansion slots</div></div>
+        <div class="row"><div class="bt">SATA Bus</div><div>Connects storage devices like SSDs or HDDs</div><div class="where">Via SATA ports on the board</div></div>
+        <div class="row"><div class="bt">USB Bus</div><div>Connects USB devices via headers / ports</div><div class="where">Routed through onboard controllers</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-pipeline" data-name="Data flow: 5+7">
+    <div class="wrap">
+      <div class="eyebrow">The fetch–decode–execute cycle · interactive</div>
+      <h2>Watch the data flow: <span class="accent">5 + 7</span></h2>
+      <p class="lede">One keystroke to one number on screen touches input, memory, the CPU, and three different buses. Press play to walk the full cycle, bit by bit.</p>
+      <div class="pipe-controls">
+        <button class="btn" id="playBtn" onclick="playPipe()">▶ Run the cycle</button>
+        <button class="btn ghost" onclick="resetPipe()">Reset</button>
+        <div class="pipe-eq">5 + 7 = <span id="res">?</span></div>
+      </div>
+      <div class="bin-readout">
+        <div class="bin"><span class="bk">operand A · 5</span><code>00000101</code></div>
+        <div class="op">+</div>
+        <div class="bin"><span class="bk">operand B · 7</span><code>00000111</code></div>
+        <div class="op">=</div>
+        <div class="bin res" id="binResBox"><span class="bk">result</span><code id="binRes">– – – – – – – –</code></div>
+      </div>
+      <div class="pipe-stage" id="pipeStage"></div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-levels" data-name="Level hierarchy">
+    <div class="wrap">
+      <div class="eyebrow">Abstraction · interactive</div>
+      <h2>The computer <span class="accent">level hierarchy</span></h2>
+      <p class="lede">A real task touches every layer — from your tap on a calculator down to electrons in transistors. Click a level to trace <span class="mono" style="color:var(--copper-bright);font-weight:700">8 × 6</span> through it.</p>
+      <div class="pyr-layout">
+        <div class="pyramid" id="pyramid"></div>
+        <div class="pyr-info" id="pyrInfo">
+          <div class="tag" style="color:var(--copper-bright)">Select a level</div>
+          <h3>Seven layers of abstraction</h3>
+          <p>Each level hides the complexity of the one beneath it. Click a band in the pyramid to see its role and how it handles the 8 × 6 calculation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-vn" data-name="Von Neumann">
+    <div class="wrap">
+      <div class="eyebrow">Architecture · interactive</div>
+      <h2>Von Neumann <span class="accent">vs. Harvard</span></h2>
+      <p class="lede">The defining design question: do instructions and data share one memory and one bus, or get their own? Flip the switch to compare.</p>
+      <div class="vn-toggle" id="vnToggle">
+        <button data-vn="von" class="on">Von Neumann</button><button data-vn="harvard">Non-Von Neumann</button>
+      </div>
+      <div class="vn-stage">
+        <div class="vn-diagram">
+          <svg viewBox="0 0 520 320" style="width:100%;height:auto">
+            <g font-family="Space Grotesk" font-weight="600">
+              <rect x="20" y="40" width="110" height="60" rx="10" fill="#3D3830" stroke="#ECAE5D" stroke-width="2"/>
+              <text x="75" y="66" text-anchor="middle" fill="#FFFFFF" font-size="14">Input</text>
+              <text x="75" y="85" text-anchor="middle" fill="#C7D6CF" font-size="11">Keyboard</text>
+              <rect x="390" y="40" width="110" height="60" rx="10" fill="#3D3830" stroke="#ECAE5D" stroke-width="2"/>
+              <text x="445" y="66" text-anchor="middle" fill="#FFFFFF" font-size="14">Output</text>
+              <text x="445" y="85" text-anchor="middle" fill="#C7D6CF" font-size="11">Monitor</text>
+              <g id="vnMem">
+                <rect id="memSingle" x="195" y="35" width="130" height="70" rx="10" fill="#2C3833" stroke="#4AE3A5" stroke-width="2.2"/>
+                <text id="memTxt1" x="260" y="62" text-anchor="middle" fill="#FFFFFF" font-size="13">Main Memory</text>
+                <text id="memTxt2" x="260" y="81" text-anchor="middle" fill="#C7D6CF" font-size="10">Data + Instructions</text>
+              </g>
+              <rect x="180" y="220" width="160" height="80" rx="10" fill="#2F3E49" stroke="#6FC2FD" stroke-width="2"/>
+              <text x="260" y="245" text-anchor="middle" fill="#6FC2FD" font-size="13" font-weight="700">CPU</text>
+              <rect x="194" y="252" width="132" height="18" rx="4" fill="#3D3830" stroke="#ECAE5D" stroke-width="1.2"/>
+              <text x="260" y="265" text-anchor="middle" fill="#FFCC80" font-size="9.5">Control Unit · fetch &amp; decode</text>
+              <rect x="194" y="275" width="132" height="18" rx="4" fill="#323E47"/>
+              <text x="260" y="288" text-anchor="middle" fill="#A8D4F6" font-size="9.5">ALU · arithmetic &amp; logic</text>
+            </g>
+            <g stroke="#9AAC9F" stroke-width="2" fill="none" marker-end="url(#ah)"><path d="M130 70 H190"/><path d="M325 70 H386"/></g>
+            <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#9AAC9F"/></marker></defs>
+            <g id="busGroup"></g>
+          </svg>
+        </div>
+        <div class="vn-info" id="vnInfo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-recap" data-name="Recap">
+    <div class="wrap">
+      <div class="eyebrow">Wrap-up</div>
+      <h2>What the <span class="accent">board</span> taught us</h2>
+      <div class="grid g2">
+        <div class="card"><div class="k">Motherboard</div><p>The PCB foundation — holds the CPU, RAM, and storage, and routes power &amp; data between them.</p></div>
+        <div class="card"><div class="k">Bus</div><p>Bundles of wires (each carrying 1 bit) that move data, addresses, and control signals. Wider = faster.</p></div>
+        <div class="card"><div class="k">The cycle</div><p>Fetch → decode → execute: input lands in RAM, the CPU computes, and the result returns to the screen.</p></div>
+        <div class="card"><div class="k">Architecture</div><p>Von Neumann shares one memory &amp; bus (the bottleneck); Harvard splits them for parallel access.</p></div>
+      </div>
+      <p class="lede" style="margin-top:1.8rem;font-family:var(--mono);font-size:.9rem;font-weight:600;color:var(--text-faint)">End of Lecture 1 · Part 2 — next: digital logic &amp; number systems.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="rail" id="rail"></div>
+<div class="foot">
+  <div class="nav-btn" onclick="prev()" aria-label="Previous">←</div>
+  <div class="nav-btn" onclick="next()" aria-label="Next">→</div>
+  <div class="count">slide <b id="cNow">01</b> / <span id="cTot">10</span></div>
+</div>
+
+<script>
+/* ===== DECK ===== */
+const slides=[...document.querySelectorAll('.slide')];
+const rail=document.getElementById('rail'),prog=document.getElementById('prog');
+let cur=0;
+slides.forEach((s,i)=>{const n=document.createElement('button');n.className='node'+(i===0?' on':'');n.innerHTML='<span class="tip">'+s.dataset.name+'</span>';n.onclick=()=>go(i);rail.appendChild(n);});
+const nodes=[...rail.children];
+document.getElementById('cTot').textContent=String(slides.length).padStart(2,'0');
+function go(i){
+  if(i<0||i>=slides.length||i===cur)return;
+  slides[cur].classList.add('exit-up');slides[cur].classList.remove('active');
+  setTimeout(()=>slides.forEach((s,j)=>{if(j!==i)s.classList.remove('exit-up')}),520);
+  cur=i;slides[cur].classList.add('active');slides[cur].classList.remove('exit-up');
+  nodes.forEach((n,j)=>n.classList.toggle('on',j===cur));
+  prog.style.width=((cur+1)/slides.length*100)+'%';
+  document.getElementById('cNow').textContent=String(cur+1).padStart(2,'0');
+  if(slides[cur].id==='s-vn')drawBus(vnMode);
+}
+function next(){go(cur+1)} function prev(){go(cur-1)}
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();next()}
+  if(e.key==='ArrowLeft'||e.key==='PageUp')prev();
+  if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);
+});
+
+/* ===== MOTHERBOARD ===== */
+const mbData={
+  cpu:{tag:'Processing',t:'CPU Socket',d:'Holds the processor — the brain of the computer. The CPU plugs into this socket and connects to memory and buses to fetch and execute instructions.'},
+  ram:{tag:'Memory',t:'Memory Slots',d:'Where RAM (DRAM) modules slide in. RAM temporarily holds the data and instructions the CPU is actively working with.'},
+  bus:{tag:'Expansion',t:'Bus / PCIe Slots',d:'Expansion slots for add-in cards — graphics, sound, WiFi. The PCI/PCIe bus carries data between these cards and the rest of the system.'},
+  sata:{tag:'Storage',t:'SATA Connectors',d:'Connect storage drives — SSDs and HDDs — to the board. The SATA bus moves saved files and programs to and from long-term storage.'},
+  usb:{tag:'Input / Output',t:'I/O & USB Ports',d:'On the edge of the board. USB (Universal Serial Bus) lets input and output devices plug in via cables; the I/O controller manages their signals.'}
+};
+const mbInfo=document.getElementById('mbInfo');
+document.querySelectorAll('.mb-comp').forEach(c=>{c.addEventListener('click',()=>{
+  document.querySelectorAll('.mb-comp').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');
+  const d=mbData[c.dataset.comp];mbInfo.innerHTML='<div class="tag">'+d.tag+'</div><h3>'+d.t+'</h3><p>'+d.d+'</p>';
+});});
+
+/* ===== BUS WIDTH ===== */
+const lanes=document.getElementById('lanes'),bwVal=document.getElementById('bwVal'),bwNote=document.getElementById('bwNote'),bwSeg=document.getElementById('bwSeg');
+const busColors=['var(--data)','var(--addr)','var(--ctrl)','var(--copper)'];
+function setWidth(w){
+  bwVal.innerHTML=w+'<span>cables / bits per cycle</span>';lanes.innerHTML='';
+  const shown=Math.min(w,32);
+  for(let i=0;i<shown;i++){const l=document.createElement('div');l.className='lane';l.style.setProperty('--data',busColors[i%4]);l.style.animationDelay=(i*0.04)+'s';lanes.appendChild(l);}
+  bwNote.innerHTML='A <b>'+w+'-bit bus</b> has '+w+' cables, so it can transmit <b>'+w+' bits</b> of data at one time.'+(w===64?' That\u2019s why a wider bus significantly improves processor performance.':'');
+  [...bwSeg.children].forEach(b=>b.classList.toggle('on',+b.dataset.w===w));
+}
+bwSeg.addEventListener('click',e=>{if(e.target.dataset.w)setWidth(+e.target.dataset.w)});
+setWidth(8);
+
+/* ===== PIPELINE 5+7 (fetch–decode–execute) ===== */
+const pipeSteps=[
+  // INPUT
+  {ph:'input',c:'Keyboard',d:'You press 5, +, 7. Each key closes a tiny switch, sending a raw electrical signal in.',bus:null,bl:'physical'},
+  {ph:'input',c:'I/O Controller',d:'Encodes each keystroke into binary — 5 \u2192 00000101, 7 \u2192 00000111, plus a code for \u201c+\u201d.',bus:'ctrl'},
+  {ph:'input',c:'Address Bus',d:'Selects the RAM location where the incoming values will be placed.',bus:'addr'},
+  {ph:'input',c:'Data Bus',d:'Carries the binary values across the board into main memory.',bus:'data'},
+  {ph:'input',c:'RAM',d:'5, + and 7 sit at known addresses, waiting until the CPU is ready.',bus:null,bl:'on-chip'},
+  // PROCESSING
+  {ph:'proc',c:'Control Unit \u00b7 FETCH',d:'Pulls the ADD instruction out of RAM using the address + control buses.',bus:'addr'},
+  {ph:'proc',c:'Control Unit \u00b7 DECODE',d:'Reads the opcode as \u201caddition\u201d and routes the two operands toward the ALU.',bus:'ctrl'},
+  {ph:'proc',c:'Registers',d:'5 and 7 are copied into fast CPU registers so the ALU can reach them instantly.',bus:'data'},
+  {ph:'proc',c:'ALU \u00b7 EXECUTE',d:'Adds bit by bit: 00000101 + 00000111 = 00001100 \u2014 that\u2019s 12.',bus:null,bl:'on-chip'},
+  {ph:'proc',c:'Accumulator',d:'The result 12 (00001100) is held in a register, ready to be sent out.',bus:null,bl:'on-chip'},
+  // OUTPUT
+  {ph:'out',c:'Data Bus',d:'Carries 00001100 from the CPU to the output controller.',bus:'data'},
+  {ph:'out',c:'Display Controller',d:'Turns the binary result into the characters \u201c1\u201d and \u201c2\u201d and maps them to pixels.',bus:'ctrl'},
+  {ph:'out',c:'Monitor',d:'Pixels light up to display the final answer: 12.',bus:null,bl:'physical'},
+  {ph:'out',c:'Feedback \u2192 RAM',d:'The result can be written back to RAM in case a later instruction needs it.',bus:'data'}
+];
+const phaseLabels={input:'1 · Input — capture &amp; store',proc:'2 · Processing — fetch · decode · execute',out:'3 · Output — display &amp; feedback'};
+const busLabels={data:'Data Bus',addr:'Address Bus',ctrl:'Control Bus'};
+const pipeStage=document.getElementById('pipeStage');
+const ALU_INDEX=8;
+function buildPipe(){
+  pipeStage.innerHTML='';let lastPh='';
+  pipeSteps.forEach((s,i)=>{
+    if(s.ph!==lastPh){const t=document.createElement('div');t.className='phase-tag '+s.ph;t.innerHTML=phaseLabels[s.ph];pipeStage.appendChild(t);lastPh=s.ph;}
+    const chip = s.bus ? '<span class="bus-chip '+s.bus+'">'+busLabels[s.bus]+'</span>'
+                       : '<span class="bus-chip none">'+(s.bl||'on-chip')+'</span>';
+    const n=document.createElement('div');n.className='pnode';n.id='pn'+i;
+    n.innerHTML='<div class="ix">'+(i+1)+'</div><div class="txt"><div class="r1"><b>'+s.c+'</b>'+chip+'</div><span>'+s.d+'</span></div>';
+    pipeStage.appendChild(n);
+  });
+}
+buildPipe();
+let pipeTimer=null;
+function resetPipe(){
+  if(pipeTimer)clearInterval(pipeTimer);pipeTimer=null;
+  document.querySelectorAll('.pnode').forEach(n=>n.classList.remove('on','passed'));
+  const r=document.getElementById('res');r.textContent='?';r.classList.remove('done');
+  document.getElementById('binRes').textContent='– – – – – – – –';
+  document.getElementById('binResBox').classList.remove('lit');
+  document.getElementById('playBtn').textContent='▶ Run the cycle';
+}
+function playPipe(){
+  resetPipe();let i=0;
+  document.getElementById('playBtn').textContent='Running…';
+  pipeTimer=setInterval(()=>{
+    if(i>0){const p=document.getElementById('pn'+(i-1));p.classList.add('passed');p.classList.remove('on');}
+    if(i>=pipeSteps.length){
+      clearInterval(pipeTimer);pipeTimer=null;
+      document.getElementById('playBtn').textContent='▶ Run again';return;
+    }
+    const node=document.getElementById('pn'+i);node.classList.add('on');
+    node.scrollIntoView({behavior:'smooth',block:'nearest'});
+    if(i===ALU_INDEX){
+      const r=document.getElementById('res');r.textContent='12';r.classList.add('done');
+      document.getElementById('binRes').textContent='00001100';
+      document.getElementById('binResBox').classList.add('lit');
+    }
+    i++;
+  },820);
+}
+
+/* ===== PYRAMID ===== */
+const levels=[
+  {lv:'Level 1',n:'User Level',c:'#DD4A3D',tc:'#fff',role:'You interact with apps — calculator, browser, games.',ex:'You tap <code>8 × 6 =</code> on the calculator app.'},
+  {lv:'Level 2',n:'High-Level Language',c:'#F09E41',tc:'#1A1205',role:'Apps written in languages like Python, Java, or Swift.',ex:'App logic in <code>Java / Python / Swift</code> defines how the button works.'},
+  {lv:'Level 3',n:'Assembly Language',c:'#F5D053',tc:'#1A1205',role:'Low-level symbolic code like MOV, ADD, MUL.',ex:'Compiled to <code>LOAD 8, MUL 6, STORE result</code>.'},
+  {lv:'Level 4',n:'Machine Language',c:'#4EC268',tc:'#fff',role:'Binary instructions the CPU reads directly.',ex:'Translated to binary <code>10001011 01001000</code>.'},
+  {lv:'Level 5',n:'Microarchitecture',c:'#3A8EEB',tc:'#fff',role:'Instruction decoding, control signals, registers.',ex:'Control unit breaks the instruction into micro-operations.'},
+  {lv:'Level 6',n:'Digital Logic',c:'#9A58C4',tc:'#fff',role:'Logic gates (AND, OR, XOR, NOT), flip-flops, circuits.',ex:'Gates in the ALU perform the multiplication → <code>48</code>.'},
+  {lv:'Level 7',n:'Device Level',c:'#855E49',tc:'#fff',role:'Transistors and physical hardware.',ex:'Output controller lights pixels to show <code>48</code>.'}
+];
+const pyr=document.getElementById('pyramid'),pyrInfo=document.getElementById('pyrInfo');
+levels.forEach((l,i)=>{
+  const r=document.createElement('div');r.className='pyr-row';
+  r.style.setProperty('--accent',l.c);
+  r.style.width=(50+i*7)+'%';r.style.minWidth='235px';
+  r.innerHTML='<span class="badge" style="color:'+l.tc+'">'+l.lv.replace('Level ','L')+'</span><span class="nm">'+l.n+'</span>';
+  r.onclick=()=>{
+    document.querySelectorAll('.pyr-row').forEach(x=>x.classList.remove('sel'));r.classList.add('sel');
+    pyrInfo.innerHTML='<div class="tag" style="color:'+l.c+'">'+l.lv+'</div><h3>'+l.n+'</h3><p>'+l.role+'</p><div class="ex" style="border-color:'+l.c+'"><div class="exk" style="color:'+l.c+'">8 × 6 at this level</div><div class="exv">'+l.ex+'</div></div>';
+  };
+  pyr.appendChild(r);
+});
+
+/* ===== VON NEUMANN / HARVARD ===== */
+const busGroup=document.getElementById('busGroup');
+const memSingle=document.getElementById('memSingle'),memTxt1=document.getElementById('memTxt1'),memTxt2=document.getElementById('memTxt2');
+let vnMode='von';
+const vnContent={
+  von:{badge:'bottleneck',badgeTxt:'The Von Neumann bottleneck',h:'One memory · one bus',items:[
+    ['Stored in','Instructions and data share the <b>same memory</b>.'],
+    ['Bus used','A single <b>shared system bus</b> carries everything.'],
+    ['Access timing','Only <b>one at a time</b> — the CPU can\u2019t fetch an instruction and data simultaneously.'],
+    ['Problem','Instruction fetch <b>delays</b> data access, and vice-versa.']
+  ]},
+  harvard:{badge:'parallel',badgeTxt:'Non-Von Neumann (Harvard)',h:'Separate memory · separate buses',items:[
+    ['Stored in','<b>Separate</b> instruction memory and data memory.'],
+    ['Bus used','A <b>dedicated instruction bus</b> and a <b>dedicated data bus</b>.'],
+    ['Access timing','Instructions and data can be fetched <b>in parallel</b>.'],
+    ['Advantage','<b>No interference</b> — fetch and data access don\u2019t block each other.']
+  ]}
+};
+function drawBus(mode){
+  const c=vnContent[mode];
+  let lis=c.items.map(it=>'<li><b>'+it[0]+':</b>&nbsp;'+it[1]+'</li>').join('');
+  document.getElementById('vnInfo').innerHTML='<span class="badge '+c.badge+'">'+c.badgeTxt+'</span><h3>'+c.h+'</h3><ul>'+lis+'</ul>';
+  if(mode==='von'){
+    memSingle.setAttribute('x','195');memSingle.setAttribute('width','130');memSingle.setAttribute('stroke','#4AE3A5');memSingle.setAttribute('fill','#2C3833');
+    memTxt1.textContent='Main Memory';memTxt2.textContent='Data + Instructions';memTxt1.setAttribute('x','260');memTxt2.setAttribute('x','260');memTxt1.setAttribute('font-size','13');
+  }else{
+    memSingle.setAttribute('x','185');memSingle.setAttribute('width','150');memSingle.setAttribute('stroke','#6FC2FD');memSingle.setAttribute('fill','#2F3E49');
+    memTxt1.textContent='Instr. Memory  |  Data Memory';memTxt2.textContent='separated';memTxt1.setAttribute('x','260');memTxt2.setAttribute('x','260');memTxt1.setAttribute('font-size','10');
+  }
+  if(mode==='von'){
+    busGroup.innerHTML=
+      '<rect x="225" y="110" width="70" height="105" rx="6" fill="none" stroke="#ECAE5D" stroke-width="1.6" opacity=".7"/>'+
+      '<text x="260" y="165" text-anchor="middle" fill="#FFCC80" font-size="9" font-family="JetBrains Mono" font-weight="700">SHARED</text>'+
+      '<text x="260" y="178" text-anchor="middle" fill="#FFCC80" font-size="9" font-family="JetBrains Mono" font-weight="700">BUS</text>'+
+      '<line x1="245" y1="110" x2="245" y2="215" stroke="#ECAE5D" stroke-width="3.5"/>'+
+      '<circle r="4.5" fill="#4AE3A5"><animateMotion dur="1.6s" repeatCount="indefinite" path="M245 110 V215"/></circle>'+
+      '<circle r="4.5" fill="#4AE3A5" opacity=".5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M245 215 V110"/></circle>';
+  }else{
+    busGroup.innerHTML=
+      '<text x="206" y="160" text-anchor="middle" fill="#FFCC80" font-size="8.5" font-family="JetBrains Mono" font-weight="700">INSTR</text>'+
+      '<text x="314" y="160" text-anchor="middle" fill="#A8D4F6" font-size="8.5" font-family="JetBrains Mono" font-weight="700">DATA</text>'+
+      '<line x1="218" y1="105" x2="218" y2="220" stroke="#ECAE5D" stroke-width="3.5"/>'+
+      '<line x1="302" y1="105" x2="302" y2="220" stroke="#6FC2FD" stroke-width="3.5"/>'+
+      '<circle r="4.5" fill="#ECAE5D"><animateMotion dur="1.1s" repeatCount="indefinite" path="M218 105 V220"/></circle>'+
+      '<circle r="4.5" fill="#6FC2FD"><animateMotion dur="1.1s" repeatCount="indefinite" path="M302 220 V105"/></circle>';
+  }
+}
+document.getElementById('vnToggle').addEventListener('click',e=>{
+  if(!e.target.dataset.vn)return;vnMode=e.target.dataset.vn;
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle('on',b.dataset.vn===vnMode));drawBus(vnMode);
+});
+drawBus('von');
+</script>
+</body>
+</html>
