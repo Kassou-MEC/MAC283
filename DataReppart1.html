@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC-283 · Lecture 2 Part 1 — Data Representation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0A2370;          /* deep blue base */
+  --navy2:#0E2E8C;
+  --blue:#1D4ED8;
+  --blue-br:#2F6BFF;
+  --sky:#38BDF8;
+  --yellow:#FFD11A;        /* vivid yellow */
+  --yellow-soft:#FFE680;
+  --amber:#F59E0B;
+  --white:#FFFFFF;
+  --paper:#EFF5FF;
+  --paper2:#DCE8FF;
+  --ink:#0A1B45;           /* deep navy ink on light */
+  --ink-soft:#33457A;
+  --line:#C3D6FB;
+  --green:#1AA85A;
+  --green-br:#27C76C;
+  --orange:#F26A1B;
+  --red:#E23B4E;
+  --display:'Orbitron',sans-serif;
+  --body:'Space Grotesk',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--navy);color:var(--white);font-family:var(--body);
+  overflow:hidden;-webkit-font-smoothing:antialiased;
+}
+.substrate{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1200px 800px at 78% -12%, rgba(56,189,248,.20), transparent 60%),
+    radial-gradient(1000px 700px at 8% 112%, rgba(255,209,26,.10), transparent 60%),
+    linear-gradient(160deg,#0A2370 0%,#0C2A82 55%,#0A1E5E 100%);}
+.substrate svg{position:absolute;inset:0;width:100%;height:100%;opacity:.5}
+
+/* DECK */
+#deck{position:relative;z-index:2;height:100vh;width:100vw}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(20px,4.5vw,80px);opacity:0;visibility:hidden;transform:translateY(26px) scale(.99);
+  transition:opacity .45s ease,transform .45s ease,visibility .45s;overflow-y:auto;}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.slide.exit-up{transform:translateY(-26px) scale(.99)}
+.wrap{width:100%;max-width:1200px;margin:0 auto}
+
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--yellow);display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;}
+.eyebrow::before{content:"";width:32px;height:2px;background:var(--yellow)}
+h1.title{font-family:var(--display);font-weight:900;line-height:.96;
+  font-size:clamp(2.4rem,7vw,5.4rem);letter-spacing:-.01em;text-transform:uppercase;color:var(--white)}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(1.55rem,3.8vw,2.9rem);
+  line-height:1.05;letter-spacing:-.01em;margin-bottom:.5rem;color:var(--white)}
+h2 .hl{color:var(--yellow)}
+.lede{color:#D7E4FF;font-size:clamp(1rem,1.55vw,1.18rem);max-width:64ch;font-weight:400;line-height:1.55}
+.lede b{color:var(--yellow)}
+.mono{font-family:var(--mono)}
+
+/* HERO */
+#s-hero .wrap{display:flex;flex-direction:column;gap:1.4rem}
+.hero-chip{align-self:flex-start;display:flex;align-items:center;gap:.6rem;border:1.5px solid rgba(255,209,26,.5);
+  border-radius:999px;padding:.45rem 1rem;font-family:var(--mono);font-size:.74rem;color:var(--yellow);
+  letter-spacing:.12em;background:rgba(255,209,26,.08)}
+.hero-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);box-shadow:0 0 12px var(--yellow);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-bin{font-family:var(--mono);color:rgba(255,255,255,.35);font-size:1rem;letter-spacing:.3em;margin-top:.3rem}
+.hero-bin b{color:var(--yellow);font-weight:700}
+.hero-meta{display:flex;flex-wrap:wrap;gap:1.4rem;margin-top:.4rem;font-family:var(--mono);font-size:.8rem;color:#9DB6F0}
+.hero-meta b{color:#D7E4FF;font-weight:500}
+.begin{margin-top:1rem;align-self:flex-start;cursor:pointer;display:flex;align-items:center;gap:.8rem;
+  color:var(--navy);background:var(--yellow);border:none;border-radius:999px;padding:.8rem 1.5rem;
+  font-family:var(--body);font-weight:700;font-size:1rem;transition:.25s;box-shadow:0 8px 24px rgba(255,209,26,.3)}
+.begin:hover{transform:translateY(-2px);background:var(--yellow-soft)}
+
+/* GRID + CARDS */
+.grid{display:grid;gap:1rem;margin-top:1.6rem}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--white);border-radius:16px;padding:1.3rem 1.4rem;color:var(--ink);
+  box-shadow:0 14px 34px rgba(4,16,54,.35);position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;top:0;left:0;width:100%;height:5px;background:var(--yellow)}
+.card.blue::before{background:var(--blue)}.card.green::before{background:var(--green)}.card.sky::before{background:var(--sky)}
+.card .k{font-family:var(--mono);font-size:.72rem;color:var(--blue);letter-spacing:.14em;margin-bottom:.5rem;text-transform:uppercase;font-weight:700}
+.card p{color:var(--ink);font-size:1rem;line-height:1.5}
+.card p b{color:var(--blue)}
+.card .big{font-family:var(--display);font-weight:900;font-size:1.8rem;color:var(--ink);line-height:1}
+.card code,.codechip{font-family:var(--mono);background:var(--paper2);color:var(--ink);padding:.06rem .35rem;border-radius:5px;font-size:.92em}
+
+/* TIMELINE */
+.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1.8rem;position:relative}
+.tl-item{background:var(--white);border-radius:14px;overflow:hidden;box-shadow:0 12px 28px rgba(4,16,54,.32)}
+.tl-date{font-family:var(--display);font-weight:700;font-size:1.2rem;color:var(--white);padding:.85rem 1rem;text-align:center}
+.tl-body{padding:1rem;color:var(--ink);font-size:.95rem;line-height:1.4;text-align:center;font-weight:500}
+.tl-1 .tl-date{background:var(--blue)} .tl-2 .tl-date{background:var(--amber);color:var(--ink)}
+.tl-3 .tl-date{background:var(--green)} .tl-4 .tl-date{background:#8B5CF6}
+
+/* TABLE */
+.tbl{margin-top:1.4rem;border-radius:14px;overflow:hidden;box-shadow:0 12px 30px rgba(4,16,54,.32)}
+.tbl .row{display:grid;border-top:1px solid var(--line)}
+.tbl .row:first-child{border-top:none}
+.tbl .row>div{padding:.8rem 1.05rem;font-size:.95rem;line-height:1.4;color:var(--ink)}
+.tbl .head{background:var(--blue)}
+.tbl .head>div{color:#fff;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;font-size:.76rem;font-weight:700}
+.tbl .row:not(.head){background:var(--white)}
+.tbl .row:not(.head):nth-child(even){background:var(--paper)}
+.tbl .rel{color:var(--green);font-weight:700}
+.tbl .bn{font-family:var(--mono);color:var(--blue);font-weight:600}
+
+/* generic interactive panel */
+.panel{background:var(--white);border-radius:18px;padding:1.5rem 1.6rem;color:var(--ink);box-shadow:0 16px 40px rgba(4,16,54,.4);margin-top:1.3rem}
+.panel .ptitle{font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:.2rem}
+.note{margin-top:1rem;background:var(--paper);border-left:4px solid var(--yellow);border-radius:0 10px 10px 0;padding:.8rem 1rem;color:var(--ink-soft);font-size:.92rem;line-height:1.5}
+.note b{color:var(--ink)}
+.explain{margin:1.2rem 0;background:linear-gradient(135deg,#11328A,#0A2160);border:1.5px solid rgba(255,209,26,.45);
+  border-radius:14px;padding:1.1rem 1.35rem;color:#EAF1FF;box-shadow:0 10px 26px rgba(4,16,54,.35)}
+.explain h4{font-family:var(--mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);
+  display:flex;align-items:center;gap:.5rem;margin-bottom:.55rem}
+.explain p{font-size:1.02rem;line-height:1.62;color:#EAF1FF}
+.explain p+p{margin-top:.55rem}
+.explain b{color:var(--yellow);font-weight:700}
+body.no-explain .explain{display:none}
+.explain-toggle{cursor:pointer;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.04em;
+  background:rgba(255,209,26,.14);border:1.5px solid rgba(255,209,26,.5);color:var(--yellow);
+  border-radius:9px;padding:.55rem .8rem;transition:.2s}
+.explain-toggle:hover{background:rgba(255,209,26,.24)}
+body.no-explain .explain-toggle{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.25);color:#9DB6F0}
+.ctrl-row{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:.4rem}
+label.fld{font-family:var(--mono);font-size:.82rem;color:var(--ink-soft);font-weight:600}
+input.num{font-family:var(--mono);font-size:1.05rem;font-weight:700;color:var(--ink);background:var(--paper);
+  border:2px solid var(--line);border-radius:10px;padding:.5rem .7rem;width:130px;text-align:center}
+input.num:focus{outline:none;border-color:var(--blue)}
+input.txt{font-family:var(--mono);font-size:1rem;color:var(--ink);background:var(--paper);border:2px solid var(--line);
+  border-radius:10px;padding:.55rem .8rem;flex:1;min-width:200px}
+input.txt:focus{outline:none;border-color:var(--blue)}
+.btn{font-family:var(--mono);font-size:.82rem;letter-spacing:.04em;cursor:pointer;background:var(--blue);color:#fff;
+  border:none;border-radius:9px;padding:.55rem 1rem;font-weight:700;transition:.2s}
+.btn:hover{background:var(--blue-br)}
+.btn.y{background:var(--yellow);color:var(--ink)}.btn.y:hover{background:var(--yellow-soft)}
+.btn.ghost{background:var(--paper);color:var(--blue);border:1.5px solid var(--line)}
+.btn.ghost:hover{border-color:var(--blue)}
+.presets{display:flex;gap:.45rem;flex-wrap:wrap}
+.presets button{font-family:var(--mono);font-size:.8rem;cursor:pointer;background:var(--paper);border:1.5px solid var(--line);
+  color:var(--blue);border-radius:8px;padding:.4rem .7rem;font-weight:700;transition:.2s}
+.presets button:hover,.presets button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* BIT TOGGLES */
+.bits{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+.bit{flex:1;min-width:72px;cursor:pointer;background:var(--paper);border:2px solid var(--line);border-radius:12px;
+  text-align:center;padding:.7rem .3rem;transition:.18s;user-select:none}
+.bit .val{font-family:var(--display);font-weight:900;font-size:1.6rem;color:#9FB3DC;line-height:1}
+.bit .pw{font-family:var(--mono);font-size:.62rem;color:var(--ink-soft);margin-top:.25rem}
+.bit .pv{font-family:var(--mono);font-size:.66rem;color:#9FB3DC;font-weight:700}
+.bit.on{background:var(--blue);border-color:var(--yellow);box-shadow:0 6px 16px rgba(29,78,216,.4)}
+.bit.on .val{color:var(--yellow)}.bit.on .pw,.bit.on .pv{color:#CFE0FF}
+.readout{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-top:.4rem}
+.readout .chip{background:var(--navy);color:#fff;border-radius:12px;padding:.7rem 1.1rem;font-family:var(--mono)}
+.readout .chip .lab{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sky);display:block;margin-bottom:.2rem}
+.readout .chip .v{font-size:1.3rem;font-weight:700;color:#fff}
+.readout .chip.y{background:var(--yellow)} .readout .chip.y .lab{color:#7A5B00}.readout .chip.y .v{color:var(--ink)}
+.sumline{font-family:var(--mono);font-size:.95rem;color:var(--ink-soft);margin-top:.7rem;line-height:1.6}
+.sumline b{color:var(--blue)}
+
+/* STEP TABLES (conversion) */
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-top:1rem}
+.minitbl{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.minitbl .mh{background:var(--green);color:#fff;display:grid;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.minitbl .mr{display:grid;border-top:1px solid var(--line);font-family:var(--mono);font-size:.9rem;color:var(--ink)}
+.minitbl .mr:nth-child(even){background:var(--paper)}
+.minitbl .mh>div,.minitbl .mr>div{padding:.5rem .6rem;text-align:center}
+.minitbl .mr .rmd{color:var(--orange);font-weight:700}
+.result-band{margin-top:.7rem;background:var(--navy);border-radius:10px;padding:.7rem 1rem;text-align:center;
+  font-family:var(--mono);color:#fff;font-size:1.05rem}
+.result-band b{color:var(--yellow);font-weight:700;letter-spacing:.1em}
+.subhead{font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:.4rem}
+
+/* BASE CONVERTER */
+.base-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem;margin-top:1rem}
+.base-cell{background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:.9rem 1.1rem}
+.base-cell .bl{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:.3rem}
+.base-cell .bv{font-family:var(--mono);font-size:1.3rem;font-weight:700;color:var(--ink);word-break:break-all}
+.base-cell.bin{border-color:var(--yellow);background:#FFFBEA}
+.base-cell.bin .bv{color:var(--amber)}
+
+/* RULE TESTER */
+.rule-wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:1.4rem;margin-top:1rem}
+.rule-ctrl{display:flex;flex-direction:column;gap:1rem}
+.ops{display:flex;gap:.4rem;flex-wrap:wrap}
+.ops button{font-family:var(--mono);font-weight:700;cursor:pointer;border:2px solid var(--line);background:var(--paper);
+  color:var(--blue);border-radius:9px;padding:.5rem .8rem;font-size:.85rem;transition:.18s}
+.ops button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.abrow{display:flex;gap:1.4rem;align-items:center}
+.abtoggle{text-align:center}
+.abtoggle .lab{font-family:var(--mono);font-size:.72rem;color:var(--ink-soft);margin-bottom:.3rem;font-weight:700}
+.abtoggle .bb{width:84px;height:84px;border-radius:16px;border:3px solid var(--line);background:var(--paper);cursor:pointer;
+  font-family:var(--display);font-weight:900;font-size:2.4rem;color:#9FB3DC;display:grid;place-items:center;transition:.18s}
+.abtoggle .bb.on{background:var(--yellow);border-color:var(--amber);color:var(--ink)}
+.rule-out{background:var(--navy);border-radius:14px;padding:1.3rem;color:#fff;display:flex;flex-direction:column;justify-content:center}
+.rule-out .eq{font-family:var(--mono);font-size:1.7rem;font-weight:700;color:var(--yellow);text-align:center;margin-bottom:.6rem}
+.rule-out .exp{font-size:.95rem;line-height:1.5;color:#CFE0FF;text-align:center}
+.rule-out .exp b{color:#fff}
+
+/* ADDER */
+.add-grid{font-family:var(--mono);margin-top:1rem;background:var(--paper);border-radius:12px;padding:1.1rem;overflow-x:auto}
+.add-grid .line{display:flex;gap:.35rem;justify-content:flex-end;align-items:center}
+.add-grid .lab{width:62px;text-align:right;color:var(--ink-soft);font-size:.78rem;font-weight:700;flex:0 0 auto}
+.add-grid .cellrow{display:flex;gap:.35rem}
+.add-grid .cell{width:34px;height:38px;border-radius:7px;display:grid;place-items:center;font-size:1.15rem;font-weight:700}
+.cell.a{background:#E4EDFF;color:var(--blue)} .cell.b{background:#E4EDFF;color:var(--blue)}
+.cell.carry{background:#FFF3CC;color:var(--amber)} .cell.carry.lit{background:var(--yellow);color:var(--ink)}
+.cell.sum{background:var(--navy);color:#fff} .cell.sum.lit{background:var(--green);color:#fff}
+.cell.empty{background:transparent}
+.add-grid .op{color:var(--ink-soft)}
+.add-pipeline{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-top:1rem}
+.pcell{background:var(--white);border:2px solid var(--line);border-radius:12px;padding:.8rem;text-align:center}
+.pcell .pl{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:700}
+.pcell .pv{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--ink);margin-top:.25rem}
+.pcell.fin{background:var(--green);border-color:var(--green)} .pcell.fin .pl{color:#CFF6DF}.pcell.fin .pv{color:#fff}
+
+/* ASCII */
+.ascii-out{margin-top:1rem;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ascii-out .ah{background:var(--blue);color:#fff;display:grid;grid-template-columns:.7fr 1fr 1.4fr;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.ascii-out .ar{display:grid;grid-template-columns:.7fr 1fr 1.4fr;border-top:1px solid var(--line);font-family:var(--mono);font-size:.95rem;color:var(--ink)}
+.ascii-out .ar:nth-child(even){background:var(--paper)}
+.ascii-out .ah>div,.ascii-out .ar>div{padding:.5rem .8rem}
+.ascii-out .ar .ch{font-weight:700;color:var(--blue)} .ascii-out .ar .bn{color:var(--amber);font-weight:700}
+.chart{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-top:1rem}
+.chart .cc{background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:.4rem;text-align:center;cursor:pointer;transition:.15s}
+.chart .cc:hover{background:var(--yellow);border-color:var(--amber)}
+.chart .cc .cn{font-family:var(--mono);font-size:.62rem;color:var(--ink-soft)}
+.chart .cc .cl{font-family:var(--display);font-weight:700;font-size:1rem;color:var(--ink)}
+@media(max-width:920px){.chart{grid-template-columns:repeat(5,1fr)}}
+
+/* NAV */
+.progress{position:fixed;top:0;left:0;height:4px;background:var(--yellow);z-index:20;transition:width .45s ease;box-shadow:0 0 12px rgba(255,209,26,.7)}
+.rail{position:fixed;right:clamp(12px,2.2vw,30px);top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:11px}
+.rail .node{width:11px;height:11px;border-radius:50%;border:2px solid rgba(255,255,255,.4);cursor:pointer;transition:.22s;position:relative;background:transparent}
+.rail .node:hover{border-color:var(--yellow)}
+.rail .node.on{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 12px rgba(255,209,26,.7)}
+.rail .node .tip{position:absolute;right:22px;top:50%;transform:translateY(-50%);white-space:nowrap;font-family:var(--mono);
+  font-size:.68rem;color:var(--navy);background:var(--yellow);padding:.25rem .55rem;border-radius:5px;opacity:0;pointer-events:none;transition:.18s;font-weight:600}
+.rail .node:hover .tip{opacity:1}
+.foot{position:fixed;left:clamp(20px,4.5vw,80px);bottom:20px;z-index:20;display:flex;align-items:center;gap:.9rem;font-family:var(--mono);font-size:.74rem;color:#9DB6F0}
+.foot .nav-btn{cursor:pointer;width:38px;height:38px;border-radius:9px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#D7E4FF;display:grid;place-items:center;transition:.2s}
+.foot .nav-btn:hover{border-color:var(--yellow);color:var(--yellow)}
+.foot .count b{color:#fff}
+.brand{position:fixed;top:18px;left:clamp(20px,4.5vw,80px);z-index:20;font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;color:#9DB6F0;text-transform:uppercase}
+.brand b{color:var(--yellow)}
+
+@media(max-width:920px){
+  .g2,.g3,.g4,.timeline,.twocol,.rule-wrap,.base-grid,.add-pipeline{grid-template-columns:1fr!important}
+  .rail{display:none}
+  .slide{padding:60px 18px 78px}
+  .tbl .row{grid-template-columns:1fr!important}
+  .tbl .head{display:none}
+  .ascii-out .ah{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:opacity .2s!important}}
+</style>
+</head>
+<body>
+
+<div class="substrate" aria-hidden="true">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <g font-family="JetBrains Mono" font-size="26" fill="#ffffff" opacity="0.05" font-weight="700">
+      <text x="40" y="120">01001101 00100000 01000001 01000011</text>
+      <text x="60" y="240">0110 1001 0010 1010 0111 0001 0100</text>
+      <text x="30" y="380">10110110 00110010 00111000 00110011</text>
+      <text x="90" y="520">0101 1010 0011 1100 1001 0110 0001</text>
+      <text x="50" y="660">01110011 01100101 01100011 01110100</text>
+      <text x="70" y="800">00110111 00111000 00110010 00110000</text>
+    </g>
+  </svg>
+</div>
+
+<div class="progress" id="prog" style="width:6%"></div>
+<div class="brand"><b>MAC-283</b> · DATA REPRESENTATION</div>
+
+<div id="deck">
+
+  <!-- 0 HERO -->
+  <section class="slide active" id="s-hero" data-name="Title">
+    <div class="wrap">
+      <div class="hero-chip"><span class="dot"></span> LECTURE 02 · PART 1 · BOOTING…</div>
+      <div class="eyebrow">From numbers to bits</div>
+      <h1 class="title">Data<br><span style="color:var(--yellow)">Representation</span></h1>
+      <div class="hero-bin"><b>0100 0100</b> 0110 0001 0111 0100 0110 0001</div>
+      <div class="hero-meta">
+        <span><b>Covers</b> — Decimal · Binary · Octal · Hex · Bits &amp; Bytes · Binary Math · ASCII</span>
+        <span><b>Format</b> — Interactive deck with live converters</span>
+      </div>
+      <button class="begin" onclick="go(1)">Start the lecture →</button>
+      <div class="explain"><h4>💡 Understand it</h4><p>This lecture is about the bridge between how <b>people</b> write information and how a <b>computer</b> actually stores it. Everything ahead builds on one simple fact: a machine can only hold patterns of <b>on and off</b>. Move through with the arrows or the dots on the right, and you can hide these explanation panels anytime with the button at the bottom.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 OVERVIEW -->
+  <section class="slide" id="s-overview" data-name="Overview">
+    <div class="wrap">
+      <div class="eyebrow">Roadmap</div>
+      <h2>What we'll <span class="hl">cover</span></h2>
+      <p class="lede">Everything inside a computer is ultimately stored as <b>0s and 1s</b>. This lecture builds from the numbers humans use up to how machines encode numbers and text.</p>
+      <div class="explain"><h4>💡 Why this matters</h4><p>A computer has no idea what a "7" or a letter "A" is — it only senses electricity that is either flowing or not. To store <b>any</b> information at all, we first turn it into numbers, then turn those numbers into patterns of on/off signals. By the end of this lecture you'll be able to move in both directions: from the way humans write numbers and text to the way a machine stores them.</p></div>
+      <div class="grid g4">
+        <div class="card blue"><div class="k">Number bases</div><p>Decimal, <b>Binary</b>, Octal, and Hexadecimal — and how to convert between them.</p></div>
+        <div class="card"><div class="k">Bits &amp; Bytes</div><p>The smallest unit of data and how 8 of them make a byte.</p></div>
+        <div class="card green"><div class="k">Binary math</div><p>Addition, subtraction, multiplication, and division in base-2.</p></div>
+        <div class="card sky"><div class="k">Text encoding</div><p>ASCII &amp; Unicode — turning letters into binary.</p></div>
+      </div>
+      <div class="note" style="max-width:none"><b>Also previewed:</b> signed numbers, fixed-point, and IEEE 754 floating-point come in Part 2. Here we lay the groundwork: the bases and the basic operations.</div>
+    </div>
+  </section>
+
+  <!-- 2 DECIMAL TIMELINE -->
+  <section class="slide" id="s-timeline" data-name="Decimal history">
+    <div class="wrap">
+      <div class="eyebrow">A little history</div>
+      <h2>The <span class="hl">decimal</span> system, through time</h2>
+      <p class="lede">Base-10 feels natural to us — most likely because we have ten fingers. But it took thousands of years to reach the form we use today.</p>
+      <div class="explain"><h4>💡 Understand it</h4><p>A "number system" isn't a law of nature — it's a <b>human invention</b> that changed over time. The Babylonians counted in groups of 60, which is why we still have 60 minutes in an hour and 360 degrees in a circle. The takeaway for this course: base-10 is a <b>choice</b>, not the only option — which opens the door to the idea that a machine might use a completely different base.</p></div>
+      <div class="timeline">
+        <div class="tl-item tl-1"><div class="tl-date">3000 BCE</div><div class="tl-body">Babylonian <b>base-60</b> system in use</div></div>
+        <div class="tl-item tl-2"><div class="tl-date">500 CE</div><div class="tl-body">Hindu-Arabic numerals develop</div></div>
+        <div class="tl-item tl-3"><div class="tl-date">1200</div><div class="tl-body">Fibonacci introduces them to Europe</div></div>
+        <div class="tl-item tl-4"><div class="tl-date">1700</div><div class="tl-body">Standardized into the modern form</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 DECIMAL + PLACE VALUE -->
+  <section class="slide" id="s-decimal" data-name="Place value">
+    <div class="wrap">
+      <div class="eyebrow">Base-10 · interactive</div>
+      <h2>Decimal &amp; <span class="hl">place value</span></h2>
+      <p class="lede">The <b>decimal</b> (base-10) system uses ten digits: <span class="mono">0 1 2 3 4 5 6 7 8 9</span>. Each digit's worth depends on its <b>position</b> — every step left multiplies by 10.</p>
+      <div class="explain"><h4>💡 The key idea of the whole lecture</h4><p>A digit's value comes from <b>two</b> things: the digit itself <b>and</b> the position it sits in. Moving one place to the left multiplies a digit's worth by the base — ×10 in decimal. So in 4,302 the "4" isn't just four, it's 4 × 1000. Once you truly understand <b>"digit × base^position"</b>, every conversion later — binary, octal, hex — is just this same rule with a different base. Change the number below and watch each digit's real value appear.</p></div>
+      <div class="panel">
+        <div class="ptitle">Place-value explorer</div>
+        <div class="ctrl-row">
+          <label class="fld" for="pvIn">Enter a whole number:</label>
+          <input class="num" id="pvIn" type="number" value="4302" min="0" max="9999999">
+          <div class="presets" id="pvPresets"><button data-n="127">127</button><button data-n="4302" class="on">4302</button><button data-n="58020">58020</button></div>
+        </div>
+        <div id="pvCols" class="tbl" style="margin-top:.9rem"></div>
+        <div class="note" id="pvNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 WHY BINARY -->
+  <section class="slide" id="s-whybin" data-name="Why binary">
+    <div class="wrap">
+      <div class="eyebrow">People vs. machines</div>
+      <h2>People love decimal — <span class="hl">computers can't use it</span></h2>
+      <p class="lede">A computer is built from billions of tiny switches. A switch has only <b>two</b> stable states, so the machine speaks in base-2.</p>
+      <div class="explain"><h4>💡 Understand it</h4><p>Inside a chip are billions of microscopic switches called <b>transistors</b>, and a switch is naturally either off or on. We could try to use ten different voltage levels to represent 0–9, but tiny electrical noise would make those levels easy to confuse. Using only two clearly separated states — <b>no voltage</b> or <b>full voltage</b> — is far more reliable. That reliability is the real reason computers use base-2 instead of base-10.</p></div>
+      <div class="grid g3">
+        <div class="card blue"><div class="k">State 0</div><p class="big" style="color:var(--blue)">OFF</p><p>Low voltage · <b>false</b></p></div>
+        <div class="card"><div class="k">State 1</div><p class="big" style="color:var(--amber)">ON</p><p>High voltage · <b>true</b></p></div>
+        <div class="card green"><div class="k">Result</div><p>Every number, letter, image, and sound becomes a stream of <b>0s and 1s</b>.</p></div>
+      </div>
+      <div class="note" style="max-width:none">Two clean states are <b>reliable</b>: it's much easier to detect "voltage / no voltage" than to distinguish ten different voltage levels. Reliability is why base-2 won.</div>
+    </div>
+  </section>
+
+  <!-- 5 BITS & BYTES -->
+  <section class="slide" id="s-bits" data-name="Bits & Bytes">
+    <div class="wrap">
+      <div class="eyebrow">Base-2 vocabulary</div>
+      <h2>Binary: <span class="hl">bits</span> and <span class="hl">bytes</span></h2>
+      <p class="lede">The <b>binary number system</b> is base-2 and uses only two digits. We bundle bits into bytes to represent useful things.</p>
+      <div class="explain"><h4>💡 Understand it</h4><p>A <b>bit</b> is the smallest possible piece of information: a single yes/no, on/off, 0/1. One bit alone can't say much, so we group <b>eight</b> of them into a <b>byte</b>, which can form 256 different patterns — enough to stand for one text character. A "binary number" is just an ordered string of these bits, read with the same place-value rule from the last slide (base 2 instead of base 10).</p></div>
+      <div class="tbl">
+        <div class="row head" style="grid-template-columns:1fr 1.6fr 1.2fr 1.4fr"><div>Term</div><div>Definition</div><div>Example</div><div>Relation</div></div>
+        <div class="row" style="grid-template-columns:1fr 1.6fr 1.2fr 1.4fr"><div><b>Bit</b></div><div>Smallest unit of data; holds 0 or 1</div><div class="bn">0 or 1</div><div class="rel">1 binary digit = 1 bit</div></div>
+        <div class="row" style="grid-template-columns:1fr 1.6fr 1.2fr 1.4fr"><div><b>Byte</b></div><div>A group of 8 bits</div><div class="bn">10110010</div><div class="rel">1 byte = 8 bits</div></div>
+        <div class="row" style="grid-template-columns:1fr 1.6fr 1.2fr 1.4fr"><div><b>Binary number</b></div><div>A sequence of bits (base-2)</div><div class="bn">1101 = 13</div><div class="rel">made of bits</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 WHY IT MATTERS -->
+  <section class="slide" id="s-sizes" data-name="Why it matters">
+    <div class="wrap">
+      <div class="eyebrow">Scaling up</div>
+      <h2>From a single byte to <span class="hl">gigabytes</span></h2>
+      <div class="explain"><h4>💡 Understand it</h4><p>Because a single bit holds so little, real files need enormous numbers of them — so we bundle bytes into bigger units. Each step up (KB → MB → GB → TB) is about <b>1,024×</b> larger than the last, because 1,024 is a power of two (2¹⁰) and computers count in twos. This is why a photo is measured in "megabytes" and a movie in "gigabytes" — you're really counting <b>millions or billions of on/off switches</b>.</p></div>
+      <div class="grid g2">
+        <div class="card blue"><div class="k">What a byte can hold</div><p>One <b>character</b> (like 'A' or '@' in ASCII), or a piece of an image, sound, or instruction.</p></div>
+        <div class="card"><div class="k">Real-life example</div><p>The letter 'A' in ASCII is <span class="codechip">01000001</span> → that's <b>8 bits = 1 byte</b>.</p></div>
+      </div>
+      <div class="tbl" style="margin-top:1rem">
+        <div class="row head" style="grid-template-columns:1fr 1fr 1.6fr"><div>Unit</div><div>Size</div><div>Roughly</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.6fr"><div><b>1 Byte</b></div><div class="bn">8 bits</div><div>one character</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.6fr"><div><b>1 KB</b></div><div class="bn">1,024 bytes</div><div>a short paragraph</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.6fr"><div><b>1 MB</b></div><div class="bn">1,024 KB</div><div>a small photo</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.6fr"><div><b>1 GB</b></div><div class="bn">1,024 MB</div><div>~250 songs</div></div>
+      </div>
+      <div class="note" style="max-width:none">A <b>2 MB photo</b> ≈ 2 million bytes ≈ <b>16 million bits</b> — sixteen million on/off switches just for one picture.</div>
+    </div>
+  </section>
+
+  <!-- 7 BINARY -> DECIMAL -->
+  <section class="slide" id="s-bin2dec" data-name="Binary → Decimal">
+    <div class="wrap">
+      <div class="eyebrow">Reading binary · interactive</div>
+      <h2>Binary → Decimal: <span class="hl">flip the bits</span></h2>
+      <p class="lede">Each position is a <b>power of 2</b>. Tap a switch to turn a bit on or off and watch the decimal value rebuild itself from the place values.</p>
+      <div class="explain"><h4>💡 How to read binary</h4><p>To read a binary number, give each position its power-of-two value — <b>1, 2, 4, 8, 16, 32, 64, 128</b> from right to left — then add up only the positions that hold a <b>1</b>. This is exactly the place-value rule from earlier, just in base 2. The switches below let you feel it: flip bits on and off and watch the decimal total get rebuilt from only the place values you switched on.</p></div>
+      <div class="panel">
+        <div class="ptitle">8-bit toggle board — click any switch</div>
+        <div class="bits" id="bits"></div>
+        <div class="readout">
+          <div class="chip"><span class="lab">Binary</span><span class="v mono" id="binStr">10110110</span></div>
+          <div class="chip y"><span class="lab">Decimal</span><span class="v" id="decVal">182</span></div>
+          <div class="chip"><span class="lab">As ASCII char</span><span class="v" id="asChar">¶</span></div>
+        </div>
+        <div class="sumline" id="sumLine"></div>
+        <div class="note">Add up only the <b>"on"</b> positions. With 8 bits you can count from 0 to <b>255</b> (that's 2<sup>8</sup> = 256 different values).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 DECIMAL -> BINARY -->
+  <section class="slide" id="s-dec2bin" data-name="Decimal → Binary">
+    <div class="wrap">
+      <div class="eyebrow">Converting · interactive</div>
+      <h2>Decimal → Binary: <span class="hl">two methods</span></h2>
+      <p class="lede">Enter a number and see it both ways: the <b>divide-by-2</b> method (remainders read bottom-to-top) and the <b>powers-of-2</b> subtraction method.</p>
+      <div class="explain"><h4>💡 Two ways, same answer</h4><p><b>Divide-by-2:</b> keep dividing the number by two and write down each <b>remainder</b>. Those remainders ARE the binary digits — but they come out in reverse, so you read them <b>bottom-to-top</b>. <b>Powers-of-2:</b> work from the top down — take the largest power of two that fits, write a 1, subtract it, and repeat down to 1. Both methods land on the same binary string; use whichever one makes more sense to you.</p></div>
+      <div class="panel">
+        <div class="ctrl-row">
+          <label class="fld" for="d2bIn">Decimal number:</label>
+          <input class="num" id="d2bIn" type="number" value="19" min="0" max="255">
+          <div class="presets" id="d2bPresets"><button data-n="19" class="on">19</button><button data-n="29">29</button><button data-n="182">182</button></div>
+        </div>
+        <div class="twocol">
+          <div>
+            <div class="subhead">Method 1 — Divide by 2</div>
+            <div class="minitbl" id="divTbl"></div>
+          </div>
+          <div>
+            <div class="subhead">Method 2 — Subtract powers of 2</div>
+            <div class="minitbl" id="powTbl"></div>
+          </div>
+        </div>
+        <div class="result-band" id="d2bResult"></div>
+        <div class="note">Divide-by-2: keep dividing, record each <b>remainder</b>, stop at 0, then read the remainders <b>bottom-to-top</b>. Powers-of-2: take the biggest power that fits, write a 1, subtract, repeat.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 BASE PLAYGROUND -->
+  <section class="slide" id="s-bases" data-name="Number bases">
+    <div class="wrap">
+      <div class="eyebrow">All four bases · interactive</div>
+      <h2>The number-base <span class="hl">playground</span></h2>
+      <p class="lede">The same value, four ways. Hex and octal are just compact shorthands programmers use for binary. Type any decimal number to see all four at once.</p>
+      <div class="explain"><h4>💡 Understand it</h4><p>Binary is reliable for machines but painful for humans — long strings of 0s and 1s are easy to miscount. <b>Octal</b> (base 8) and <b>hexadecimal</b> (base 16) are tidy shorthands: one hex digit stands for exactly <b>four bits</b>, and one octal digit for three. So a byte like <span class="mono">10110110</span> becomes the much shorter <span class="mono">B6</span> in hex. These aren't new values — just neater ways to write the very same binary number.</p></div>
+      <div class="panel">
+        <div class="ctrl-row">
+          <label class="fld" for="baseIn">Decimal value:</label>
+          <input class="num" id="baseIn" type="number" value="182" min="0" max="1000000">
+          <div class="presets" id="basePresets"><button data-n="10">10</button><button data-n="182" class="on">182</button><button data-n="255">255</button><button data-n="65">65</button></div>
+        </div>
+        <div class="base-grid">
+          <div class="base-cell"><div class="bl">Decimal · base 10</div><div class="bv" id="bDec">182</div></div>
+          <div class="base-cell bin"><div class="bl">Binary · base 2</div><div class="bv" id="bBin">10110110</div></div>
+          <div class="base-cell"><div class="bl">Octal · base 8</div><div class="bv" id="bOct">266</div></div>
+          <div class="base-cell"><div class="bl">Hexadecimal · base 16</div><div class="bv" id="bHex">B6</div></div>
+        </div>
+        <div class="note">Why hex? Each hex digit equals exactly <b>4 bits</b>, so <span class="mono">10110110</span> groups neatly into <span class="mono">1011 0110</span> = <span class="mono">B6</span>. Much easier for humans to read than a long binary string.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 ARITHMETIC RULES -->
+  <section class="slide" id="s-rules" data-name="Binary rules">
+    <div class="wrap">
+      <div class="eyebrow">The four operations · interactive</div>
+      <h2>Binary arithmetic <span class="hl">rules</span></h2>
+      <p class="lede">Set bit <b>A</b> and bit <b>B</b>, pick an operation, and see the single-bit rule with its explanation. These four rules are all the hardware needs.</p>
+      <div class="explain"><h4>💡 Understand it</h4><p>Here's the reassuring part: no matter how large the numbers get, binary arithmetic reduces to a handful of <b>single-bit rules</b> plus carrying or borrowing. These exact rules are what the <b>logic gates</b> inside the processor physically carry out. The one that trips people up is <b>1 + 1 = 10</b> — just like 9 + 1 rolls over to 10 in decimal, 1 + 1 rolls over in binary: write 0, carry the 1.</p></div>
+      <div class="panel">
+        <div class="rule-wrap">
+          <div class="rule-ctrl">
+            <div class="ops" id="ops">
+              <button data-op="add" class="on">Addition</button>
+              <button data-op="sub">Subtraction</button>
+              <button data-op="mul">Multiplication</button>
+              <button data-op="div">Division</button>
+            </div>
+            <div class="abrow">
+              <div class="abtoggle"><div class="lab">Bit A</div><div class="bb on" id="bitA">1</div></div>
+              <div class="abtoggle"><div class="lab">Bit B</div><div class="bb on" id="bitB">1</div></div>
+            </div>
+            <div class="presets"><button onclick="setAB(0,0)">0,0</button><button onclick="setAB(0,1)">0,1</button><button onclick="setAB(1,0)">1,0</button><button onclick="setAB(1,1)">1,1</button></div>
+          </div>
+          <div class="rule-out"><div class="eq" id="ruleEq"></div><div class="exp" id="ruleExp"></div></div>
+        </div>
+        <div class="note">The one to remember: <b>1 + 1 = 10</b> in binary — you write a <b>0</b> and <b>carry the 1</b>, exactly like 9 + 1 = 10 in decimal.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 BINARY ADDITION -->
+  <section class="slide" id="s-add" data-name="Binary addition">
+    <div class="wrap">
+      <div class="eyebrow">Putting it together · interactive</div>
+      <h2>Binary addition with <span class="hl">carries</span></h2>
+      <p class="lede">When you type <span class="mono">25 + 13</span> into a calculator, here's what the CPU actually does — convert to binary, add column by column carrying as needed, then convert back.</p>
+      <div class="explain"><h4>💡 What really happens when you press "="</h4><p>The numbers are converted to binary, then added <b>column by column from the right</b>. Whenever a column adds up to two, a <b>1 is carried</b> into the next column — the same carrying you learned in grade-school addition, just in base 2. Finally the binary result is converted back to decimal so you can read it. The yellow <b>carry row</b> makes that overflow visible at each step.</p></div>
+      <div class="panel">
+        <div class="ctrl-row">
+          <label class="fld">A:</label><input class="num" id="addA" type="number" value="25" min="0" max="127">
+          <label class="fld">B:</label><input class="num" id="addB" type="number" value="13" min="0" max="127">
+          <button class="btn y" onclick="runAdd()">▶ Add &amp; show carries</button>
+        </div>
+        <div class="add-grid" id="addGrid"></div>
+        <div class="add-pipeline" id="addPipe"></div>
+        <div class="note">Read it right-to-left like grade-school addition. A <span style="color:var(--amber);font-weight:700">yellow carry</span> means the column overflowed (1+1) and pushed a 1 into the next column.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 ASCII INTRO -->
+  <section class="slide" id="s-ascii-intro" data-name="ASCII & Unicode">
+    <div class="wrap">
+      <div class="eyebrow">Encoding text</div>
+      <h2>Letters need numbers too: <span class="hl">ASCII</span></h2>
+      <p class="lede"><b>ASCII</b> (American Standard Code for Information Interchange) is a character-encoding standard. Every key on your keyboard maps to a number, and that number is stored in binary.</p>
+      <div class="explain"><h4>💡 Understand it</h4><p>Numbers are one thing — but how does a computer store the letter "A"? The answer is a <b>shared agreement</b> called ASCII: a lookup table that gives every character a number. Because every computer uses the same table, the byte <span class="mono">01000001</span> reliably means "A" everywhere in the world. The number of bits decides how many characters fit: 7 bits gives 128 characters, and <b>Unicode</b> extends the same idea to cover every language and emoji.</p></div>
+      <div class="grid g3">
+        <div class="card blue"><div class="k">How big</div><p>Standard ASCII uses <b>7 bits</b> → values 0–127.</p></div>
+        <div class="card"><div class="k">Extended</div><p>Extended ASCII uses <b>8 bits</b> → 0–255, adding chars like <span class="codechip">é</span> <span class="codechip">ç</span>.</p></div>
+        <div class="card sky"><div class="k">Unicode</div><p>Goes further — millions of characters for every language &amp; emoji.</p></div>
+      </div>
+      <div class="tbl" style="margin-top:1rem">
+        <div class="row head" style="grid-template-columns:1fr 1fr 1.4fr"><div>Character</div><div>ASCII (decimal)</div><div>Binary (8-bit)</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.4fr"><div><b>A</b></div><div>65</div><div class="bn">01000001</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.4fr"><div><b>a</b></div><div>97</div><div class="bn">01100001</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.4fr"><div><b>1</b></div><div>49</div><div class="bn">00110001</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.4fr"><div><b>@</b></div><div>64</div><div class="bn">01000000</div></div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1.4fr"><div><b>(space)</b></div><div>32</div><div class="bn">00100000</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 TEXT ENCODER -->
+  <section class="slide" id="s-encoder" data-name="Text → Binary">
+    <div class="wrap">
+      <div class="eyebrow">Encode anything · interactive</div>
+      <h2>Text → ASCII → <span class="hl">Binary</span></h2>
+      <p class="lede">Type any message below. Each character is converted to its ASCII code and 8-bit binary — the exact bytes your computer would store or send.</p>
+      <div class="explain"><h4>💡 Understand it</h4><p>Text is nothing more than a <b>sequence of bytes</b>. Each character is looked up to get its ASCII number, and that number is written as 8-bit binary — and that's literally what gets saved to a file or sent in a text message. Type anything below to watch your words become the exact bytes a computer stores. This is also the skill your <b>assignment</b> asks you to do by hand.</p></div>
+      <div class="panel">
+        <div class="ctrl-row">
+          <input class="txt" id="encIn" value="MAC283" maxlength="40" placeholder="Type text here…">
+          <div class="presets" id="encPresets"><button data-t="Hi">Hi</button><button data-t="MAC283" class="on">MAC283</button><button data-t="section 7820">section 7820</button></div>
+        </div>
+        <div class="ascii-out" id="encOut"></div>
+        <div class="subhead" style="margin-top:1.1rem">ASCII reference — click a character to insert it</div>
+        <div class="chart" id="asciiChart"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 KEYBOARD VS CALCULATOR -->
+  <section class="slide" id="s-kbcalc" data-name="Key vs Calc">
+    <div class="wrap">
+      <div class="eyebrow">A subtle but key difference</div>
+      <h2>Keyboard '2' vs. calculator <span class="hl">2</span></h2>
+      <p class="lede">The same symbol can mean two completely different things depending on whether the computer treats it as <b>text</b> or as a <b>value</b>.</p>
+      <div class="explain"><h4>💡 A subtle point worth mastering</h4><p>The character <b>'2'</b> you type and the number <b>2</b> you calculate with are stored completely differently: '2' the symbol is ASCII 50 (<span class="mono">00110010</span>), while 2 the value is binary 2 (<span class="mono">00000010</span>). The computer relies on <b>context</b> to know which one you mean. Mixing these up — treating text like a number, or a number like text — is a classic source of programming bugs, so it's worth getting clear on now.</p></div>
+      <div class="tbl">
+        <div class="row head" style="grid-template-columns:1.1fr 1.3fr 1.3fr"><div>Feature</div><div>Keyboard button '2'</div><div>Calculator value 2</div></div>
+        <div class="row" style="grid-template-columns:1.1fr 1.3fr 1.3fr"><div><b>What you press</b></div><div>A character key '2'</div><div>A numeric value 2</div></div>
+        <div class="row" style="grid-template-columns:1.1fr 1.3fr 1.3fr"><div><b>Computer receives</b></div><div>ASCII of '2' → <span class="bn">00110010</span></div><div>Binary of 2 → <span class="bn">00000010</span></div></div>
+        <div class="row" style="grid-template-columns:1.1fr 1.3fr 1.3fr"><div><b>Interpreted as</b></div><div>A symbol / character</div><div>A value for math</div></div>
+        <div class="row" style="grid-template-columns:1.1fr 1.3fr 1.3fr"><div><b>Stored as</b></div><div>Decimal 50 = <span class="bn">00110010</span></div><div>Decimal 2 = <span class="bn">00000010</span></div></div>
+        <div class="row" style="grid-template-columns:1.1fr 1.3fr 1.3fr"><div><b>Used for</b></div><div>Displaying text, typing strings</div><div>Performing calculations</div></div>
+      </div>
+      <div class="note" style="max-width:none">Same key, different jobs: the character <b>'2'</b> is stored as <span class="mono">00110010</span> (ASCII 50), but the <b>number 2</b> is stored as <span class="mono">00000010</span>. Context decides which.</div>
+    </div>
+  </section>
+
+  <!-- 15 RECAP + ASSIGNMENT -->
+  <section class="slide" id="s-recap" data-name="Recap & HW">
+    <div class="wrap">
+      <div class="eyebrow">Wrap-up</div>
+      <h2>Recap &amp; <span class="hl">assignment</span></h2>
+      <div class="explain"><h4>💡 How it all connects</h4><p>Notice how one idea — <b>place value</b> — ran through everything: it let us read any base, convert between bases, do binary math, and decode ASCII. If you can explain <b>"digit × base^position"</b> and the <b>carry rule</b> to a friend, you understand the heart of this lecture. The assignment below asks you to apply ASCII encoding by hand, which ties the number and text halves together.</p></div>
+      <div class="grid g4">
+        <div class="card blue"><div class="k">Bases</div><p>Decimal (10), binary (2), octal (8), hex (16) — all describe the same values.</p></div>
+        <div class="card"><div class="k">Bits &amp; bytes</div><p>1 bit = 0/1; 8 bits = 1 byte; bytes scale to KB, MB, GB.</p></div>
+        <div class="card green"><div class="k">Binary math</div><p>Four single-bit rules drive add, subtract, multiply, divide — with carries &amp; borrows.</p></div>
+        <div class="card sky"><div class="k">ASCII</div><p>Characters map to numbers (0–127) stored as 8-bit binary bytes.</p></div>
+      </div>
+      <div class="panel" style="margin-top:1.2rem">
+        <div class="ptitle">📝 Assignment</div>
+        <p style="color:var(--ink);line-height:1.6;margin-top:.4rem">Convert each character in the sentence <span class="codechip">Computer Organization and Assembly Language</span> into its <b>ASCII decimal value</b> and its <b>8-bit binary</b>. Organize your answer in a table with columns: <b>Character · ASCII Decimal · Binary (8-bit)</b>.</p>
+        <div class="note"><b>Tip:</b> use the Text → Binary encoder on the previous slide to check your work — but show the conversion steps for full credit.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="rail" id="rail"></div>
+<div class="foot">
+  <div class="nav-btn" onclick="prev()" aria-label="Previous">←</div>
+  <div class="nav-btn" onclick="next()" aria-label="Next">→</div>
+  <div class="count">slide <b id="cNow">01</b> / <span id="cTot">16</span></div>
+  <button class="explain-toggle" id="explainToggle" onclick="toggleExplain()">💡 Explanations: On</button>
+</div>
+
+<script>
+/* ===== DECK ENGINE ===== */
+const slides=[...document.querySelectorAll('.slide')];
+const rail=document.getElementById('rail'),prog=document.getElementById('prog');
+let cur=0;
+slides.forEach((s,i)=>{const n=document.createElement('button');n.className='node'+(i===0?' on':'');
+  n.innerHTML='<span class="tip">'+s.dataset.name+'</span>';n.onclick=()=>go(i);rail.appendChild(n);});
+const nodes=[...rail.children];
+document.getElementById('cTot').textContent=String(slides.length).padStart(2,'0');
+function go(i){
+  if(i<0||i>=slides.length||i===cur)return;
+  slides[cur].classList.add('exit-up');slides[cur].classList.remove('active');
+  setTimeout(()=>slides.forEach((s,j)=>{if(j!==i)s.classList.remove('exit-up')}),460);
+  cur=i;slides[cur].classList.add('active');slides[cur].classList.remove('exit-up');
+  nodes.forEach((n,j)=>n.classList.toggle('on',j===cur));
+  prog.style.width=((cur+1)/slides.length*100)+'%';
+  document.getElementById('cNow').textContent=String(cur+1).padStart(2,'0');
+}
+function next(){go(cur+1)} function prev(){go(cur-1)}
+let explainOn=true;
+function toggleExplain(){explainOn=!explainOn;document.body.classList.toggle('no-explain',!explainOn);
+  document.getElementById('explainToggle').textContent='💡 Explanations: '+(explainOn?'On':'Off');}
+window.addEventListener('keydown',e=>{
+  const t=e.target.tagName; if(t==='INPUT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();next()}
+  if(e.key==='ArrowLeft'||e.key==='PageUp')prev();
+  if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);
+});
+
+/* ===== 3 · PLACE VALUE ===== */
+const pvIn=document.getElementById('pvIn'),pvCols=document.getElementById('pvCols'),pvNote=document.getElementById('pvNote');
+function renderPV(){
+  let n=Math.max(0,Math.floor(+pvIn.value||0));
+  const s=String(n); const L=s.length;
+  let rows='<div class="row head" style="grid-template-columns:1fr 1fr 1.3fr 1.6fr"><div>Position (n)</div><div>10ⁿ</div><div>Name</div><div>Digit × value</div></div>';
+  const names=['Ones','Tens','Hundreds','Thousands','Ten-thousands','Hundred-thousands','Millions'];
+  let parts=[];
+  for(let i=0;i<L;i++){
+    const pos=L-1-i; const digit=+s[i]; const place=Math.pow(10,pos); const val=digit*place;
+    if(val>0)parts.push(val);
+    rows+='<div class="row" style="grid-template-columns:1fr 1fr 1.3fr 1.6fr"><div><b>'+pos+'</b></div><div class="bn">10'+sup(pos)+'</div><div>'+(names[pos]||'10^'+pos)+'</div><div>'+digit+' × '+place.toLocaleString()+' = <b style="color:var(--blue)">'+val.toLocaleString()+'</b></div></div>';
+  }
+  pvCols.innerHTML=rows;
+  pvNote.innerHTML='Adding the columns: <b>'+(parts.join(' + ')||'0')+' = '+n.toLocaleString()+'</b>. Each position is worth 10× the one to its right — that\u2019s why it\u2019s called <b>base-10</b>.';
+}
+function sup(n){const m={0:'⁰',1:'¹',2:'²',3:'³',4:'⁴',5:'⁵',6:'⁶',7:'⁷',8:'⁸',9:'⁹'};return String(n).split('').map(d=>m[d]).join('')}
+pvIn.addEventListener('input',()=>{markPreset('pvPresets',pvIn.value);renderPV()});
+document.getElementById('pvPresets').addEventListener('click',e=>{if(e.target.dataset.n){pvIn.value=e.target.dataset.n;markPreset('pvPresets',e.target.dataset.n);renderPV()}});
+function markPreset(id,v){[...document.getElementById(id).children].forEach(b=>b.classList.toggle('on',b.dataset.n===String(v)))}
+renderPV();
+
+/* ===== 7 · BINARY -> DECIMAL TOGGLES ===== */
+const bitsEl=document.getElementById('bits');
+let bitState=[1,0,1,1,0,1,1,0]; // 182, MSB first
+const weights=[128,64,32,16,8,4,2,1];
+function renderBits(){
+  bitsEl.innerHTML='';
+  bitState.forEach((b,i)=>{
+    const d=document.createElement('div');d.className='bit'+(b?' on':'');
+    d.innerHTML='<div class="val">'+b+'</div><div class="pw">2'+sup(7-i)+'</div><div class="pv">'+weights[i]+'</div>';
+    d.onclick=()=>{bitState[i]^=1;updateBits()};
+    bitsEl.appendChild(d);
+  });
+}
+function updateBits(){
+  renderBits();
+  const bin=bitState.join('');
+  const dec=bitState.reduce((a,b,i)=>a+b*weights[i],0);
+  document.getElementById('binStr').textContent=bin;
+  document.getElementById('decVal').textContent=dec;
+  const ch=(dec>=32&&dec<=126)?String.fromCharCode(dec):'(non-printable)';
+  document.getElementById('asChar').textContent=ch;
+  const terms=bitState.map((b,i)=>b?weights[i]:null).filter(x=>x!==null);
+  document.getElementById('sumLine').innerHTML= terms.length? 'Sum of the on-bits: <b>'+terms.join(' + ')+' = '+dec+'</b>' : 'All bits off → <b>0</b>';
+}
+updateBits();
+
+/* ===== 8 · DECIMAL -> BINARY ===== */
+const d2bIn=document.getElementById('d2bIn');
+function renderD2B(){
+  let n=Math.max(0,Math.min(255,Math.floor(+d2bIn.value||0)));
+  // divide method
+  let rows='<div class="mh" style="grid-template-columns:1.4fr 1fr 1fr"><div>Division</div><div>Quotient</div><div>Remainder</div></div>';
+  let rem=[],x=n;
+  if(x===0){rows+='<div class="mr" style="grid-template-columns:1.4fr 1fr 1fr"><div>0 ÷ 2</div><div>0</div><div class="rmd">0</div></div>';rem=[0];}
+  while(x>0){const q=Math.floor(x/2),r=x%2;rem.push(r);
+    rows+='<div class="mr" style="grid-template-columns:1.4fr 1fr 1fr"><div>'+x+' ÷ 2</div><div>'+q+'</div><div class="rmd">'+r+'</div></div>';x=q;}
+  document.getElementById('divTbl').innerHTML=rows;
+  const bin=rem.slice().reverse().join('');
+  // powers method (clean)
+  let prows='<div class="mh" style="grid-template-columns:1fr .8fr .8fr 1.5fr"><div>Power</div><div>Value</div><div>Bit</div><div>Remaining</div></div>';
+  let remaining=n;
+  const high=n>0?Math.floor(Math.log2(n)):0;
+  for(let p=high;p>=0;p--){
+    const v=Math.pow(2,p);let bit=0;const before=remaining;let detail;
+    if(v<=remaining){bit=1;remaining-=v;detail=before+' − '+v+' = '+remaining;}
+    else{detail=v+' &gt; '+remaining+' → skip';}
+    prows+='<div class="mr" style="grid-template-columns:1fr .8fr .8fr 1.5fr"><div>2'+sup(p)+'</div><div>'+v+'</div><div class="rmd">'+bit+'</div><div>'+detail+'</div></div>';
+  }
+  document.getElementById('powTbl').innerHTML=prows;
+  document.getElementById('d2bResult').innerHTML=n+' in decimal &nbsp;=&nbsp; <b>'+bin+'</b> in binary';
+}
+d2bIn.addEventListener('input',()=>{markPreset('d2bPresets',d2bIn.value);renderD2B()});
+document.getElementById('d2bPresets').addEventListener('click',e=>{if(e.target.dataset.n){d2bIn.value=e.target.dataset.n;markPreset('d2bPresets',e.target.dataset.n);renderD2B()}});
+renderD2B();
+
+/* ===== 9 · BASE PLAYGROUND ===== */
+const baseIn=document.getElementById('baseIn');
+function renderBases(){
+  let n=Math.max(0,Math.floor(+baseIn.value||0));
+  document.getElementById('bDec').textContent=n.toLocaleString();
+  document.getElementById('bBin').textContent=n.toString(2);
+  document.getElementById('bOct').textContent=n.toString(8);
+  document.getElementById('bHex').textContent=n.toString(16).toUpperCase();
+}
+baseIn.addEventListener('input',()=>{markPreset('basePresets',baseIn.value);renderBases()});
+document.getElementById('basePresets').addEventListener('click',e=>{if(e.target.dataset.n){baseIn.value=e.target.dataset.n;markPreset('basePresets',e.target.dataset.n);renderBases()}});
+renderBases();
+
+/* ===== 10 · RULE TESTER ===== */
+let opMode='add', A=1, B=1;
+const rules={
+  add:(a,b)=>{const s=a+b; return {eq:a+' + '+b+' = '+(s===2?'10':s), exp: s===2?'<b>1 + 1 = 10</b> — write 0, <b>carry 1</b>.':'No carry needed.'};},
+  sub:(a,b)=>{ if(a===0&&b===1)return{eq:'0 − 1 = 1 (borrow)',exp:'Can\u2019t take 1 from 0, so <b>borrow</b> from the next column.'};
+    const d=a-b; return {eq:a+' − '+b+' = '+d, exp:'No borrow needed.'};},
+  mul:(a,b)=>({eq:a+' × '+b+' = '+(a*b), exp:(a*b)===1?'Only <b>1 × 1 = 1</b>.':'Anything × 0 = <b>0</b>.'}),
+  div:(a,b)=>{ if(b===0)return{eq:a+' ÷ 0 = undefined',exp:'<b>Division by zero</b> is undefined.'};
+    return {eq:a+' ÷ '+b+' = '+(a/b), exp: a===0?'Zero divided by anything (non-zero) is <b>0</b>.':'Same number → <b>1</b>.'};}
+};
+function setAB(a,b){A=a;B=b;document.getElementById('bitA').textContent=a;document.getElementById('bitB').textContent=b;
+  document.getElementById('bitA').classList.toggle('on',!!a);document.getElementById('bitB').classList.toggle('on',!!b);renderRule();}
+function renderRule(){const r=rules[opMode](A,B);document.getElementById('ruleEq').textContent=r.eq;document.getElementById('ruleExp').innerHTML=r.exp;}
+document.getElementById('ops').addEventListener('click',e=>{if(e.target.dataset.op){opMode=e.target.dataset.op;
+  [...document.getElementById('ops').children].forEach(b=>b.classList.toggle('on',b.dataset.op===opMode));renderRule();}});
+document.getElementById('bitA').onclick=()=>setAB(A^1,B);
+document.getElementById('bitB').onclick=()=>setAB(A,B^1);
+renderRule();
+
+/* ===== 11 · BINARY ADDITION ===== */
+function runAdd(){
+  let a=Math.max(0,Math.min(255,Math.floor(+document.getElementById('addA').value||0)));
+  let b=Math.max(0,Math.min(255,Math.floor(+document.getElementById('addB').value||0)));
+  const sum=a+b; const width=Math.max(8, sum.toString(2).length);
+  const ab=a.toString(2).padStart(width,'0').split('');
+  const bb=b.toString(2).padStart(width,'0').split('');
+  // compute carries
+  let carry=0, sumBits=[], carries=new Array(width+1).fill(0);
+  for(let i=width-1;i>=0;i--){const t=(+ab[i])+(+bb[i])+carry; sumBits[i]=t%2; carry=t>1?1:0; carries[i]=carry;}
+  const sb=sumBits.join('');
+  // render grid
+  const cells=(arr,cls)=>arr.map(v=>'<div class="cell '+cls+'">'+v+'</div>').join('');
+  const carryCells=carries.slice(0,width).map(v=>'<div class="cell carry'+(v?' lit':'')+'">'+(v?1:'')+'</div>').join('');
+  const sumCells=sumBits.map(v=>'<div class="cell sum lit">'+v+'</div>').join('');
+  document.getElementById('addGrid').innerHTML=
+    '<div class="line"><div class="lab">carry</div><div class="cellrow"><div class="cell empty"></div>'+carryCells+'</div></div>'+
+    '<div class="line"><div class="lab">A = '+a+'</div><div class="cellrow"><div class="cell empty"></div>'+cells(ab,'a')+'</div></div>'+
+    '<div class="line"><div class="lab op">+ B = '+b+'</div><div class="cellrow"><div class="cell empty"></div>'+cells(bb,'b')+'</div></div>'+
+    '<div class="line"><div class="lab">sum</div><div class="cellrow"><div class="cell empty"></div>'+sumCells+'</div></div>';
+  document.getElementById('addPipe').innerHTML=
+    '<div class="pcell"><div class="pl">Decimal input</div><div class="pv">'+a+' + '+b+'</div></div>'+
+    '<div class="pcell"><div class="pl">Binary add</div><div class="pv">'+a.toString(2)+' + '+b.toString(2)+'</div></div>'+
+    '<div class="pcell fin"><div class="pl">Result</div><div class="pv">'+sb+' = '+sum+'</div></div>';
+}
+runAdd();
+
+/* ===== 13 · TEXT ENCODER + CHART ===== */
+const encIn=document.getElementById('encIn');
+function renderEnc(){
+  const t=encIn.value;
+  let rows='<div class="ah"><div>Char</div><div>ASCII</div><div>Binary (8-bit)</div></div>';
+  for(const c of t){const code=c.charCodeAt(0);const label=c===' '?'(space)':c;
+    rows+='<div class="ar"><div class="ch">'+label+'</div><div>'+code+'</div><div class="bn">'+code.toString(2).padStart(8,'0')+'</div></div>';}
+  if(!t)rows+='<div class="ar"><div>—</div><div>—</div><div>type something…</div></div>';
+  document.getElementById('encOut').innerHTML=rows;
+}
+encIn.addEventListener('input',()=>{markPresetT('encPresets',encIn.value);renderEnc()});
+function markPresetT(id,v){[...document.getElementById(id).children].forEach(b=>b.classList.toggle('on',b.dataset.t===v))}
+document.getElementById('encPresets').addEventListener('click',e=>{if(e.target.dataset.t!==undefined&&e.target.dataset.t!==null&&e.target.dataset.t!==''){encIn.value=e.target.dataset.t;markPresetT('encPresets',e.target.dataset.t);renderEnc()}});
+// build ASCII chart 65-90 (A-Z) + a few
+const chart=document.getElementById('asciiChart');
+for(let code=65;code<=90;code++){const c=document.createElement('div');c.className='cc';
+  c.innerHTML='<div class="cn">'+code+'</div><div class="cl">'+String.fromCharCode(code)+'</div>';
+  c.onclick=()=>{encIn.value+=String.fromCharCode(code);renderEnc()};chart.appendChild(c);}
+[48,49,50,51,52,53,54,55,56,57].forEach(code=>{const c=document.createElement('div');c.className='cc';
+  c.innerHTML='<div class="cn">'+code+'</div><div class="cl">'+String.fromCharCode(code)+'</div>';
+  c.onclick=()=>{encIn.value+=String.fromCharCode(code);renderEnc()};chart.appendChild(c);});
+renderEnc();
+</script>
+</body>
+</html>
