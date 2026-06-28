@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitwise Operations · MAC-283</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070f1e; --bg-2:#0b1830; --panel:#0f2138; --panel-2:#13294480;
+    --line:#1d3a5f; --trace:#2e6ad1; --cyan:#38bdf8; --cyan-dim:#1c5e87;
+    --amber:#fbbf24; --amber-deep:#d99413; --copper:#c08a3e;
+    --ink:#e8f0fb; --muted:#8da4c0; --muted-2:#5d7593;
+    --good:#34d399; --bad:#f87171; --violet:#c79cf0;
+    --bit0:#1a2f4d; --bit0-ink:#6f88a8; --bit1:#0e3a52; --bit1-ink:#5fd2f8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #102a4a 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 110%, #0c2138 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; min-height:100vh; overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.16;
+    background-image:linear-gradient(90deg,#18406b 1px,transparent 1px),linear-gradient(#18406b 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 80%);
+  }
+  .stage{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px}
+
+  .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#070f1eee,#070f1ecc 70%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1120px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:.3px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#07101f;background:var(--amber);padding:3px 8px;border-radius:5px;letter-spacing:1px}
+  .brand small{color:var(--muted);font-weight:500;font-family:'Inter';font-size:12.5px;letter-spacing:0}
+  .progress-wrap{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#21456f;cursor:pointer;border:none;transition:.25s;padding:0}
+  .dot:hover{background:var(--cyan-dim)} .dot.active{background:var(--cyan);box-shadow:0 0 0 4px #38bdf833}
+  .counter{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)}
+
+  .deck{padding:30px 0 90px}
+  .slide{display:none;animation:fade .45s ease} .slide.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.1rem,5.2vw,3.7rem);line-height:1.04;letter-spacing:-1px}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(1.5rem,3.6vw,2.3rem);line-height:1.12;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.18rem;margin-bottom:8px;color:var(--ink)}
+  p{color:#cdddf0}
+  .lead{font-size:1.12rem;color:var(--muted);max-width:62ch}
+  .accent{color:var(--amber)} .cyan{color:var(--cyan)} .violet{color:var(--violet)} .good{color:var(--good)}
+  strong{color:#fff;font-weight:600} .mono{font-family:'JetBrains Mono',monospace}
+
+  .card{background:linear-gradient(180deg,var(--panel),#0c1d33);border:1px solid var(--line);border-radius:16px;padding:24px 26px}
+  .grid{display:grid;gap:18px} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:1fr 1fr 1fr} .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:780px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .note{border-left:3px solid var(--amber);background:linear-gradient(90deg,#2a200733,transparent);padding:12px 16px;border-radius:0 10px 10px 0;color:#e9d9b3}
+  .note.cyan{border-color:var(--cyan);background:linear-gradient(90deg,#06283833,transparent);color:#bfe6f7}
+  .note.violet{border-color:var(--violet);background:linear-gradient(90deg,#2a1d4333,transparent);color:#dcc8f5}
+  .note.good{border-color:var(--good);background:linear-gradient(90deg,#06302433,transparent);color:#bdeedd}
+  .pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;background:#10314e;border:1px solid var(--line);color:var(--cyan);padding:3px 9px;border-radius:20px}
+
+  /* bit cells */
+  .reg{display:flex;flex-direction:column;gap:10px;align-items:center;margin:6px 0}
+  .bitrow{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .rlabel{width:96px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)}
+  .rlabel b{color:var(--ink)}
+  .bits{display:flex;gap:6px}
+  .bit{width:42px;height:48px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:20px;background:var(--bit0);color:var(--bit0-ink);border:1px solid #21436a;transition:background .3s,color .3s,transform .25s,box-shadow .3s;user-select:none}
+  .bit.one{background:var(--bit1);color:var(--bit1-ink);border-color:#1f6c92;box-shadow:0 0 14px #38bdf833}
+  .bit.click{cursor:pointer} .bit.click:hover{transform:translateY(-2px)}
+  .bit.flip{animation:flip .5s ease}
+  @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+  /* operator result tints */
+  .bit.op-and.one{background:#0e3a52;color:var(--cyan);border-color:#1f6c92;box-shadow:0 0 14px #38bdf844}
+  .bit.op-or.one{background:#3a2c07;color:var(--amber);border-color:#7a5a12;box-shadow:0 0 14px #fbbf2444}
+  .bit.op-xor.one{background:#2a1545;color:var(--violet);border-color:#6b3aa0;box-shadow:0 0 14px #a855f744}
+  .bit.op-not.one{background:#0c3327;color:var(--good);border-color:#1f7a5a;box-shadow:0 0 14px #34d39944}
+  .opsym{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;width:96px;text-align:right;padding-right:6px}
+  .opsym.c-and{color:var(--cyan)} .opsym.c-or{color:var(--amber)} .opsym.c-xor{color:var(--violet)} .opsym.c-not{color:var(--good)}
+  .ruleline{width:100%;max-width:430px;height:1px;background:var(--line);margin:2px auto}
+
+  /* truth table */
+  .truth{border-collapse:collapse;font-family:'JetBrains Mono',monospace;margin:0 auto}
+  .truth th,.truth td{border:1px solid var(--line);padding:8px 16px;text-align:center;font-size:15px}
+  .truth th{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:#0c1f36}
+  .truth td.res{font-weight:700}
+  .truth td.r1{color:var(--good)} .truth td.r0{color:var(--muted-2)}
+
+  .btn{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;background:var(--cyan);color:#06101f;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;transition:.18s}
+  .btn:hover{background:#5fcbfb;transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--cyan-dim)} .btn.ghost:hover{background:#0e2740;color:#7dd6fb}
+  .btn.amber{background:var(--amber);color:#1a1200} .btn.amber:hover{background:#ffcb4a}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .opbtn{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;background:#0a1c30;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:10px 16px;cursor:pointer;transition:.18s}
+  .opbtn:hover{border-color:var(--cyan-dim);color:var(--ink)}
+  .opbtn.active{background:var(--cyan);color:#06101f;border-color:var(--cyan)}
+  input[type=number]{font-family:'JetBrains Mono',monospace;font-size:18px;background:#0a1c30;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;width:110px;outline:none;transition:.18s}
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #38bdf833}
+  label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+  .live-out{font-family:'Space Grotesk';font-weight:600;font-size:1.25rem;text-align:center;margin-top:16px}
+
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:34px;gap:12px}
+  .kbd-hint{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted-2)}
+  kbd{background:#10243c;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)}
+
+  .prob{background:linear-gradient(180deg,var(--panel),#0b1c31);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .prob-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .prob-q{font-family:'JetBrains Mono';font-weight:700;font-size:1.15rem;color:var(--ink)}
+  .prob-q b{color:var(--amber)}
+  .tag{font-family:'JetBrains Mono';font-size:10.5px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .prob-in{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .prob-in input{width:120px;font-size:16px}
+  .feedback{font-family:'JetBrains Mono';font-size:13px;min-height:18px}
+  .feedback.ok{color:var(--good)} .feedback.no{color:var(--bad)}
+  .sol{display:none;border-top:1px dashed var(--line);padding-top:12px;margin-top:2px}
+  .sol.show{display:block;animation:fade .35s ease}
+  .sol-line{font-family:'JetBrains Mono';font-size:13px;color:var(--muted);padding:2px 0}
+  .sol-line b{color:var(--good)}
+
+  .scorebar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:22px}
+  .scorebar .big{font-family:'Space Grotesk';font-weight:700;font-size:1.6rem;color:var(--cyan)}
+
+  .cheat td,.cheat th{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}
+  .cheat th{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .cheat td:first-child{font-family:'JetBrains Mono';color:var(--amber);font-weight:700;white-space:nowrap}
+  .cheat td.mid{font-family:'JetBrains Mono';color:var(--cyan)}
+  table.wide{width:100%;border-collapse:collapse}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:9px}
+  ul.clean li{padding-left:24px;position:relative;color:#cdddf0}
+  ul.clean li::before{content:"▸";position:absolute;left:2px;color:var(--cyan)}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  @media(max-width:560px){.bit{width:34px;height:40px;font-size:16px}.rlabel,.opsym{width:64px;font-size:11px}.topbar .counter{display:none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="chip">MAC-283</span> Computer Architecture <small>· Khalid Kassou · LaGuardia CC</small></div>
+    <div class="progress-wrap"><div class="dots" id="dots"></div><span class="counter" id="counter"></span></div>
+  </div>
+</div>
+
+<div class="stage"><div class="deck">
+
+<!-- 1 TITLE -->
+<section class="slide active" data-title="Title">
+  <div class="eyebrow">Number Systems · Lecture 06</div>
+  <h1>Bitwise <span class="accent">operations</span></h1>
+  <p class="lead" style="margin-top:18px">Ordinary math treats a number as a whole. <strong>Bitwise</strong> operations reach inside and work on <span class="cyan">each individual bit</span> — the closest you get to the hardware without writing assembly. They're how a CPU flips flags, packs data, and runs fast. This lecture covers the four logic operators, the two shifts, and the everyday tricks built from them.</p>
+
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card"><div class="pill cyan">Logic</div><h3 style="margin-top:12px">AND · OR · XOR · NOT</h3><p style="font-size:14px;color:var(--muted)">Combine two bit patterns, bit by bit.</p></div>
+    <div class="card" style="border-color:var(--amber-deep)"><div class="pill" style="color:var(--amber);border-color:var(--amber-deep)">Shifts</div><h3 style="margin-top:12px">&lt;&lt; and &gt;&gt;</h3><p style="font-size:14px;color:var(--muted)">Slide bits left or right — instant ×2 and ÷2.</p></div>
+    <div class="card" style="border-color:#6b3aa0"><div class="pill" style="color:var(--violet);border-color:#6b3aa0">Patterns</div><h3 style="margin-top:12px">Mask · set · clear · toggle</h3><p style="font-size:14px;color:var(--muted)">The idioms real code uses constantly.</p></div>
+  </div>
+  <div class="note cyan" style="margin-top:26px">Move with <kbd>→</kbd> / <kbd>←</kbd>, the dots above, or the buttons below. Examples use 8-bit bytes.</div>
+</section>
+
+<!-- 2 WHAT & WHY -->
+<section class="slide" data-title="Why bother">
+  <div class="eyebrow">Motivation</div>
+  <h2>Why work at the level of bits?</h2>
+  <p class="lead">Because a single byte can hold <strong>eight independent yes/no facts</strong> at once, and bitwise operators let you read or change any one of them in a single, blazing-fast machine instruction.</p>
+
+  <div class="grid g2" style="margin-top:24px">
+    <div class="card">
+      <h3 class="cyan">Where you meet them</h3>
+      <ul class="clean" style="margin-top:6px">
+        <li><strong>Flags & permissions</strong> — Unix file modes (rwx), status registers</li>
+        <li><strong>Masking</strong> — pull one field out of a packed value</li>
+        <li><strong>Graphics</strong> — split a color into R, G, B, A channels</li>
+        <li><strong>Networking</strong> — subnet masks on IP addresses</li>
+        <li><strong>Crypto & hashing</strong> — XOR is everywhere</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:var(--amber-deep)">
+      <h3 class="accent">Why it’s fast</h3>
+      <p style="font-size:15px">Each operator maps straight to a <strong>logic gate</strong> the CPU already has. No loops, no branches — the hardware does all 8 (or 32, or 64) bits at the same time, in one tick of the clock. A shift can replace a whole multiply.</p>
+      <div class="note cyan" style="margin-top:14px">This is the bridge from binary numbers to the assembly instructions you'll write next unit.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 AND -->
+<section class="slide" data-title="AND">
+  <div class="eyebrow">Operator · AND &nbsp;<span style="color:var(--cyan)">&amp;</span></div>
+  <h2>AND — <span class="cyan">1 only if both are 1</span></h2>
+  <p class="lead">Compare the two patterns column by column. A result bit is 1 only when <em>both</em> input bits are 1 — think of it as a strict gatekeeper.</p>
+
+  <div class="grid g2" style="margin-top:22px;align-items:start">
+    <div class="card">
+      <h3>Truth table</h3>
+      <table class="truth" style="margin-top:10px">
+        <tr><th>A</th><th>B</th><th>A &amp; B</th></tr>
+        <tr><td>0</td><td>0</td><td class="res r0">0</td></tr>
+        <tr><td>0</td><td>1</td><td class="res r0">0</td></tr>
+        <tr><td>1</td><td>0</td><td class="res r0">0</td></tr>
+        <tr><td>1</td><td>1</td><td class="res r1">1</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Example: <span class="mono">12 &amp; 10 = 8</span></h3>
+      <div class="reg" id="and-ex" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="note cyan" style="margin-top:20px"><strong>Used for masking:</strong> AND with a mask of 1s keeps those bits and forces every other bit to 0 — like a stencil.</div>
+</section>
+
+<!-- 4 OR -->
+<section class="slide" data-title="OR">
+  <div class="eyebrow">Operator · OR &nbsp;<span style="color:var(--amber)">|</span></div>
+  <h2>OR — <span class="accent">1 if either is 1</span></h2>
+  <p class="lead">A result bit is 1 when <em>at least one</em> input bit is 1. It only stays 0 when both are 0 — the generous opposite of AND.</p>
+
+  <div class="grid g2" style="margin-top:22px;align-items:start">
+    <div class="card">
+      <h3>Truth table</h3>
+      <table class="truth" style="margin-top:10px">
+        <tr><th>A</th><th>B</th><th>A | B</th></tr>
+        <tr><td>0</td><td>0</td><td class="res r0">0</td></tr>
+        <tr><td>0</td><td>1</td><td class="res r1">1</td></tr>
+        <tr><td>1</td><td>0</td><td class="res r1">1</td></tr>
+        <tr><td>1</td><td>1</td><td class="res r1">1</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Example: <span class="mono">12 | 10 = 14</span></h3>
+      <div class="reg" id="or-ex" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="note" style="margin-top:20px"><strong>Used for setting bits:</strong> OR with a mask <em>turns on</em> exactly the bits the mask has set, leaving the rest untouched.</div>
+</section>
+
+<!-- 5 XOR -->
+<section class="slide" data-title="XOR">
+  <div class="eyebrow">Operator · XOR &nbsp;<span style="color:var(--violet)">^</span></div>
+  <h2>XOR — <span class="violet">1 if the bits differ</span></h2>
+  <p class="lead">“Exclusive OR”: a result bit is 1 only when the two inputs are <em>different</em>. Same bits give 0. This little rule has surprising powers.</p>
+
+  <div class="grid g2" style="margin-top:22px;align-items:start">
+    <div class="card">
+      <h3>Truth table</h3>
+      <table class="truth" style="margin-top:10px">
+        <tr><th>A</th><th>B</th><th>A ^ B</th></tr>
+        <tr><td>0</td><td>0</td><td class="res r0">0</td></tr>
+        <tr><td>0</td><td>1</td><td class="res r1">1</td></tr>
+        <tr><td>1</td><td>0</td><td class="res r1">1</td></tr>
+        <tr><td>1</td><td>1</td><td class="res r0">0</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Example: <span class="mono">12 ^ 10 = 6</span></h3>
+      <div class="reg" id="xor-ex" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="note violet"><strong>Toggling:</strong> XOR with a 1 flips a bit; XOR with a 0 leaves it. So <span class="mono">x ^ x = 0</span> always.</div>
+    <div class="note violet"><strong>Swap with no temp:</strong> <span class="mono">a^=b; b^=a; a^=b;</span> exchanges two values using no extra storage.</div>
+  </div>
+</section>
+
+<!-- 6 NOT -->
+<section class="slide" data-title="NOT">
+  <div class="eyebrow">Operator · NOT &nbsp;<span style="color:var(--good)">~</span></div>
+  <h2>NOT — <span class="good">flip every bit</span></h2>
+  <p class="lead">The only one-input operator. It inverts all bits at once: every 0 becomes 1 and every 1 becomes 0. (You met this before — it's the <em>one's complement</em>.)</p>
+
+  <div class="grid g2" style="margin-top:22px;align-items:start">
+    <div class="card">
+      <h3>Truth table</h3>
+      <table class="truth" style="margin-top:10px">
+        <tr><th>A</th><th>~A</th></tr>
+        <tr><td>0</td><td class="res r1">1</td></tr>
+        <tr><td>1</td><td class="res r0">0</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Example: <span class="mono">~12</span> (one byte)</h3>
+      <div class="reg" id="not-ex" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="note good" style="margin-top:20px"><strong>Watch the sign.</strong> As an unsigned byte, <span class="mono">~12 = 243</span>. As a signed (two's complement) byte it's <span class="mono">−13</span> — because flipping all bits gives <span class="mono">~n = −n − 1</span>. Same bits, two readings.</div>
+</section>
+
+<!-- 7 PLAYGROUND -->
+<section class="slide" data-title="Playground">
+  <div class="eyebrow">Interactive · try them all</div>
+  <h2>Bitwise <span class="cyan">playground</span></h2>
+  <p class="lead">Set two bytes, pick an operator, and watch the result form bit by bit. NOT uses only A.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
+      <label class="fld">A (0–255)<input type="number" id="pg-a" min="0" max="255" value="12"></label>
+      <label class="fld">B (0–255)<input type="number" id="pg-b" min="0" max="255" value="10"></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="opbtn active" data-op="AND">A &amp; B</button>
+        <button class="opbtn" data-op="OR">A | B</button>
+        <button class="opbtn" data-op="XOR">A ^ B</button>
+        <button class="opbtn" data-op="NOT">~A</button>
+      </div>
+    </div>
+    <div class="reg" id="pg-rows"></div>
+    <div class="live-out" id="pg-out"></div>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:2px" id="pg-rule"></p>
+  </div>
+</section>
+
+<!-- 8 SHIFTS -->
+<section class="slide" data-title="Shifts">
+  <div class="eyebrow">Moving bits</div>
+  <h2>Shifts: <span class="cyan">&lt;&lt;</span> and <span class="cyan">&gt;&gt;</span></h2>
+  <p class="lead">A shift slides every bit a fixed number of places. Bits that fall off the end are lost; zeros fill in behind. The magic is what it does to the <em>value</em>.</p>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card">
+      <h3 class="cyan">Left shift &nbsp;<span class="mono">&lt;&lt; n</span></h3>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:10px">Slide left, append 0s. Each step <strong>doubles</strong> the number.</p>
+      <div class="reg" id="ls-ex"></div>
+      <p style="text-align:center;margin-top:8px" class="mono">3 &lt;&lt; 2 = 12 &nbsp;=&nbsp; 3 × 2² <span class="accent">(×4)</span></p>
+    </div>
+    <div class="card">
+      <h3 class="cyan">Right shift &nbsp;<span class="mono">&gt;&gt; n</span></h3>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:10px">Slide right, drop the low bits. Each step <strong>halves</strong> (rounding down).</p>
+      <div class="reg" id="rs-ex"></div>
+      <p style="text-align:center;margin-top:8px" class="mono">12 &gt;&gt; 2 = 3 &nbsp;=&nbsp; 12 ÷ 2² <span class="accent">(÷4)</span></p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:18px"><strong>So <span class="mono">x &lt;&lt; n</span> = x × 2ⁿ and <span class="mono">x &gt;&gt; n</span> = ⌊x ÷ 2ⁿ⌋.</strong> Shifts are how a CPU multiplies and divides by powers of two for free. (Right-shifting a <em>signed</em> negative keeps the sign bit — that's an “arithmetic” shift.)</div>
+</section>
+
+<!-- 9 SHIFT VISUALIZER -->
+<section class="slide" data-title="Shift Tool">
+  <div class="eyebrow">Interactive tool</div>
+  <h2>Shift <span class="cyan">visualizer</span></h2>
+  <p class="lead">Pick a byte, a direction, and how far to shift. See the before/after pattern and the arithmetic it performs.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
+      <label class="fld">VALUE (0–255)<input type="number" id="sh-v" min="0" max="255" value="3"></label>
+      <label class="fld">SHIFT BY<input type="number" id="sh-n" min="0" max="8" value="2"></label>
+      <div style="display:flex;gap:8px">
+        <button class="opbtn active" data-dir="L">&lt;&lt; left</button>
+        <button class="opbtn" data-dir="R">&gt;&gt; right</button>
+      </div>
+    </div>
+    <div class="reg" id="sh-rows"></div>
+    <div class="live-out" id="sh-out"></div>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:2px" id="sh-note"></p>
+  </div>
+</section>
+
+<!-- 10 PATTERNS -->
+<section class="slide" data-title="Patterns">
+  <div class="eyebrow">The everyday idioms</div>
+  <h2>Building blocks you'll reuse forever</h2>
+  <p class="lead">Almost all bit manipulation comes down to a handful of one-liners. Here <span class="mono">i</span> is the bit position (0 = rightmost), and <span class="mono">1 &lt;&lt; i</span> builds a mask with a single 1 in that spot.</p>
+
+  <div class="card" style="margin-top:20px;padding:8px 6px">
+    <table class="wide cheat">
+      <thead><tr><th>Goal</th><th>Idiom</th><th>How it works</th></tr></thead>
+      <tbody>
+        <tr><td>Check bit i</td><td class="mid">(n &gt;&gt; i) &amp; 1</td><td style="color:var(--muted)">Slide bit i to the end, AND off the rest → 0 or 1</td></tr>
+        <tr><td>Set bit i</td><td class="mid">n | (1 &lt;&lt; i)</td><td style="color:var(--muted)">OR forces that one bit on, others unchanged</td></tr>
+        <tr><td>Clear bit i</td><td class="mid">n &amp; ~(1 &lt;&lt; i)</td><td style="color:var(--muted)">AND with a mask that's all 1s except bit i</td></tr>
+        <tr><td>Toggle bit i</td><td class="mid">n ^ (1 &lt;&lt; i)</td><td style="color:var(--muted)">XOR flips just that bit</td></tr>
+        <tr><td>Is n odd?</td><td class="mid">n &amp; 1</td><td style="color:var(--muted)">Tests the lowest bit → 1 means odd</td></tr>
+        <tr><td>×2ᵏ / ÷2ᵏ</td><td class="mid">n &lt;&lt; k &nbsp;/&nbsp; n &gt;&gt; k</td><td style="color:var(--muted)">Shift instead of multiply/divide</td></tr>
+        <tr><td>Low byte</td><td class="mid">n &amp; 0xFF</td><td style="color:var(--muted)">Mask keeps the bottom 8 bits</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note cyan" style="margin-top:18px">Read these aloud as English: “OR the mask <em>on</em>”, “AND the mask <em>to keep</em>”, “XOR <em>to flip</em>”. That phrasing is the whole game.</div>
+</section>
+
+<!-- 11 PRACTICE -->
+<section class="slide" data-title="Practice">
+  <div class="eyebrow">Your turn</div>
+  <h2>10 practice problems</h2>
+  <p class="lead">Evaluate each expression and enter the <strong>decimal</strong> result. Hit <em>Check</em>, or reveal the bit-by-bit working. All operands fit in a byte.</p>
+
+  <div class="scorebar">
+    <div><div class="big" id="score">0 / 10</div><div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono'">CORRECT</div></div>
+    <button class="btn ghost" id="reveal-all">Reveal all solutions</button>
+    <button class="btn ghost" id="reset-prac">Reset</button>
+    <div style="font-size:13px;color:var(--muted);margin-left:auto">Tip: line the bytes up in columns.</div>
+  </div>
+  <div class="grid g2" id="prac-grid"></div>
+</section>
+
+<!-- 12 CHEAT SHEET -->
+<section class="slide" data-title="Summary">
+  <div class="eyebrow">Take it with you</div>
+  <h2>One-page cheat sheet</h2>
+
+  <div class="grid g4" style="margin-top:20px">
+    <div class="card"><h3 class="cyan">&amp; AND</h3><p style="font-size:13.5px;color:var(--muted)">1 if <strong>both</strong> 1. Masks / keeps bits.</p></div>
+    <div class="card"><h3 class="accent">| OR</h3><p style="font-size:13.5px;color:var(--muted)">1 if <strong>either</strong> 1. Sets bits on.</p></div>
+    <div class="card"><h3 class="violet">^ XOR</h3><p style="font-size:13.5px;color:var(--muted)">1 if <strong>different</strong>. Toggles bits.</p></div>
+    <div class="card"><h3 class="good">~ NOT</h3><p style="font-size:13.5px;color:var(--muted)">Flips <strong>all</strong> bits. ~n = −n−1.</p></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card">
+      <h3 class="cyan">Shifts</h3>
+      <ul class="clean" style="margin-top:6px">
+        <li><span class="mono">x &lt;&lt; n</span> = x × 2ⁿ (slide left, add 0s)</li>
+        <li><span class="mono">x &gt;&gt; n</span> = ⌊x ÷ 2ⁿ⌋ (slide right, drop low bits)</li>
+        <li>Bits pushed off the end are gone</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:#6b3aa0">
+      <h3 class="violet">Single-bit toolkit (bit i)</h3>
+      <ul class="clean" style="margin-top:6px">
+        <li>Check: <span class="mono">(n &gt;&gt; i) &amp; 1</span></li>
+        <li>Set: <span class="mono">n | (1 &lt;&lt; i)</span> · Clear: <span class="mono">n &amp; ~(1 &lt;&lt; i)</span></li>
+        <li>Toggle: <span class="mono">n ^ (1 &lt;&lt; i)</span> · Odd?: <span class="mono">n &amp; 1</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:18px;border-color:var(--amber)"><strong>Don’t confuse them with logic.</strong> <span class="mono">&amp;</span> and <span class="mono">|</span> work on every bit; the logical <span class="mono">&amp;&amp;</span> and <span class="mono">||</span> work on whole true/false values. Mixing them up is a classic bug.</div>
+  <p style="text-align:center;color:var(--muted);margin-top:26px;font-family:'JetBrains Mono';font-size:13px">MAC-283 · Computer Architecture & Assembler Language · Prof. Khalid Kassou</p>
+</section>
+
+<div class="nav">
+  <button class="btn ghost" id="prev">← Previous</button>
+  <span class="kbd-hint">Navigate with <kbd>←</kbd> <kbd>→</kbd></span>
+  <button class="btn" id="next">Next →</button>
+</div>
+
+</div></div>
+
+<script>
+/* ---------- helpers ---------- */
+const b8 = n => ((n%256)+256)%256;
+const bin8 = n => b8(n).toString(2).padStart(8,'0');
+
+function makeBit(ch,opts={}){
+  const d=document.createElement('div');
+  d.className='bit'+(ch==='1'?' one':'')+(opts.tint?(' '+opts.tint):'')+(opts.click?' click':'');
+  if(opts.flip) d.classList.add('flip');
+  d.textContent=ch;
+  return d;
+}
+/* a labelled row: leftLabel (HTML) + 8 bit cells */
+function bitRow(labelHTML,bitStr,opts={}){
+  const row=document.createElement('div'); row.className='bitrow';
+  const lab=document.createElement('div'); lab.className=opts.symbol?('opsym '+(opts.symClass||'')):'rlabel'; lab.innerHTML=labelHTML; row.appendChild(lab);
+  const bits=document.createElement('div'); bits.className='bits';
+  [...bitStr].forEach((c,i)=>bits.appendChild(makeBit(c,{tint:opts.tint,click:opts.click,flip:opts.flip})));
+  row.appendChild(bits);
+  return row;
+}
+function ruleLine(){const d=document.createElement('div');d.className='ruleline';return d;}
+
+/* build a 3-row op illustration (A, op B, = result) into a container */
+function renderOp(container,a,b,op){
+  container.innerHTML='';
+  const sym={AND:'&',OR:'|',XOR:'^',NOT:'~'}[op];
+  const symClass={AND:'c-and',OR:'c-or',XOR:'c-xor',NOT:'c-not'}[op];
+  const tint={AND:'op-and',OR:'op-or',XOR:'op-xor',NOT:'op-not'}[op];
+  let res;
+  if(op==='AND')res=a&b; else if(op==='OR')res=a|b; else if(op==='XOR')res=a^b; else res=b8(~a);
+  container.appendChild(bitRow('A = <b>'+a+'</b>',bin8(a)));
+  if(op==='NOT'){
+    container.appendChild(ruleLine());
+    container.appendChild(bitRow(sym,bin8(res),{symbol:true,symClass:symClass,tint:tint}));
+  } else {
+    container.appendChild(bitRow(sym+' &nbsp;<b style="color:var(--ink)">'+b+'</b>',bin8(b),{symbol:true,symClass:symClass}));
+    container.appendChild(ruleLine());
+    container.appendChild(bitRow('= <b>'+res+'</b>',bin8(res),{tint:tint}));
+  }
+  return res;
+}
+
+/* ---------- operator slide examples ---------- */
+renderOp(document.getElementById('and-ex'),12,10,'AND');
+renderOp(document.getElementById('or-ex'),12,10,'OR');
+renderOp(document.getElementById('xor-ex'),12,10,'XOR');
+renderOp(document.getElementById('not-ex'),12,0,'NOT');
+
+/* ---------- shift slide examples ---------- */
+function renderShift(container,v,n,dir){
+  container.innerHTML='';
+  const before=bin8(v);
+  const res = dir==='L' ? b8(v<<n) : (v>>n);
+  const after=bin8(res);
+  container.appendChild(bitRow('before <b>'+v+'</b>',before));
+  container.appendChild(bitRow((dir==='L'?'&lt;&lt; ':'&gt;&gt; ')+n,after,{symbol:true,symClass:'c-and',tint:'op-and'}));
+  return res;
+}
+renderShift(document.getElementById('ls-ex'),3,2,'L');
+renderShift(document.getElementById('rs-ex'),12,2,'R');
+
+/* ---------- Playground ---------- */
+(function(){
+  const aI=document.getElementById('pg-a'), bI=document.getElementById('pg-b');
+  const rows=document.getElementById('pg-rows'), out=document.getElementById('pg-out'), rule=document.getElementById('pg-rule');
+  let op='AND';
+  const rules={AND:'1 only where both A and B are 1',OR:'1 where A or B (or both) is 1',XOR:'1 where A and B differ',NOT:'every bit of A flipped'};
+  function run(){
+    let a=b8(parseInt(aI.value)||0), b=b8(parseInt(bI.value)||0);
+    const res=renderOp(rows,a,b,op);
+    let extra='';
+    if(op==='NOT') extra=' &nbsp;<span style="color:var(--muted);font-size:1rem">(signed: '+(~a)+')</span>';
+    out.innerHTML = (op==='NOT'? '~'+a : a+' '+({AND:'&',OR:'|',XOR:'^'}[op])+' '+b) + ' = <span class="accent mono">'+res+'</span>'+extra;
+    rule.textContent=rules[op];
+  }
+  document.querySelectorAll('.opbtn[data-op]').forEach(btn=>btn.addEventListener('click',()=>{
+    op=btn.dataset.op;
+    document.querySelectorAll('.opbtn[data-op]').forEach(b=>b.classList.toggle('active',b===btn));
+    run();
+  }));
+  aI.addEventListener('input',run); bI.addEventListener('input',run);
+  run();
+})();
+
+/* ---------- Shift visualizer ---------- */
+(function(){
+  const vI=document.getElementById('sh-v'), nI=document.getElementById('sh-n');
+  const rows=document.getElementById('sh-rows'), out=document.getElementById('sh-out'), note=document.getElementById('sh-note');
+  let dir='L';
+  function run(){
+    let v=b8(parseInt(vI.value)||0), n=Math.max(0,Math.min(8,parseInt(nI.value)||0));
+    const trueVal = dir==='L' ? (v<<n) : (v>>n);
+    const res = dir==='L' ? b8(trueVal) : trueVal;
+    renderShift(rows,v,n,dir);
+    const sym = dir==='L'?'&lt;&lt;':'&gt;&gt;';
+    out.innerHTML = v+' '+sym+' '+n+' = <span class="accent mono">'+res+'</span>';
+    if(dir==='L'){
+      if(trueVal>255) note.innerHTML='= '+v+' × 2<sup>'+n+'</sup> = '+trueVal+', but bits above bit 7 overflowed — byte result is '+res;
+      else note.innerHTML='= '+v+' × 2<sup>'+n+'</sup> = '+v+' × '+(2**n)+' = '+res;
+    } else {
+      note.innerHTML='= ⌊'+v+' ÷ 2<sup>'+n+'</sup>⌋ = ⌊'+v+' ÷ '+(2**n)+'⌋ = '+res;
+    }
+  }
+  document.querySelectorAll('.opbtn[data-dir]').forEach(btn=>btn.addEventListener('click',()=>{
+    dir=btn.dataset.dir;
+    document.querySelectorAll('.opbtn[data-dir]').forEach(b=>b.classList.toggle('active',b===btn));
+    run();
+  }));
+  vI.addEventListener('input',run); nI.addEventListener('input',run);
+  run();
+})();
+
+/* ---------- Practice ---------- */
+const PROBLEMS=[
+  {a:12,b:10,op:'&'},
+  {a:12,b:10,op:'|'},
+  {a:12,b:10,op:'^'},
+  {a:6, b:3, op:'&'},
+  {a:5, b:2, op:'|'},
+  {a:7, b:7, op:'^'},
+  {a:3, n:2, op:'<<'},
+  {a:40,n:3, op:'>>'},
+  {a:1, n:5, op:'<<'},
+  {a:13,b:1, op:'&'}
+];
+function evalP(p){
+  switch(p.op){
+    case '&':return p.a&p.b; case '|':return p.a|p.b; case '^':return p.a^p.b;
+    case '<<':return p.a<<p.n; case '>>':return p.a>>p.n;
+  }
+}
+function exprText(p){ return p.op==='<<'||p.op==='>>' ? `${p.a} ${p.op} ${p.n}` : `${p.a} ${p.op} ${p.b}`; }
+function opName(o){return {'&':'AND','|':'OR','^':'XOR','<<':'left shift','>>':'right shift'}[o];}
+function genSolution(p){
+  const ans=evalP(p);
+  if(p.op==='<<'||p.op==='>>'){
+    const dirL=p.op==='<<';
+    return `<div class="sol-line">${bin8(p.a)}  (${p.a})</div>
+            <div class="sol-line">${p.op} ${p.n}  ${dirL?'→ slide left, add zeros':'→ slide right, drop low bits'}</div>
+            <div class="sol-line">${bin8(ans)}  = <b>${ans}</b>  (${p.a} ${dirL?'×':'÷'} 2^${p.n})</div>`;
+  }
+  return `<div class="sol-line">${bin8(p.a)}  (${p.a})</div>
+          <div class="sol-line">${p.op} ${bin8(p.b)}  (${p.b})   ${opName(p.op)}</div>
+          <div class="sol-line">= ${bin8(ans)}  = <b>${ans}</b></div>`;
+}
+const solved=new Array(10).fill(false);
+function buildProblem(p,idx){
+  const ans=evalP(p);
+  const card=document.createElement('div'); card.className='prob';
+  card.innerHTML=`
+    <div class="prob-head">
+      <div class="prob-q">${idx+1}.&nbsp; <b>${exprText(p)}</b> = ?</div>
+      <span class="tag">${opName(p.op)}</span>
+    </div>
+    <div class="prob-in">
+      <input type="number" placeholder="decimal">
+      <button class="btn check">Check</button>
+      <button class="btn ghost showbtn">Show steps</button>
+    </div>
+    <div class="feedback"></div>
+    <div class="sol">${genSolution(p)}</div>`;
+  const inp=card.querySelector('input'), fb=card.querySelector('.feedback'), sol=card.querySelector('.sol');
+  card.querySelector('.check').addEventListener('click',()=>{
+    const raw=inp.value.trim();
+    if(raw===''){ fb.className='feedback no'; fb.textContent='Enter a number.'; return; }
+    if(parseInt(raw)===ans){
+      fb.className='feedback ok'; fb.textContent='✓ Correct!';
+      if(!solved[idx]){solved[idx]=true;updateScore();}
+    } else { fb.className='feedback no'; fb.textContent='✕ Not quite — try the steps.'; }
+  });
+  card.querySelector('.showbtn').addEventListener('click',()=>sol.classList.toggle('show'));
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')card.querySelector('.check').click();});
+  return card;
+}
+(function(){ const g=document.getElementById('prac-grid'); PROBLEMS.forEach((p,i)=>g.appendChild(buildProblem(p,i))); })();
+function updateScore(){ document.getElementById('score').textContent=solved.filter(Boolean).length+' / 10'; }
+document.getElementById('reveal-all').addEventListener('click',()=>document.querySelectorAll('.sol').forEach(s=>s.classList.add('show')));
+document.getElementById('reset-prac').addEventListener('click',()=>{
+  document.querySelectorAll('.prob input').forEach(i=>i.value='');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.sol').forEach(s=>s.classList.remove('show'));
+  for(let i=0;i<solved.length;i++)solved[i]=false; updateScore();
+});
+
+/* ---------- navigation ---------- */
+const slides=[...document.querySelectorAll('.slide')];
+const dotsWrap=document.getElementById('dots'), counter=document.getElementById('counter');
+let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot'+(i===0?' active':'');b.title=s.dataset.title;b.addEventListener('click',()=>goto(i));dotsWrap.appendChild(b);});
+const dots=[...dotsWrap.children];
+function goto(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  dots.forEach((d,k)=>d.classList.toggle('active',k===cur));
+  counter.textContent=String(cur+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('next').addEventListener('click',()=>goto(cur+1));
+document.getElementById('prev').addEventListener('click',()=>goto(cur-1));
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return; if(e.key==='ArrowRight')goto(cur+1); if(e.key==='ArrowLeft')goto(cur-1); });
+goto(0);
+</script>
+</body>
+</html>
