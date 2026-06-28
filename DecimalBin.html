@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binary Fractions · MAC-283</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070f1e; --bg-2:#0b1830; --panel:#0f2138; --panel-2:#13294480;
+    --line:#1d3a5f; --trace:#2e6ad1; --cyan:#38bdf8; --cyan-dim:#1c5e87;
+    --amber:#fbbf24; --amber-deep:#d99413; --copper:#c08a3e;
+    --ink:#e8f0fb; --muted:#8da4c0; --muted-2:#5d7593;
+    --good:#34d399; --bad:#f87171;
+    --bit0:#1a2f4d; --bit0-ink:#6f88a8; --bit1:#0e3a52; --bit1-ink:#5fd2f8;
+    --frac:#1e1538; --frac1:#3a1d5e; --frac-ink:#c79cf0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #102a4a 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 110%, #0c2138 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; min-height:100vh; overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.16;
+    background-image:linear-gradient(90deg,#18406b 1px,transparent 1px),linear-gradient(#18406b 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 80%);
+  }
+  .stage{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px}
+
+  .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#070f1eee,#070f1ecc 70%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1120px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:.3px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#07101f;background:var(--amber);padding:3px 8px;border-radius:5px;letter-spacing:1px}
+  .brand small{color:var(--muted);font-weight:500;font-family:'Inter';font-size:12.5px;letter-spacing:0}
+  .progress-wrap{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#21456f;cursor:pointer;border:none;transition:.25s;padding:0}
+  .dot:hover{background:var(--cyan-dim)} .dot.active{background:var(--cyan);box-shadow:0 0 0 4px #38bdf833}
+  .counter{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)}
+
+  .deck{padding:30px 0 90px}
+  .slide{display:none;animation:fade .45s ease} .slide.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.1rem,5.2vw,3.7rem);line-height:1.04;letter-spacing:-1px}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(1.5rem,3.6vw,2.3rem);line-height:1.12;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.18rem;margin-bottom:8px;color:var(--ink)}
+  p{color:#cdddf0}
+  .lead{font-size:1.12rem;color:var(--muted);max-width:62ch}
+  .accent{color:var(--amber)} .cyan{color:var(--cyan)} .violet{color:var(--frac-ink)}
+  strong{color:#fff;font-weight:600} .mono{font-family:'JetBrains Mono',monospace}
+
+  .card{background:linear-gradient(180deg,var(--panel),#0c1d33);border:1px solid var(--line);border-radius:16px;padding:24px 26px}
+  .grid{display:grid;gap:18px} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:780px){.g2,.g3{grid-template-columns:1fr}}
+
+  .note{border-left:3px solid var(--amber);background:linear-gradient(90deg,#2a200733,transparent);padding:12px 16px;border-radius:0 10px 10px 0;color:#e9d9b3}
+  .note.cyan{border-color:var(--cyan);background:linear-gradient(90deg,#06283833,transparent);color:#bfe6f7}
+  .note.violet{border-color:var(--frac-ink);background:linear-gradient(90deg,#2a1d4333,transparent);color:#dcc8f5}
+  .pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;background:#10314e;border:1px solid var(--line);color:var(--cyan);padding:3px 9px;border-radius:20px}
+
+  /* bit strip with binary point */
+  .reg{display:flex;flex-direction:column;gap:6px;align-items:center;margin:6px 0}
+  .reg-row{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;align-items:flex-end}
+  .place{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted-2);width:48px;text-align:center;line-height:1.25}
+  .bit{width:48px;height:54px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;background:var(--bit0);color:var(--bit0-ink);border:1px solid #21436a;transition:background .3s,color .3s,transform .25s,box-shadow .3s;user-select:none;position:relative}
+  .bit.one{background:var(--bit1);color:var(--bit1-ink);border-color:#1f6c92;box-shadow:0 0 14px #38bdf833}
+  .bit.frac{background:var(--frac);color:#8e74b8;border-color:#3a2a5e}
+  .bit.frac.one{background:var(--frac1);color:var(--frac-ink);border-color:#6b3aa0;box-shadow:0 0 14px #a855f733}
+  .bit.click{cursor:pointer} .bit.click:hover{transform:translateY(-2px)}
+  .bit.flip{animation:flip .5s ease}
+  @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+  .point{width:20px;height:54px;display:flex;align-items:flex-end;justify-content:center;position:relative}
+  .point::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px var(--amber);margin-bottom:8px}
+  .point-lbl{width:20px;font-family:'JetBrains Mono';font-size:9px;color:var(--amber);text-align:center}
+
+  .btn{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;background:var(--cyan);color:#06101f;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;transition:.18s}
+  .btn:hover{background:#5fcbfb;transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--cyan-dim)} .btn.ghost:hover{background:#0e2740;color:#7dd6fb}
+  .btn.amber{background:var(--amber);color:#1a1200} .btn.amber:hover{background:#ffcb4a}
+  .btn.violet{background:var(--frac-ink);color:#1a0e2e} .btn.violet:hover{background:#d4b3f5}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  input[type=number],input[type=text]{font-family:'JetBrains Mono',monospace;font-size:18px;background:#0a1c30;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;width:150px;outline:none;transition:.18s}
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #38bdf833}
+  label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+
+  .steps{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .step{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start;padding:13px 15px;background:#0a1c30;border:1px solid var(--line);border-radius:12px;transition:.4s}
+  .step-n{width:30px;height:30px;border-radius:8px;background:#10314e;color:var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
+  .step-title{font-weight:600;color:#fff;font-size:14.5px}
+  .codeline{font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:2px;color:var(--cyan)}
+
+  /* multiply-by-2 table */
+  .m2{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:14px;margin-top:6px}
+  .m2 th{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .m2 td{padding:8px 10px;border-bottom:1px solid #14283f}
+  .m2 .bitcol{color:var(--violet);font-weight:700;text-align:center}
+  .m2 .arrow{color:var(--amber)}
+  .m2 tr.cycle td{background:#2a1d4322}
+  .live-out{font-family:'Space Grotesk';font-weight:600;font-size:1.25rem;text-align:center;margin-top:14px}
+
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:34px;gap:12px}
+  .kbd-hint{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted-2)}
+  kbd{background:#10243c;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)}
+
+  .prob{background:linear-gradient(180deg,var(--panel),#0b1c31);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .prob-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .prob-q{font-family:'Space Grotesk';font-weight:600;font-size:1.08rem}
+  .prob-q b{color:var(--amber);font-family:'JetBrains Mono'}
+  .tag{font-family:'JetBrains Mono';font-size:10.5px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .tag.b2d{color:var(--cyan);border-color:var(--cyan-dim)} .tag.d2b{color:var(--violet);border-color:#6b3aa0}
+  .prob-in{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .prob-in input{width:175px;font-size:16px;letter-spacing:2px}
+  .feedback{font-family:'JetBrains Mono';font-size:13px;min-height:18px}
+  .feedback.ok{color:var(--good)} .feedback.no{color:var(--bad)}
+  .sol{display:none;border-top:1px dashed var(--line);padding-top:12px;margin-top:2px}
+  .sol.show{display:block;animation:fade .35s ease}
+  .sol .codeline{font-size:14.5px} .sol-line{font-family:'JetBrains Mono';font-size:12.5px;color:var(--muted);padding:2px 0}
+  .sol-line b{color:var(--good)}
+
+  .scorebar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:22px}
+  .scorebar .big{font-family:'Space Grotesk';font-weight:700;font-size:1.6rem;color:var(--cyan)}
+
+  .cheat td,.cheat th{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}
+  .cheat th{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .cheat td:first-child{font-family:'JetBrains Mono';color:var(--amber);font-weight:700}
+  .cheat .mono{color:var(--cyan)} table{width:100%;border-collapse:collapse}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:9px}
+  ul.clean li{padding-left:24px;position:relative;color:#cdddf0}
+  ul.clean li::before{content:"▸";position:absolute;left:2px;color:var(--cyan)}
+  .ok-list li::before{content:"✓";color:var(--good)}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  @media(max-width:560px){.bit{width:40px;height:46px;font-size:18px}.place{width:40px}.topbar .counter{display:none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="chip">MAC-283</span> Computer Architecture <small>· Khalid Kassou · LaGuardia CC</small></div>
+    <div class="progress-wrap"><div class="dots" id="dots"></div><span class="counter" id="counter"></span></div>
+  </div>
+</div>
+
+<div class="stage"><div class="deck">
+
+<!-- 1 TITLE -->
+<section class="slide active" data-title="Title">
+  <div class="eyebrow">Number Systems · Lecture 05</div>
+  <h1>Binary <span class="accent">fractions</span></h1>
+  <p class="lead" style="margin-top:18px">We know how whole numbers look in binary. But how does a computer store <span class="cyan mono">0.625</span> or <span class="cyan mono">6.5</span>? The trick is to keep the same place-value idea and let it run <strong>past the point</strong>. We start by <strong>converting decimal fractions into binary</strong>, then learn to read binary fractions back — and finish with the famous reason <span class="accent mono">0.1 + 0.2 ≠ 0.3</span>.</p>
+
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card" style="border-color:#6b3aa0"><div class="pill" style="color:var(--violet);border-color:#6b3aa0">Start here · Convert</div><h3 style="margin-top:12px">Decimal → Binary</h3><p style="font-size:14px;color:var(--muted)">Multiply the fraction by 2, over and over.</p></div>
+    <div class="card"><div class="pill cyan">Then · Read</div><h3 style="margin-top:12px">Binary → Decimal</h3><p style="font-size:14px;color:var(--muted)">Add up the place values to the right of the point.</p></div>
+    <div class="card" style="border-color:var(--amber-deep)"><div class="pill" style="color:var(--amber);border-color:var(--amber-deep)">Beware</div><h3 style="margin-top:12px">It may never end</h3><p style="font-size:14px;color:var(--muted)">Some neat decimals repeat forever in binary.</p></div>
+  </div>
+  <div class="note cyan" style="margin-top:26px">Move with <kbd>→</kbd> / <kbd>←</kbd>, the dots above, or the buttons below.</div>
+</section>
+
+<!-- 2 THE BINARY POINT -->
+<section class="slide" data-title="The Binary Point">
+  <div class="eyebrow">The core idea</div>
+  <h2>Place values keep going past the <span class="accent">point</span></h2>
+  <p class="lead">To the left of the point, each column is worth <strong>twice</strong> the one on its right: 8, 4, 2, 1. Keep that rule going to the <em>right</em> of the point and each column is worth <strong>half</strong> the previous: ½, ¼, ⅛, 1⁄16.</p>
+
+  <div class="card" style="margin-top:24px">
+    <div class="reg">
+      <div class="reg-row" id="p2-places"></div>
+      <div class="reg-row" id="p2-bits"></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:14px">Same doubling rule, mirrored around the <span class="accent">binary point</span>. The integer columns are powers of 2; the fraction columns are powers of ½.</p>
+  </div>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="note cyan">Each fraction column = <span class="mono">2⁻ⁿ</span>: the first is 2⁻¹ = 0.5, then 2⁻² = 0.25, 2⁻³ = 0.125, 2⁻⁴ = 0.0625 …</div>
+    <div class="note">The “binary point” is the binary version of a decimal point. Same job: it separates whole from fractional. Now let’s turn a decimal into one.</div>
+  </div>
+</section>
+
+<!-- 3 MULTIPLY BY 2 RECIPE (Direction 1) -->
+<section class="slide" data-title="Multiply ×2">
+  <div class="eyebrow">Direction 1 · the method</div>
+  <h2>Decimal → binary: the <span class="violet">multiply-by-2</span> trick</h2>
+  <p class="lead">To convert a fraction, repeat three moves on the <strong>fraction part</strong> until it reaches 0:</p>
+
+  <div class="grid g3" style="margin-top:24px">
+    <div class="card"><div class="step-n" style="margin-bottom:10px">1</div><h3>Multiply by 2</h3><p style="font-size:14px;color:var(--muted)">Take the fraction and double it.</p></div>
+    <div class="card"><div class="step-n" style="margin-bottom:10px">2</div><h3>Record the whole part</h3><p style="font-size:14px;color:var(--muted)">The digit before the point (0 or 1) is your next bit.</p></div>
+    <div class="card" style="border-color:#6b3aa0"><div class="step-n" style="margin-bottom:10px;background:var(--frac-ink);color:#1a0e2e">3</div><h3>Repeat on the rest</h3><p style="font-size:14px;color:var(--muted)">Keep only the new fraction and go again — until it hits 0.</p></div>
+  </div>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;margin-bottom:6px">Worked example — convert <span class="violet mono">0.625</span></p>
+    <table class="m2">
+      <thead><tr><th>fraction</th><th>× 2</th><th>= result</th><th class="bitcol">bit</th><th>keep</th></tr></thead>
+      <tbody>
+        <tr><td>0.625</td><td class="arrow">×2</td><td>1.25</td><td class="bitcol">1</td><td>0.25</td></tr>
+        <tr><td>0.25</td><td class="arrow">×2</td><td>0.5</td><td class="bitcol">0</td><td>0.5</td></tr>
+        <tr><td>0.5</td><td class="arrow">×2</td><td>1.0</td><td class="bitcol">1</td><td>0 ■ stop</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:12px;text-align:center;font-family:'Space Grotesk';font-weight:600">Read the bits <span class="accent">top-down</span>: 0.625 = <span class="violet mono">0.101₂</span></p>
+  </div>
+  <div class="note violet" style="margin-top:18px"><strong>Why it works:</strong> multiplying by 2 in binary shifts everything one place left — so the bit that lands in front of the point is exactly the next fraction digit.</div>
+</section>
+
+<!-- 4 INTERACTIVE CONVERTER -->
+<section class="slide" data-title="Converter">
+  <div class="eyebrow">Interactive tool</div>
+  <h2>Decimal → binary <span class="violet">converter</span></h2>
+  <p class="lead">Enter any decimal (mixed numbers welcome, e.g. <span class="mono">6.625</span>). Watch the multiply-by-2 table build. If it can’t end, it stops at 16 bits and tells you.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px">
+      <label class="fld">DECIMAL NUMBER<input type="number" id="cv-in" value="6.625" step="any"></label>
+      <button class="btn violet" id="cv-go">Convert →</button>
+    </div>
+    <div id="cv-int" class="note cyan" style="margin-bottom:12px;display:none"></div>
+    <div id="cv-tablewrap"></div>
+    <div class="live-out" id="cv-out"></div>
+  </div>
+</section>
+
+<!-- 5 MIXED NUMBERS -->
+<section class="slide" data-title="Mixed Numbers">
+  <div class="eyebrow">Putting it together</div>
+  <h2>Mixed numbers: do each side separately</h2>
+  <p class="lead">A number like <span class="accent mono">6.625</span> has two halves. Convert the <span class="cyan">whole part</span> the usual way, convert the <span class="violet">fraction</span> with multiply-by-2, then join them across the point.</p>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card">
+      <h3 class="cyan">Whole part: 6</h3>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:8px">Divide-by-2 (or recognize 4+2):</p>
+      <div class="codeline">6 = 4 + 2 = <span class="cyan">110₂</span></div>
+    </div>
+    <div class="card" style="border-color:#6b3aa0">
+      <h3 class="violet">Fraction part: 0.625</h3>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:8px">Multiply-by-2, just like before:</p>
+      <div class="codeline">0.625 = <span class="violet">0.101₂</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;text-align:center">
+    <p style="color:var(--muted);font-size:14px;margin-bottom:10px">Join them across the binary point:</p>
+    <div class="reg">
+      <div class="reg-row" id="mx-places"></div>
+      <div class="reg-row" id="mx-bits"></div>
+    </div>
+    <p style="font-family:'Space Grotesk';font-weight:700;font-size:1.4rem;margin-top:12px">6.625 = <span class="cyan mono">110</span><span class="accent">.</span><span class="violet mono">101₂</span></p>
+  </div>
+</section>
+
+<!-- 6 READ BINARY -> DECIMAL (Direction 2) -->
+<section class="slide" data-title="Read → Decimal">
+  <div class="eyebrow">Direction 2 · the easy way back</div>
+  <h2>Reading a binary fraction</h2>
+  <p class="lead">Going <strong>binary → decimal</strong> is simpler: just add the value of every column that holds a <span class="cyan">1</span>. This is also how you <em>check</em> a conversion you just did.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.2rem;margin-bottom:14px">Example: <span class="cyan mono">0.101₂</span></p>
+    <div class="reg">
+      <div class="reg-row" id="p3-places"></div>
+      <div class="reg-row" id="p3-bits"></div>
+    </div>
+    <div class="steps" style="margin-top:18px">
+      <div class="step"><div class="step-n">1</div><div><div class="step-title">List the lit columns</div><div class="codeline">0.5 &nbsp; 0 &nbsp; 0.125</div></div></div>
+      <div class="step"><div class="step-n" style="background:var(--good);color:#06101f">=</div><div><div class="step-title">Add them</div><div class="codeline">0.5 + 0.125 = <span class="accent">0.625</span></div></div></div>
+    </div>
+  </div>
+  <div class="note cyan" style="margin-top:20px">So <span class="mono">0.101₂ = 0.625₁₀</span> — back to where slide 3 started. The middle column (¼) was a 0, so it contributes nothing.</div>
+</section>
+
+<!-- 7 INTERACTIVE EXPLORER -->
+<section class="slide" data-title="Explorer">
+  <div class="eyebrow">Interactive · build intuition</div>
+  <h2>Place-value <span class="cyan">explorer</span></h2>
+  <p class="lead">Click any bit to toggle it. The decimal value updates instantly. Try to build <span class="accent mono">0.75</span>, then <span class="accent mono">2.5</span>, then <span class="accent mono">5.625</span>.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div class="reg">
+      <div class="reg-row" id="ex-places"></div>
+      <div class="reg-row" id="ex-bits"></div>
+    </div>
+    <div class="live-out" id="ex-out"></div>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:4px" id="ex-break"></p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+      <button class="btn ghost" data-set="0000.1000">Set 0.5</button>
+      <button class="btn ghost" data-set="0000.1100">Set 0.75</button>
+      <button class="btn ghost" data-set="0101.1010">Set 5.625</button>
+      <button class="btn ghost" data-set="0000.0000">Clear</button>
+    </div>
+  </div>
+</section>
+
+<!-- 8 THE 0.1 PROBLEM -->
+<section class="slide" data-title="The 0.1 Problem">
+  <div class="eyebrow">Why this matters · floating point</div>
+  <h2>The number that <span class="accent">never ends</span></h2>
+  <p class="lead">Watch what happens when we run multiply-by-2 on a perfectly ordinary decimal: <span class="accent mono">0.1</span>. The “keep” column starts repeating — so the bits repeat <strong>forever</strong>.</p>
+
+  <div class="card" style="margin-top:20px">
+    <table class="m2" id="tenth-table"></table>
+    <p style="margin-top:12px;text-align:center;font-family:'Space Grotesk';font-weight:600">0.1 = <span class="violet mono">0.0001100110011…₂</span> &nbsp;(the <span class="accent">0011</span> block repeats endlessly)</p>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3>So 0.1 can’t be stored exactly</h3>
+    <p style="margin-top:6px">A computer only has room for a fixed number of bits, so it keeps a <strong>rounded</strong> version of 0.1. Tiny errors like this add up. Press the button to see the classic result:</p>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn amber" id="fp-go">Compute 0.1 + 0.2</button>
+      <span class="codeline" id="fp-out" style="font-size:1.3rem"></span>
+    </div>
+  </div>
+  <div class="note cyan" style="margin-top:18px">This is why you never test <span class="mono">if (x == 0.3)</span> with floats — and the reason the <strong>IEEE-754 floating-point</strong> standard (next unit) exists. A fraction terminates in binary <em>only</em> if its denominator is a power of 2.</div>
+</section>
+
+<!-- 9 PRACTICE 1 (decimal -> binary) -->
+<section class="slide" data-title="Practice 1–5">
+  <div class="eyebrow">Your turn · part 1 · decimal → binary</div>
+  <h2>10 practice problems</h2>
+  <p class="lead">Start with the direction we just learned: convert each decimal to binary using multiply-by-2. Write binary answers <strong>with a point</strong>, like <span class="mono">101.1</span>. Spaces are ignored, and any extra zero-padding still counts as correct.</p>
+
+  <div class="scorebar">
+    <div><div class="big" id="score">0 / 10</div><div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono'">CORRECT</div></div>
+    <button class="btn ghost" id="reveal-all">Reveal all solutions</button>
+    <button class="btn ghost" id="reset-prac">Reset</button>
+  </div>
+  <div class="grid g2" id="prac-grid-1"></div>
+</section>
+
+<!-- 10 PRACTICE 2 (binary -> decimal) -->
+<section class="slide" data-title="Practice 6–10">
+  <div class="eyebrow">Your turn · part 2 · binary → decimal</div>
+  <h2>Practice — problems 6 to 10</h2>
+  <p class="lead">Now the easy direction back: read each binary fraction into decimal by adding the lit place values. Type a decimal number as your answer.</p>
+  <div class="grid g2" id="prac-grid-2" style="margin-top:8px"></div>
+  <div class="note violet" style="margin-top:22px"><strong>Sanity check:</strong> you can verify any decimal→binary answer from part 1 by reading it back this way — add the place values and confirm you land on the original number.</div>
+</section>
+
+<!-- 11 CHEAT SHEET -->
+<section class="slide" data-title="Summary">
+  <div class="eyebrow">Take it with you</div>
+  <h2>One-page cheat sheet</h2>
+
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card" style="border-color:#6b3aa0">
+      <h3 class="violet">Decimal → Binary (multiply)</h3>
+      <ul class="clean" style="margin-top:8px">
+        <li>Whole part: divide-by-2 as usual</li>
+        <li>Fraction: ×2, write the whole digit, repeat</li>
+        <li>Read fraction bits <strong>top-down</strong>; stop at 0</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="cyan">Binary → Decimal (read)</h3>
+      <ul class="clean ok-list" style="margin-top:8px">
+        <li>Columns right of point: ½, ¼, ⅛, 1⁄16 …</li>
+        <li>Add the value of every column with a 1</li>
+        <li>Example: 0.101 = 0.5 + 0.125 = 0.625</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;padding:8px 6px">
+    <table class="cheat">
+      <thead><tr><th>Decimal</th><th>Binary</th><th>How to see it</th></tr></thead>
+      <tbody>
+        <tr><td>0.5</td><td class="mono">0.1</td><td style="color:var(--muted)">½</td></tr>
+        <tr><td>0.25</td><td class="mono">0.01</td><td style="color:var(--muted)">¼</td></tr>
+        <tr><td>0.625</td><td class="mono">0.101</td><td style="color:var(--muted)">½ + ⅛</td></tr>
+        <tr><td>2.75</td><td class="mono">10.11</td><td style="color:var(--muted)">2 + ½ + ¼</td></tr>
+        <tr><td>0.1</td><td class="mono">0.0001100110…</td><td style="color:var(--bad)">never terminates</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note amber" style="margin-top:18px;border-color:var(--amber)"><strong>Golden rule:</strong> a decimal fraction ends cleanly in binary only when its denominator is a power of 2 (2, 4, 8, 16 …). Everything else repeats.</div>
+  <p style="text-align:center;color:var(--muted);margin-top:26px;font-family:'JetBrains Mono';font-size:13px">MAC-283 · Computer Architecture & Assembler Language · Prof. Khalid Kassou</p>
+</section>
+
+<div class="nav">
+  <button class="btn ghost" id="prev">← Previous</button>
+  <span class="kbd-hint">Navigate with <kbd>←</kbd> <kbd>→</kbd></span>
+  <button class="btn" id="next">Next →</button>
+</div>
+
+</div></div>
+
+<script>
+/* ---------- helpers ---------- */
+const INT_PLACES=[8,4,2,1];
+const FRAC_PLACES=[0.5,0.25,0.125,0.0625];
+const FRAC_LBL=['½','¼','⅛','1⁄16'];
+
+function fmt(x){
+  if(Math.abs(x-Math.round(x))<1e-12) return String(Math.round(x));
+  return parseFloat(x.toFixed(10)).toString();
+}
+function binFracToDec(str){
+  str=str.trim().replace(/\s+/g,'');
+  let [ip,fp='']=str.split('.');
+  let v=ip?parseInt(ip,2):0;
+  for(let i=0;i<fp.length;i++){ if(fp[i]==='1') v+=Math.pow(2,-(i+1)); }
+  return v;
+}
+function makeBit(ch,opts={}){
+  const d=document.createElement('div');
+  d.className='bit'+(opts.frac?' frac':'')+(ch==='1'?' one':'')+(opts.click?' click':'');
+  d.textContent=ch;
+  return d;
+}
+function makePlace(t){const d=document.createElement('div');d.className='place';d.innerHTML=t;return d;}
+function makePoint(){const d=document.createElement('div');d.className='point';return d;}
+function makePointLbl(){const d=document.createElement('div');d.className='point-lbl';d.textContent='pt';return d;}
+
+function renderStrip(placesEl,bitsEl,intStr,fracStr,opts={}){
+  placesEl.innerHTML=''; bitsEl.innerHTML='';
+  [...intStr].forEach((c,i)=>{
+    placesEl.appendChild(makePlace(String(INT_PLACES[INT_PLACES.length-intStr.length+i])));
+    bitsEl.appendChild(makeBit(c,{click:opts.click}));
+  });
+  placesEl.appendChild(makePointLbl());
+  bitsEl.appendChild(makePoint());
+  [...fracStr].forEach((c,i)=>{
+    placesEl.appendChild(makePlace(FRAC_LBL[i]+'<br>'+FRAC_PLACES[i]));
+    bitsEl.appendChild(makeBit(c,{frac:true,click:opts.click}));
+  });
+}
+
+/* Slide 2: static strip 1011.0110 */
+renderStrip(document.getElementById('p2-places'),document.getElementById('p2-bits'),'1011','0110');
+
+/* Slide 6: 0.101 */
+renderStrip(document.getElementById('p3-places'),document.getElementById('p3-bits'),'0','101');
+
+/* multiply-by-2 engine */
+function multiplyBy2(frac,maxit){
+  const rows=[]; let f=frac, bits='', terminated=false, seen={};
+  for(let k=0;k<maxit;k++){
+    if(f<1e-12){terminated=true;break;}
+    const key=f.toFixed(9);
+    const cyc = seen[key]!==undefined;
+    seen[key]=k;
+    const p=f*2; const b=Math.floor(p+1e-12); const keep=p-b;
+    rows.push({frac:f,prod:p,bit:b,keep:keep,cycle:cyc});
+    bits+=b; f=keep;
+  }
+  return {rows,bits,terminated};
+}
+function intToBin(n){ return n.toString(2); }
+
+/* Slide 7: interactive explorer */
+(function(){
+  const placesEl=document.getElementById('ex-places'), bitsEl=document.getElementById('ex-bits');
+  const out=document.getElementById('ex-out'), brk=document.getElementById('ex-break');
+  let intStr='0000', fracStr='0000';
+  function draw(){
+    renderStrip(placesEl,bitsEl,intStr,fracStr,{click:true});
+    const cells=[...bitsEl.querySelectorAll('.bit')];
+    cells.forEach(cell=>{
+      if(cell.classList.contains('point'))return;
+      const isFrac=cell.classList.contains('frac');
+      cell.addEventListener('click',()=>{
+        if(isFrac){ const i=fracIndex(cell); fracStr=toggle(fracStr,i);}
+        else{ const i=intIndex(cell); intStr=toggle(intStr,i);}
+        cell.classList.add('flip'); setTimeout(draw,140);
+      });
+    });
+    update();
+  }
+  function intIndex(cell){ const ints=[...bitsEl.querySelectorAll('.bit')].filter(b=>!b.classList.contains('frac')); return ints.indexOf(cell);}
+  function fracIndex(cell){ const fr=[...bitsEl.querySelectorAll('.bit.frac')]; return fr.indexOf(cell);}
+  function toggle(s,i){ const a=[...s]; a[i]=a[i]==='1'?'0':'1'; return a.join(''); }
+  function update(){
+    const dec=binFracToDec(intStr+'.'+fracStr);
+    out.innerHTML=`<span class="cyan mono">${intStr}.${fracStr}</span> &nbsp;=&nbsp; <span class="accent mono">${fmt(dec)}</span>`;
+    const parts=[];
+    [...intStr].forEach((c,i)=>{ if(c==='1') parts.push(String(INT_PLACES[INT_PLACES.length-4+i])); });
+    [...fracStr].forEach((c,i)=>{ if(c==='1') parts.push(fmt(FRAC_PLACES[i])); });
+    brk.textContent = parts.length? parts.join(' + ')+' = '+fmt(dec) : 'all zero';
+  }
+  document.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{
+    const [i,f]=b.dataset.set.split('.'); intStr=i; fracStr=f; draw();
+  }));
+  draw();
+})();
+
+/* Slide 4: converter */
+(function(){
+  const inp=document.getElementById('cv-in'), go=document.getElementById('cv-go');
+  const intBox=document.getElementById('cv-int'), wrap=document.getElementById('cv-tablewrap'), out=document.getElementById('cv-out');
+  function run(){
+    const x=parseFloat(inp.value);
+    if(isNaN(x)||x<0){ out.innerHTML='<span style="color:var(--bad)">Enter a non-negative decimal.</span>'; wrap.innerHTML=''; intBox.style.display='none'; return; }
+    const ip=Math.floor(x), frac=x-ip;
+    const intBin=intToBin(ip);
+    if(ip>0){ intBox.style.display='block'; intBox.innerHTML=`Whole part: <span class="mono">${ip}</span> → <span class="mono">${intBin}₂</span>`; }
+    else intBox.style.display='none';
+    if(frac<1e-12){
+      wrap.innerHTML='<p style="color:var(--muted);font-family:JetBrains Mono;font-size:13px">No fraction part — nothing to multiply.</p>';
+      out.innerHTML=`<span class="mono">${fmt(x)}</span> = <span class="cyan mono">${intBin}₂</span>`; return;
+    }
+    const r=multiplyBy2(frac,16);
+    let html='<table class="m2"><thead><tr><th>fraction</th><th>×2</th><th>= result</th><th class="bitcol">bit</th><th>keep</th></tr></thead><tbody>';
+    r.rows.forEach((row,i)=>{
+      const stop = (i===r.rows.length-1 && r.terminated);
+      html+=`<tr class="${row.cycle?'cycle':''}"><td>${fmt(row.frac)}</td><td class="arrow">×2</td><td>${fmt(row.prod)}</td><td class="bitcol">${row.bit}</td><td>${stop?'0 ■ stop':fmt(row.keep)}</td></tr>`;
+    });
+    html+='</tbody></table>';
+    if(!r.terminated) html+='<p style="color:var(--amber);font-family:JetBrains Mono;font-size:12.5px;margin-top:8px">↻ Did not terminate within 16 bits — this fraction repeats forever. Result is rounded.</p>';
+    wrap.innerHTML=html;
+    const full=intBin+'.'+r.bits;
+    out.innerHTML=`<span class="mono">${fmt(x)}</span> = <span class="violet mono">${full}₂</span>${r.terminated?'':' …'}`;
+  }
+  go.addEventListener('click',run); inp.addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+  run();
+})();
+
+/* Slide 5: mixed strip 110.101 */
+renderStrip(document.getElementById('mx-places'),document.getElementById('mx-bits'),'110','101');
+
+/* Slide 8: the 0.1 table + float demo */
+(function(){
+  const t=document.getElementById('tenth-table');
+  const r=multiplyBy2(0.1,12);
+  let html='<thead><tr><th>fraction</th><th>×2</th><th>= result</th><th class="bitcol">bit</th><th>keep</th></tr></thead><tbody>';
+  r.rows.forEach(row=>{ html+=`<tr class="${row.cycle?'cycle':''}"><td>${fmt(row.frac)}</td><td class="arrow">×2</td><td>${fmt(row.prod)}</td><td class="bitcol">${row.bit}</td><td>${fmt(row.keep)}</td></tr>`; });
+  html+='<tr><td colspan="5" style="text-align:center;color:var(--amber)">… 0.2 came back — the cycle repeats forever …</td></tr></tbody>';
+  t.innerHTML=html;
+  document.getElementById('fp-go').addEventListener('click',()=>{
+    document.getElementById('fp-out').innerHTML=' = <span class="accent">'+(0.1+0.2)+'</span>';
+  });
+})();
+
+/* ---------- Practice (decimal→binary first, then binary→decimal) ---------- */
+const PROBLEMS=[
+  {type:'d2b',q:'0.25',  val:0.25},
+  {type:'d2b',q:'0.625', val:0.625},
+  {type:'d2b',q:'0.75',  val:0.75},
+  {type:'d2b',q:'5.5',   val:5.5},
+  {type:'d2b',q:'3.375', val:3.375},
+  {type:'b2d',q:'0.1',   val:0.5},
+  {type:'b2d',q:'0.011', val:0.375},
+  {type:'b2d',q:'1.101', val:1.625},
+  {type:'b2d',q:'10.01', val:2.25},
+  {type:'b2d',q:'0.1011',val:0.6875}
+];
+const solved=new Array(10).fill(false);
+
+function canonicalBinary(val){
+  const ip=Math.floor(val), frac=val-ip;
+  const r=multiplyBy2(frac,20);
+  return intToBin(ip)+(r.bits?'.'+r.bits:'');
+}
+function genSolution(p){
+  if(p.type==='b2d'){
+    const [ip,fp='']=p.q.split('.');
+    const terms=[];
+    [...ip].forEach((c,i)=>{ if(c==='1'){const pv=Math.pow(2,ip.length-1-i);terms.push(String(pv));}});
+    [...fp].forEach((c,i)=>{ if(c==='1'){terms.push(fmt(Math.pow(2,-(i+1))));}});
+    return `<div class="sol-line">Lit columns: ${terms.length?terms.join(' + '):'none'}</div>
+            <div class="sol-line">Sum: <b>${fmt(p.val)}</b></div>`;
+  } else {
+    const ip=Math.floor(p.val), frac=p.val-ip;
+    const r=multiplyBy2(frac,20);
+    let rows=r.rows.map(row=>`<div class="sol-line">${fmt(row.frac)} ×2 = ${fmt(row.prod)} → bit ${row.bit}</div>`).join('');
+    return `<div class="sol-line">Whole part ${ip} = ${intToBin(ip)}₂</div>${rows}
+            <div class="sol-line">Answer: <b>${canonicalBinary(p.val)}₂</b></div>`;
+  }
+}
+function buildProblem(p,idx){
+  const card=document.createElement('div'); card.className='prob';
+  const isB2D=p.type==='b2d';
+  const qhtml = isB2D ? `Convert <b>${p.q}₂</b> to decimal` : `Convert <b>${p.q}</b> to binary`;
+  const placeholder = isB2D ? 'decimal answer' : 'binary, e.g. 0.101';
+  card.innerHTML=`
+    <div class="prob-head">
+      <div class="prob-q">${idx+1}. ${qhtml}</div>
+      <span class="tag ${isB2D?'b2d':'d2b'}">${isB2D?'binary → dec':'dec → binary'}</span>
+    </div>
+    <div class="prob-in">
+      <input type="text" placeholder="${placeholder}" spellcheck="false">
+      <button class="btn check">Check</button>
+      <button class="btn ghost showbtn">Show steps</button>
+    </div>
+    <div class="feedback"></div>
+    <div class="sol">${genSolution(p)}</div>`;
+  const inp=card.querySelector('input'), fb=card.querySelector('.feedback'), sol=card.querySelector('.sol');
+  card.querySelector('.check').addEventListener('click',()=>{
+    const raw=inp.value.trim();
+    if(!raw){ fb.className='feedback no'; fb.textContent='Type an answer first.'; return; }
+    let userVal;
+    if(isB2D){ userVal=parseFloat(raw); if(isNaN(userVal)){fb.className='feedback no';fb.textContent='Enter a decimal number.';return;} }
+    else{ const clean=raw.replace(/\s+/g,''); if(!/^[01]+(\.[01]+)?$/.test(clean)){fb.className='feedback no';fb.textContent='Use only 0s, 1s and one point.';return;} userVal=binFracToDec(clean); }
+    if(Math.abs(userVal-p.val)<1e-9){
+      fb.className='feedback ok'; fb.textContent='✓ Correct!';
+      if(!solved[idx]){solved[idx]=true;updateScore();}
+    } else { fb.className='feedback no'; fb.textContent='✕ Not quite — try again or show the steps.'; }
+  });
+  card.querySelector('.showbtn').addEventListener('click',()=>sol.classList.toggle('show'));
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')card.querySelector('.check').click();});
+  return card;
+}
+(function(){
+  const g1=document.getElementById('prac-grid-1'), g2=document.getElementById('prac-grid-2');
+  PROBLEMS.forEach((p,i)=>{ (i<5?g1:g2).appendChild(buildProblem(p,i)); });
+})();
+function updateScore(){ document.getElementById('score').textContent=solved.filter(Boolean).length+' / 10'; }
+document.getElementById('reveal-all').addEventListener('click',()=>document.querySelectorAll('.sol').forEach(s=>s.classList.add('show')));
+document.getElementById('reset-prac').addEventListener('click',()=>{
+  document.querySelectorAll('.prob input').forEach(i=>i.value='');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.sol').forEach(s=>s.classList.remove('show'));
+  for(let i=0;i<solved.length;i++)solved[i]=false; updateScore();
+});
+
+/* ---------- navigation ---------- */
+const slides=[...document.querySelectorAll('.slide')];
+const dotsWrap=document.getElementById('dots'), counter=document.getElementById('counter');
+let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot'+(i===0?' active':'');b.title=s.dataset.title;b.addEventListener('click',()=>goto(i));dotsWrap.appendChild(b);});
+const dots=[...dotsWrap.children];
+function goto(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  dots.forEach((d,k)=>d.classList.toggle('active',k===cur));
+  counter.textContent=String(cur+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('next').addEventListener('click',()=>goto(cur+1));
+document.getElementById('prev').addEventListener('click',()=>goto(cur-1));
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return; if(e.key==='ArrowRight')goto(cur+1); if(e.key==='ArrowLeft')goto(cur-1); });
+goto(0);
+</script>
+</body>
+</html>
