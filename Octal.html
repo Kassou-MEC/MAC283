@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Octal System · MAC-283</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070f1e; --bg-2:#0b1830; --panel:#0f2138; --panel-2:#13294480;
+    --line:#1d3a5f; --trace:#2e6ad1; --cyan:#38bdf8; --cyan-dim:#1c5e87;
+    --amber:#fbbf24; --amber-deep:#d99413; --copper:#c08a3e;
+    --ink:#e8f0fb; --muted:#8da4c0; --muted-2:#5d7593;
+    --good:#34d399; --bad:#f87171; --violet:#c79cf0;
+    --oct:#fbbf24; --oct-deep:#b8830f;
+    --bit0:#1a2f4d; --bit0-ink:#6f88a8; --bit1:#0e3a52; --bit1-ink:#5fd2f8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #102a4a 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 110%, #0c2138 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; min-height:100vh; overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.16;
+    background-image:linear-gradient(90deg,#18406b 1px,transparent 1px),linear-gradient(#18406b 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 80%);
+  }
+  .stage{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px}
+
+  .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#070f1eee,#070f1ecc 70%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1120px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:.3px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#07101f;background:var(--amber);padding:3px 8px;border-radius:5px;letter-spacing:1px}
+  .brand small{color:var(--muted);font-weight:500;font-family:'Inter';font-size:12.5px;letter-spacing:0}
+  .progress-wrap{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#21456f;cursor:pointer;border:none;transition:.25s;padding:0}
+  .dot:hover{background:var(--cyan-dim)} .dot.active{background:var(--cyan);box-shadow:0 0 0 4px #38bdf833}
+  .counter{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)}
+
+  .deck{padding:30px 0 90px}
+  .slide{display:none;animation:fade .45s ease} .slide.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.1rem,5.2vw,3.7rem);line-height:1.04;letter-spacing:-1px}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(1.5rem,3.6vw,2.3rem);line-height:1.12;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.18rem;margin-bottom:8px;color:var(--ink)}
+  p{color:#cdddf0}
+  .lead{font-size:1.12rem;color:var(--muted);max-width:62ch}
+  .accent,.oct{color:var(--amber)} .cyan{color:var(--cyan)} .good{color:var(--good)} .violet{color:var(--violet)}
+  strong{color:#fff;font-weight:600} .mono{font-family:'JetBrains Mono',monospace}
+
+  .card{background:linear-gradient(180deg,var(--panel),#0c1d33);border:1px solid var(--line);border-radius:16px;padding:24px 26px}
+  .grid{display:grid;gap:18px} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:780px){.g2,.g3{grid-template-columns:1fr}}
+
+  .note{border-left:3px solid var(--amber);background:linear-gradient(90deg,#2a200733,transparent);padding:12px 16px;border-radius:0 10px 10px 0;color:#e9d9b3}
+  .note.cyan{border-color:var(--cyan);background:linear-gradient(90deg,#06283833,transparent);color:#bfe6f7}
+  .note.good{border-color:var(--good);background:linear-gradient(90deg,#06302433,transparent);color:#bdeedd}
+  .pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;background:#10314e;border:1px solid var(--line);color:var(--cyan);padding:3px 9px;border-radius:20px}
+
+  /* cells */
+  .reg{display:flex;flex-direction:column;gap:10px;align-items:center;margin:6px 0}
+  .bitrow{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .bits{display:flex;gap:6px}
+  .bit{width:40px;height:46px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:19px;background:var(--bit0);color:var(--bit0-ink);border:1px solid #21436a;transition:.25s;user-select:none}
+  .bit.one{background:var(--bit1);color:var(--bit1-ink);border-color:#1f6c92;box-shadow:0 0 14px #38bdf833}
+  .octcell{width:48px;height:50px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;background:#2a2007;color:var(--oct);border:1px solid var(--oct-deep);box-shadow:0 0 14px #fbbf2433}
+  .placecell{font-family:'JetBrains Mono';font-size:11px;color:var(--muted-2);text-align:center}
+
+  /* octal↔binary grouping visual */
+  .groups{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+  .group{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;border:1px dashed var(--oct-deep);border-radius:12px;background:#1a14040f}
+  .group .trip{display:flex;gap:5px}
+  .group .eq{font-family:'JetBrains Mono';color:var(--muted);font-size:12px}
+
+  .steps{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .step{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start;padding:12px 15px;background:#0a1c30;border:1px solid var(--line);border-radius:12px}
+  .step-n{width:30px;height:30px;border-radius:8px;background:#10314e;color:var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
+  .step-title{font-weight:600;color:#fff;font-size:14px}
+  .codeline{font-family:'JetBrains Mono',monospace;font-size:17px;letter-spacing:1px;color:var(--cyan)}
+
+  /* division table */
+  .divt{width:100%;max-width:420px;margin:6px auto;border-collapse:collapse;font-family:'JetBrains Mono';font-size:15px}
+  .divt td{padding:7px 10px;border-bottom:1px solid #14283f}
+  .divt .rem{color:var(--oct);font-weight:700;text-align:right}
+  .arrowup{color:var(--oct);font-family:'JetBrains Mono';text-align:center;font-size:13px;margin-top:6px}
+
+  .btn{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;background:var(--cyan);color:#06101f;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;transition:.18s}
+  .btn:hover{background:#5fcbfb;transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--cyan-dim)} .btn.ghost:hover{background:#0e2740;color:#7dd6fb}
+  .btn.amber{background:var(--amber);color:#1a1200} .btn.amber:hover{background:#ffcb4a}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .opbtn{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;background:#0a1c30;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:9px 14px;cursor:pointer;transition:.18s}
+  .opbtn:hover{border-color:var(--cyan-dim);color:var(--ink)} .opbtn.active{background:var(--cyan);color:#06101f;border-color:var(--cyan)}
+  .opbtn.oct.active{background:var(--amber);color:#1a1200;border-color:var(--amber)}
+  input[type=text],input[type=number]{font-family:'JetBrains Mono',monospace;font-size:18px;background:#0a1c30;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;width:150px;outline:none;transition:.18s}
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #38bdf833}
+  label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+
+  .outcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}
+  @media(max-width:620px){.outcards{grid-template-columns:1fr}}
+  .outcard{background:#0a1c30;border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .outcard .lab{font-family:'JetBrains Mono';font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+  .outcard .val{font-family:'JetBrains Mono';font-weight:700;font-size:1.5rem;word-break:break-all;margin-top:4px}
+  .outcard.dec .val{color:var(--ink)} .outcard.oct .val{color:var(--oct)} .outcard.bin .val{color:var(--cyan)}
+
+  /* permissions */
+  .perm{display:flex;flex-direction:column;gap:12px}
+  .permrow{display:grid;grid-template-columns:96px 1fr 70px;gap:12px;align-items:center}
+  .permrow .who{font-family:'JetBrains Mono';color:var(--muted);font-size:14px;text-align:right}
+  .permbtns{display:flex;gap:8px}
+  .permbtns .opbtn{min-width:54px;text-align:center}
+  .digit{font-family:'JetBrains Mono';font-weight:700;font-size:1.6rem;color:var(--oct);text-align:center}
+  .chmod-out{font-family:'JetBrains Mono';font-weight:700;text-align:center;margin-top:14px}
+  .chmod-out .num{font-size:2.2rem;color:var(--oct);letter-spacing:4px}
+  .chmod-out .sym{font-size:1.3rem;color:var(--cyan);letter-spacing:3px;display:block;margin-top:4px}
+
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:34px;gap:12px}
+  .kbd-hint{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted-2)}
+  kbd{background:#10243c;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)}
+
+  .prob{background:linear-gradient(180deg,var(--panel),#0b1c31);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .prob-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .prob-q{font-family:'JetBrains Mono';font-weight:700;font-size:1.05rem;color:var(--ink)}
+  .prob-q b{color:var(--amber)}
+  .tag{font-family:'JetBrains Mono';font-size:10.5px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .prob-in{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .prob-in input{width:140px;font-size:16px}
+  .feedback{font-family:'JetBrains Mono';font-size:13px;min-height:18px}
+  .feedback.ok{color:var(--good)} .feedback.no{color:var(--bad)}
+  .sol{display:none;border-top:1px dashed var(--line);padding-top:12px;margin-top:2px}
+  .sol.show{display:block;animation:fade .35s ease}
+  .sol-line{font-family:'JetBrains Mono';font-size:13px;color:var(--muted);padding:2px 0}
+  .sol-line b{color:var(--good)}
+
+  .scorebar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:22px}
+  .scorebar .big{font-family:'Space Grotesk';font-weight:700;font-size:1.6rem;color:var(--cyan)}
+
+  .cheat td,.cheat th{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}
+  .cheat th{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .cheat td:first-child{font-family:'JetBrains Mono';color:var(--amber);font-weight:700;white-space:nowrap}
+  .cheat td.mid{font-family:'JetBrains Mono';color:var(--cyan)}
+  table.wide{width:100%;border-collapse:collapse}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:9px}
+  ul.clean li{padding-left:24px;position:relative;color:#cdddf0}
+  ul.clean li::before{content:"▸";position:absolute;left:2px;color:var(--cyan)}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  @media(max-width:560px){.bit{width:32px;height:38px;font-size:15px}.octcell{width:40px;height:44px;font-size:20px}.topbar .counter{display:none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="chip">MAC-283</span> Computer Architecture <small>· Khalid Kassou · LaGuardia CC</small></div>
+    <div class="progress-wrap"><div class="dots" id="dots"></div><span class="counter" id="counter"></span></div>
+  </div>
+</div>
+
+<div class="stage"><div class="deck">
+
+<!-- 1 TITLE -->
+<section class="slide active" data-title="Title">
+  <div class="eyebrow">Number Systems · Lecture 07</div>
+  <h1>The <span class="accent">octal</span> system</h1>
+  <p class="lead" style="margin-top:18px">Octal is base <strong>8</strong> — eight digits, <span class="oct mono">0–7</span>, and nothing else. It exists for one elegant reason: <strong>8 = 2³</strong>, so a single octal digit packs exactly three binary bits. That makes it a compact shorthand for binary, and it's still how Unix writes file permissions. We'll cover every conversion you need.</p>
+
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card"><div class="pill" style="color:var(--amber);border-color:var(--amber-deep)">Base 8</div><h3 style="margin-top:12px">Digits 0–7</h3><p style="font-size:14px;color:var(--muted)">Place values are powers of 8: 1, 8, 64, 512…</p></div>
+    <div class="card" style="border-color:var(--cyan-dim)"><div class="pill cyan">The trick</div><h3 style="margin-top:12px">1 digit = 3 bits</h3><p style="font-size:14px;color:var(--muted)">Binary ↔ octal needs no arithmetic at all.</p></div>
+    <div class="card" style="border-color:#1f7a5a"><div class="pill" style="color:var(--good);border-color:#1f7a5a">In the wild</div><h3 style="margin-top:12px">chmod 755</h3><p style="font-size:14px;color:var(--muted)">File permissions are pure octal.</p></div>
+  </div>
+  <div class="note cyan" style="margin-top:26px">Move with <kbd>→</kbd> / <kbd>←</kbd>, the dots above, or the buttons below.</div>
+</section>
+
+<!-- 2 WHAT IS OCTAL -->
+<section class="slide" data-title="What is octal">
+  <div class="eyebrow">The basics</div>
+  <h2>Counting in base 8</h2>
+  <p class="lead">Each column is worth <strong>8 times</strong> the column to its right — just like decimal uses powers of 10 and binary uses powers of 2. There's no digit “8” or “9”; after 7 you carry.</p>
+
+  <div class="card" style="margin-top:22px">
+    <div class="reg">
+      <div class="bitrow" id="oct-places"></div>
+      <div class="bitrow" id="oct-digits"></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:12px">The octal number <span class="oct mono">752₈</span> means 7×64 + 5×8 + 2×1.</p>
+  </div>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card">
+      <h3 class="cyan">Counting up</h3>
+      <p class="mono" style="font-size:15px;color:var(--ink)">…5, 6, 7, <span class="oct">10</span>, 11, …, 17, <span class="oct">20</span>, …, 77, <span class="oct">100</span></p>
+      <p style="font-size:13.5px;color:var(--muted);margin-top:8px">After 7 the ones column resets and carries — so octal “10” is decimal 8, not ten.</p>
+    </div>
+    <div class="card">
+      <h3 class="accent">Why it was invented</h3>
+      <p style="font-size:14.5px">Early machines grouped bits in threes, and programmers needed a way to read long binary strings without going cross-eyed. Octal collapses every 3 bits into 1 digit. You'll also see it in C literals (<span class="mono">0752</span>) and Python (<span class="mono">0o752</span>).</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 OCTAL -> DECIMAL -->
+<section class="slide" data-title="Octal → Decimal">
+  <div class="eyebrow">Conversion 1</div>
+  <h2>Octal → Decimal: weighted sum</h2>
+  <p class="lead">Multiply each digit by its place value (a power of 8) and add. Same method you'd use to read any positional number.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:8px">Convert <span class="oct mono">752₈</span> to decimal</p>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div><div class="step-title">Write each digit over its place value</div><div class="codeline"><span class="oct">7</span>×64 &nbsp; <span class="oct">5</span>×8 &nbsp; <span class="oct">2</span>×1</div></div></div>
+      <div class="step"><div class="step-n">2</div><div><div class="step-title">Multiply out</div><div class="codeline">448 &nbsp; + &nbsp; 40 &nbsp; + &nbsp; 2</div></div></div>
+      <div class="step"><div class="step-n" style="background:var(--good);color:#06101f">=</div><div><div class="step-title">Add</div><div class="codeline">752₈ = <span class="accent">490₁₀</span></div></div></div>
+    </div>
+  </div>
+  <div class="note" style="margin-top:18px">Place values grow ×8 each step: <span class="mono">1, 8, 64, 512, 4096…</span> Memorizing the first few makes this instant.</div>
+</section>
+
+<!-- 4 DECIMAL -> OCTAL -->
+<section class="slide" data-title="Decimal → Octal">
+  <div class="eyebrow">Conversion 2</div>
+  <h2>Decimal → Octal: divide by 8</h2>
+  <p class="lead">Repeatedly divide by 8, writing down each remainder. When the quotient hits 0, read the remainders <strong>bottom-up</strong>.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:8px">Convert <span class="accent mono">490₁₀</span> to octal</p>
+    <table class="divt">
+      <tr><td>490 ÷ 8 =</td><td>61</td><td class="rem">remainder 2</td></tr>
+      <tr><td>61 ÷ 8 =</td><td>7</td><td class="rem">remainder 5</td></tr>
+      <tr><td>7 ÷ 8 =</td><td>0</td><td class="rem">remainder 7</td></tr>
+    </table>
+    <p class="arrowup">↑ read the remainders upward ↑</p>
+    <p style="text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:1.3rem;margin-top:6px">490₁₀ = <span class="oct mono">752₈</span></p>
+  </div>
+  <div class="note good" style="margin-top:18px">Why bottom-up? The first remainder you get is the <em>ones</em> digit (smallest place); the last is the highest place. So you stack them from the bottom.</div>
+</section>
+
+<!-- 5 THE KEY: 8 = 2^3 -->
+<section class="slide" data-title="8 = 2³">
+  <div class="eyebrow">The key insight</div>
+  <h2>One octal digit = <span class="cyan">three binary bits</span></h2>
+  <p class="lead">Because <strong>8 = 2³</strong>, every octal digit 0–7 corresponds to exactly one group of three bits — and that mapping never changes. Learn this tiny table and binary ↔ octal becomes pure lookup.</p>
+
+  <div class="card" style="margin-top:20px;padding:8px 6px">
+    <table class="wide cheat" style="text-align:center">
+      <thead><tr><th style="text-align:center">Octal</th><th style="text-align:center">0</th><th style="text-align:center">1</th><th style="text-align:center">2</th><th style="text-align:center">3</th><th style="text-align:center">4</th><th style="text-align:center">5</th><th style="text-align:center">6</th><th style="text-align:center">7</th></tr></thead>
+      <tbody><tr><td style="color:var(--muted)">Binary</td>
+        <td class="mid">000</td><td class="mid">001</td><td class="mid">010</td><td class="mid">011</td>
+        <td class="mid">100</td><td class="mid">101</td><td class="mid">110</td><td class="mid">111</td></tr></tbody>
+    </table>
+  </div>
+  <div class="note cyan" style="margin-top:20px">Compare with hex, where 16 = 2⁴ so one hex digit = 4 bits. Octal and hex are both just “binary, grouped” — octal in 3s, hex in 4s.</div>
+</section>
+
+<!-- 6 OCTAL -> BINARY -->
+<section class="slide" data-title="Octal → Binary">
+  <div class="eyebrow">Conversion 3</div>
+  <h2>Octal → Binary: expand each digit</h2>
+  <p class="lead">Replace every octal digit with its 3-bit pattern from the table. Concatenate, and you're done — no math required.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:12px">Convert <span class="oct mono">752₈</span> to binary</p>
+    <div class="groups" id="o2b-groups"></div>
+    <p style="text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:1.25rem;margin-top:10px">752₈ = <span class="cyan mono">111101010₂</span></p>
+  </div>
+  <div class="note" style="margin-top:18px">Keep all three bits for every digit, even leading zeros (e.g. 2 → <span class="mono">010</span>). You only trim leading zeros from the very front of the final result.</div>
+</section>
+
+<!-- 7 BINARY -> OCTAL -->
+<section class="slide" data-title="Binary → Octal">
+  <div class="eyebrow">Conversion 4</div>
+  <h2>Binary → Octal: group in threes</h2>
+  <p class="lead">Starting from the <strong>right</strong>, slice the binary into groups of 3 bits (pad the left with zeros if needed). Turn each group into its octal digit.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:12px">Convert <span class="cyan mono">111101010₂</span> to octal</p>
+    <div class="groups" id="b2o-groups"></div>
+    <p style="text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:1.25rem;margin-top:10px">111101010₂ = <span class="oct mono">752₈</span></p>
+  </div>
+  <div class="note good" style="margin-top:18px"><strong>Always group from the right.</strong> The rightmost bits are the ones place, so an incomplete group belongs at the <em>left</em> — pad it with leading zeros, never the right.</div>
+</section>
+
+<!-- 8 UNIVERSAL CONVERTER -->
+<section class="slide" data-title="Converter">
+  <div class="eyebrow">Interactive tool</div>
+  <h2>Universal <span class="cyan">converter</span></h2>
+  <p class="lead">Type a number, tell it which base you typed, and see all three at once — plus the digit-by-digit grouping that links octal and binary.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+      <label class="fld">VALUE<input type="text" id="cv-in" value="752" spellcheck="false"></label>
+      <div style="display:flex;gap:8px">
+        <button class="opbtn oct active" data-base="8">Octal</button>
+        <button class="opbtn" data-base="10">Decimal</button>
+        <button class="opbtn" data-base="2">Binary</button>
+      </div>
+    </div>
+    <div id="cv-err" class="feedback no" style="margin-bottom:6px"></div>
+    <div class="outcards">
+      <div class="outcard dec"><div class="lab">Decimal</div><div class="val" id="cv-dec">—</div></div>
+      <div class="outcard oct"><div class="lab">Octal</div><div class="val" id="cv-oct">—</div></div>
+      <div class="outcard bin"><div class="lab">Binary</div><div class="val" id="cv-bin">—</div></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:12.5px;margin:16px 0 6px;font-family:'JetBrains Mono'">each octal digit ↔ its 3 bits</p>
+    <div class="groups" id="cv-groups"></div>
+  </div>
+</section>
+
+<!-- 9 PERMISSIONS -->
+<section class="slide" data-title="chmod">
+  <div class="eyebrow">Octal in the real world</div>
+  <h2>Unix permissions: <span class="oct">chmod 755</span></h2>
+  <p class="lead">A file's permissions are three groups — <strong>owner, group, other</strong> — each with read (4), write (2), execute (1). Add them and each group becomes a single octal digit 0–7. Toggle below and watch the number build.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div class="perm" id="perm"></div>
+    <div class="chmod-out"><span class="num" id="chmod-num">755</span><span class="sym" id="chmod-sym">rwxr-xr-x</span></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap">
+      <button class="btn ghost" data-preset="755">755</button>
+      <button class="btn ghost" data-preset="644">644</button>
+      <button class="btn ghost" data-preset="777">777</button>
+      <button class="btn ghost" data-preset="600">600</button>
+    </div>
+  </div>
+  <div class="note cyan" style="margin-top:18px">r = 4, w = 2, x = 1. So <span class="mono">7 = 4+2+1 = rwx</span> and <span class="mono">5 = 4+1 = r-x</span>. This is the same “1 octal digit = 3 bits” idea — the three bits are just labelled r, w, x.</div>
+</section>
+
+<!-- 10 PRACTICE -->
+<section class="slide" data-title="Practice">
+  <div class="eyebrow">Your turn</div>
+  <h2>10 practice problems</h2>
+  <p class="lead">All four directions plus a permissions question. Type your answer in the base the problem asks for, hit <em>Check</em>, or reveal the steps. Extra leading zeros are fine.</p>
+
+  <div class="scorebar">
+    <div><div class="big" id="score">0 / 10</div><div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono'">CORRECT</div></div>
+    <button class="btn ghost" id="reveal-all">Reveal all solutions</button>
+    <button class="btn ghost" id="reset-prac">Reset</button>
+  </div>
+  <div class="grid g2" id="prac-grid"></div>
+</section>
+
+<!-- 11 CHEAT SHEET -->
+<section class="slide" data-title="Summary">
+  <div class="eyebrow">Take it with you</div>
+  <h2>One-page cheat sheet</h2>
+
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card">
+      <h3 class="cyan">Through decimal (any base)</h3>
+      <ul class="clean" style="margin-top:6px">
+        <li><strong>Octal → Dec:</strong> multiply digits by 1, 8, 64… and add</li>
+        <li><strong>Dec → Octal:</strong> divide by 8, read remainders bottom-up</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:var(--amber-deep)">
+      <h3 class="oct">Through binary (no math)</h3>
+      <ul class="clean" style="margin-top:6px">
+        <li><strong>Octal → Binary:</strong> each digit → its 3 bits</li>
+        <li><strong>Binary → Octal:</strong> group bits in 3s from the right</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;padding:8px 6px">
+    <table class="wide cheat">
+      <thead><tr><th>Octal</th><th>3 bits</th><th>Octal</th><th>3 bits</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td class="mid">000</td><td>4</td><td class="mid">100</td></tr>
+        <tr><td>1</td><td class="mid">001</td><td>5</td><td class="mid">101</td></tr>
+        <tr><td>2</td><td class="mid">010</td><td>6</td><td class="mid">110</td></tr>
+        <tr><td>3</td><td class="mid">011</td><td>7</td><td class="mid">111</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note amber" style="margin-top:18px;border-color:var(--amber)"><strong>Remember:</strong> octal “10” is decimal 8. There is no 8 or 9 digit — when a column passes 7 it carries. And for permissions, r=4, w=2, x=1.</div>
+  <p style="text-align:center;color:var(--muted);margin-top:26px;font-family:'JetBrains Mono';font-size:13px">MAC-283 · Computer Architecture & Assembler Language · Prof. Khalid Kassou</p>
+</section>
+
+<div class="nav">
+  <button class="btn ghost" id="prev">← Previous</button>
+  <span class="kbd-hint">Navigate with <kbd>←</kbd> <kbd>→</kbd></span>
+  <button class="btn" id="next">Next →</button>
+</div>
+
+</div></div>
+
+<script>
+/* ---------- helpers ---------- */
+function octTrip(d){ return d.toString(2).padStart(3,'0'); }
+function makeBitCell(ch){const d=document.createElement('div');d.className='bit'+(ch==='1'?' one':'');d.textContent=ch;return d;}
+function makeOctCell(ch){const d=document.createElement('div');d.className='octcell';d.textContent=ch;return d;}
+
+/* a group = octal digit above its 3-bit triplet */
+function makeGroup(octDigit){
+  const g=document.createElement('div'); g.className='group';
+  g.appendChild(makeOctCell(octDigit));
+  const trip=document.createElement('div'); trip.className='trip';
+  [...octTrip(parseInt(octDigit,8))].forEach(b=>trip.appendChild(makeBitCell(b)));
+  g.appendChild(trip);
+  return g;
+}
+function renderGroups(container,octStr){
+  container.innerHTML='';
+  [...octStr].forEach(d=>container.appendChild(makeGroup(d)));
+}
+
+/* ---------- Slide 2: place strip for 752 ---------- */
+(function(){
+  const places=document.getElementById('oct-places'), digits=document.getElementById('oct-digits');
+  const pv=['8²=64','8¹=8','8⁰=1'], dg=['7','5','2'];
+  pv.forEach(t=>{const d=document.createElement('div');d.className='placecell';d.style.width='48px';d.textContent=t;places.appendChild(d);});
+  dg.forEach(t=>digits.appendChild(makeOctCell(t)));
+})();
+
+/* ---------- Slides 6 & 7: grouping visuals ---------- */
+renderGroups(document.getElementById('o2b-groups'),'752');
+renderGroups(document.getElementById('b2o-groups'),'752');
+
+/* ---------- Slide 8: universal converter ---------- */
+(function(){
+  const inp=document.getElementById('cv-in'), err=document.getElementById('cv-err');
+  const decEl=document.getElementById('cv-dec'), octEl=document.getElementById('cv-oct'), binEl=document.getElementById('cv-bin');
+  const groups=document.getElementById('cv-groups');
+  let base=8;
+  const valid={2:/^[01]+$/,8:/^[0-7]+$/,10:/^[0-9]+$/};
+  function run(){
+    err.textContent='';
+    const raw=inp.value.trim().replace(/\s+/g,'');
+    if(raw===''){ decEl.textContent=octEl.textContent=binEl.textContent='—'; groups.innerHTML=''; return; }
+    if(!valid[base].test(raw)){ err.textContent='Not a valid base-'+base+' number (allowed digits: '+(base===2?'0–1':base===8?'0–7':'0–9')+').'; decEl.textContent=octEl.textContent=binEl.textContent='—'; groups.innerHTML=''; return; }
+    const value=parseInt(raw,base);
+    decEl.textContent=value.toString(10);
+    const octStr=value.toString(8);
+    octEl.textContent=octStr;
+    binEl.textContent=value.toString(2);
+    renderGroups(groups,octStr);
+  }
+  document.querySelectorAll('.opbtn[data-base]').forEach(btn=>btn.addEventListener('click',()=>{
+    base=parseInt(btn.dataset.base);
+    document.querySelectorAll('.opbtn[data-base]').forEach(b=>{b.classList.toggle('active',b===btn);b.classList.toggle('oct',b===btn&&base===8);});
+    run();
+  }));
+  inp.addEventListener('input',run);
+  run();
+})();
+
+/* ---------- Slide 9: permissions calculator ---------- */
+(function(){
+  const wrap=document.getElementById('perm');
+  const groupsDef=[['Owner','o'],['Group','g'],['Other','t']];
+  const perms=['r','w','x']; const valOf={r:4,w:2,x:1};
+  const state={o:{r:true,w:true,x:true},g:{r:true,w:false,x:true},t:{r:true,w:false,x:true}}; // 755
+  function rowDigit(s){ return (s.r?4:0)+(s.w?2:0)+(s.x?1:0); }
+  function symFor(s){ return (s.r?'r':'-')+(s.w?'w':'-')+(s.x?'x':'-'); }
+  function build(){
+    wrap.innerHTML='';
+    groupsDef.forEach(([label,key])=>{
+      const row=document.createElement('div'); row.className='permrow';
+      const who=document.createElement('div'); who.className='who'; who.textContent=label; row.appendChild(who);
+      const btns=document.createElement('div'); btns.className='permbtns';
+      perms.forEach(p=>{
+        const b=document.createElement('button'); b.className='opbtn'+(state[key][p]?' active':'');
+        b.textContent=p+' ('+valOf[p]+')';
+        b.addEventListener('click',()=>{ state[key][p]=!state[key][p]; b.classList.toggle('active'); update(); });
+        btns.appendChild(b);
+      });
+      row.appendChild(btns);
+      const dg=document.createElement('div'); dg.className='digit'; dg.id='dg-'+key; dg.textContent=rowDigit(state[key]);
+      row.appendChild(dg);
+      wrap.appendChild(row);
+    });
+  }
+  function update(){
+    let num='', sym='';
+    groupsDef.forEach(([,key])=>{ num+=rowDigit(state[key]); sym+=symFor(state[key]); document.getElementById('dg-'+key).textContent=rowDigit(state[key]); });
+    document.getElementById('chmod-num').textContent=num;
+    document.getElementById('chmod-sym').textContent=sym;
+  }
+  document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>{
+    const p=btn.dataset.preset;
+    groupsDef.forEach(([,key],i)=>{ const d=parseInt(p[i]); state[key]={r:!!(d&4),w:!!(d&2),x:!!(d&1)}; });
+    build(); update();
+  }));
+  build(); update();
+})();
+
+/* ---------- Slide 10: practice ---------- */
+const DIGITS={2:'0–1',8:'0–7',10:'0–9'};
+const VALID={2:/^[01]+$/,8:/^[0-7]+$/,10:/^[0-9]+$/};
+const PROBLEMS=[
+  {q:'17₈ → decimal',  fromB:8, ansB:10, value:15, tag:'oct → dec'},
+  {q:'64₈ → decimal',  fromB:8, ansB:10, value:52, tag:'oct → dec'},
+  {q:'100₁₀ → octal',  fromB:10,ansB:8,  value:100,tag:'dec → oct'},
+  {q:'25₁₀ → octal',   fromB:10,ansB:8,  value:25, tag:'dec → oct'},
+  {q:'5₈ → binary',    fromB:8, ansB:2,  value:5,  tag:'oct → bin'},
+  {q:'27₈ → binary',   fromB:8, ansB:2,  value:23, tag:'oct → bin'},
+  {q:'110101₂ → octal',fromB:2, ansB:8,  value:53, tag:'bin → oct'},
+  {q:'11011₂ → octal', fromB:2, ansB:8,  value:27, tag:'bin → oct'},
+  {q:'752₈ → decimal', fromB:8, ansB:10, value:490,tag:'oct → dec'},
+  {q:'rw-r--r-- → chmod number', fromB:8, ansB:8, value:0o644, tag:'permissions'}
+];
+const solved=new Array(10).fill(false);
+function genSolution(p){
+  const v=p.value;
+  if(p.ansB===10){ // octal/binary -> decimal weighted sum
+    const s=v.toString(p.fromB); let terms=[];
+    [...s].forEach((d,i)=>{ const pw=Math.pow(p.fromB,s.length-1-i); if(d!=='0')terms.push(d+'×'+pw); });
+    return `<div class="sol-line">${terms.join(' + ')}</div><div class="sol-line">= <b>${v}</b></div>`;
+  }
+  if(p.fromB===10 && p.ansB===8){ // decimal -> octal divide
+    let n=v, lines=[];
+    while(n>0){ lines.push(`${n} ÷ 8 = ${Math.floor(n/8)} remainder ${n%8}`); n=Math.floor(n/8); }
+    return lines.map(l=>`<div class="sol-line">${l}</div>`).join('')+`<div class="sol-line">read up: <b>${v.toString(8)}₈</b></div>`;
+  }
+  if(p.ansB===2){ // octal -> binary
+    const o=v.toString(8);
+    const trips=[...o].map(d=>d+'→'+parseInt(d,8).toString(2).padStart(3,'0'));
+    return `<div class="sol-line">${trips.join('  ')}</div><div class="sol-line">= <b>${v.toString(2)}₂</b></div>`;
+  }
+  if(p.fromB===2 && p.ansB===8){ // binary -> octal group by 3
+    let b=v.toString(2); const pad=(3-b.length%3)%3; const bp='0'.repeat(pad)+b;
+    let groups=bp.match(/.{3}/g);
+    const mapped=groups.map(g=>g+'→'+parseInt(g,2));
+    return `<div class="sol-line">pad: ${bp}</div><div class="sol-line">${mapped.join('  ')}</div><div class="sol-line">= <b>${v.toString(8)}₈</b></div>`;
+  }
+  // permissions
+  return `<div class="sol-line">rw- = 4+2 = 6 · r-- = 4 · r-- = 4</div><div class="sol-line">= <b>644</b></div>`;
+}
+function buildProblem(p,idx){
+  const card=document.createElement('div'); card.className='prob';
+  const allowed=DIGITS[p.ansB];
+  card.innerHTML=`
+    <div class="prob-head">
+      <div class="prob-q">${idx+1}.&nbsp; <b>${p.q}</b></div>
+      <span class="tag">${p.tag}</span>
+    </div>
+    <div class="prob-in">
+      <input type="text" placeholder="base-${p.ansB} answer" spellcheck="false">
+      <button class="btn check">Check</button>
+      <button class="btn ghost showbtn">Show steps</button>
+    </div>
+    <div class="feedback"></div>
+    <div class="sol">${genSolution(p)}</div>`;
+  const inp=card.querySelector('input'), fb=card.querySelector('.feedback'), sol=card.querySelector('.sol');
+  card.querySelector('.check').addEventListener('click',()=>{
+    const raw=inp.value.trim().replace(/\s+/g,'');
+    if(raw===''){ fb.className='feedback no'; fb.textContent='Type an answer first.'; return; }
+    if(!VALID[p.ansB].test(raw)){ fb.className='feedback no'; fb.textContent='Use only digits '+allowed+' for a base-'+p.ansB+' answer.'; return; }
+    if(parseInt(raw,p.ansB)===p.value){
+      fb.className='feedback ok'; fb.textContent='✓ Correct!';
+      if(!solved[idx]){solved[idx]=true;updateScore();}
+    } else { fb.className='feedback no'; fb.textContent='✕ Not quite — try the steps.'; }
+  });
+  card.querySelector('.showbtn').addEventListener('click',()=>sol.classList.toggle('show'));
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')card.querySelector('.check').click();});
+  return card;
+}
+(function(){ const g=document.getElementById('prac-grid'); PROBLEMS.forEach((p,i)=>g.appendChild(buildProblem(p,i))); })();
+function updateScore(){ document.getElementById('score').textContent=solved.filter(Boolean).length+' / 10'; }
+document.getElementById('reveal-all').addEventListener('click',()=>document.querySelectorAll('.sol').forEach(s=>s.classList.add('show')));
+document.getElementById('reset-prac').addEventListener('click',()=>{
+  document.querySelectorAll('.prob input').forEach(i=>i.value='');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.sol').forEach(s=>s.classList.remove('show'));
+  for(let i=0;i<solved.length;i++)solved[i]=false; updateScore();
+});
+
+/* ---------- navigation ---------- */
+const slides=[...document.querySelectorAll('.slide')];
+const dotsWrap=document.getElementById('dots'), counter=document.getElementById('counter');
+let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot'+(i===0?' active':'');b.title=s.dataset.title;b.addEventListener('click',()=>goto(i));dotsWrap.appendChild(b);});
+const dots=[...dotsWrap.children];
+function goto(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  dots.forEach((d,k)=>d.classList.toggle('active',k===cur));
+  counter.textContent=String(cur+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('next').addEventListener('click',()=>goto(cur+1));
+document.getElementById('prev').addEventListener('click',()=>goto(cur-1));
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return; if(e.key==='ArrowRight')goto(cur+1); if(e.key==='ArrowLeft')goto(cur-1); });
+goto(0);
+</script>
+</body>
+</html>
