@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hexadecimal System · MAC-283</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070f1e; --bg-2:#0b1830; --panel:#0f2138; --panel-2:#13294480;
+    --line:#1d3a5f; --trace:#2e6ad1; --cyan:#38bdf8; --cyan-dim:#1c5e87;
+    --amber:#fbbf24; --amber-deep:#d99413; --copper:#c08a3e;
+    --ink:#e8f0fb; --muted:#8da4c0; --muted-2:#5d7593;
+    --good:#34d399; --bad:#f87171; --violet:#c79cf0;
+    --hex:#f472b6; --hex-deep:#9d3565;
+    --bit0:#1a2f4d; --bit0-ink:#6f88a8; --bit1:#0e3a52; --bit1-ink:#5fd2f8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #102a4a 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 110%, #0c2138 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; min-height:100vh; overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.16;
+    background-image:linear-gradient(90deg,#18406b 1px,transparent 1px),linear-gradient(#18406b 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 80%);
+  }
+  .stage{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px}
+
+  .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#070f1eee,#070f1ecc 70%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1120px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:.3px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#07101f;background:var(--amber);padding:3px 8px;border-radius:5px;letter-spacing:1px}
+  .brand small{color:var(--muted);font-weight:500;font-family:'Inter';font-size:12.5px;letter-spacing:0}
+  .progress-wrap{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#21456f;cursor:pointer;border:none;transition:.25s;padding:0}
+  .dot:hover{background:var(--cyan-dim)} .dot.active{background:var(--cyan);box-shadow:0 0 0 4px #38bdf833}
+  .counter{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)}
+
+  .deck{padding:30px 0 90px}
+  .slide{display:none;animation:fade .45s ease} .slide.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.1rem,5.2vw,3.7rem);line-height:1.04;letter-spacing:-1px}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(1.5rem,3.6vw,2.3rem);line-height:1.12;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.18rem;margin-bottom:8px;color:var(--ink)}
+  p{color:#cdddf0}
+  .lead{font-size:1.12rem;color:var(--muted);max-width:62ch}
+  .accent{color:var(--amber)} .cyan{color:var(--cyan)} .good{color:var(--good)} .hexc{color:var(--hex)}
+  strong{color:#fff;font-weight:600} .mono{font-family:'JetBrains Mono',monospace}
+
+  .card{background:linear-gradient(180deg,var(--panel),#0c1d33);border:1px solid var(--line);border-radius:16px;padding:24px 26px}
+  .grid{display:grid;gap:18px} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:780px){.g2,.g3{grid-template-columns:1fr}}
+
+  .note{border-left:3px solid var(--amber);background:linear-gradient(90deg,#2a200733,transparent);padding:12px 16px;border-radius:0 10px 10px 0;color:#e9d9b3}
+  .note.cyan{border-color:var(--cyan);background:linear-gradient(90deg,#06283833,transparent);color:#bfe6f7}
+  .note.good{border-color:var(--good);background:linear-gradient(90deg,#06302433,transparent);color:#bdeedd}
+  .note.hexn{border-color:var(--hex);background:linear-gradient(90deg,#2a142033,transparent);color:#f6cbe0}
+  .pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;background:#10314e;border:1px solid var(--line);color:var(--cyan);padding:3px 9px;border-radius:20px}
+
+  /* cells */
+  .reg{display:flex;flex-direction:column;gap:10px;align-items:center;margin:6px 0}
+  .bitrow{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .bits{display:flex;gap:5px}
+  .bit{width:38px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;background:var(--bit0);color:var(--bit0-ink);border:1px solid #21436a;transition:.25s;user-select:none}
+  .bit.one{background:var(--bit1);color:var(--bit1-ink);border-color:#1f6c92;box-shadow:0 0 14px #38bdf833}
+  .hexcell{width:50px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;background:#2a1320;color:var(--hex);border:1px solid var(--hex-deep);box-shadow:0 0 14px #f472b633}
+  .placecell{font-family:'JetBrains Mono';font-size:11px;color:var(--muted-2);text-align:center}
+
+  /* hex↔binary grouping visual */
+  .groups{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+  .group{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;border:1px dashed var(--hex-deep);border-radius:12px}
+  .group .nib{display:flex;gap:4px}
+
+  .steps{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .step{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start;padding:12px 15px;background:#0a1c30;border:1px solid var(--line);border-radius:12px}
+  .step-n{width:30px;height:30px;border-radius:8px;background:#10314e;color:var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
+  .step-title{font-weight:600;color:#fff;font-size:14px}
+  .codeline{font-family:'JetBrains Mono',monospace;font-size:17px;letter-spacing:1px;color:var(--cyan)}
+
+  .divt{width:100%;max-width:440px;margin:6px auto;border-collapse:collapse;font-family:'JetBrains Mono';font-size:15px}
+  .divt td{padding:7px 10px;border-bottom:1px solid #14283f}
+  .divt .rem{color:var(--hex);font-weight:700;text-align:right}
+  .arrowup{color:var(--hex);font-family:'JetBrains Mono';text-align:center;font-size:13px;margin-top:6px}
+
+  .btn{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;background:var(--cyan);color:#06101f;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;transition:.18s}
+  .btn:hover{background:#5fcbfb;transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--cyan-dim)} .btn.ghost:hover{background:#0e2740;color:#7dd6fb}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .opbtn{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;background:#0a1c30;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:9px 14px;cursor:pointer;transition:.18s}
+  .opbtn:hover{border-color:var(--cyan-dim);color:var(--ink)} .opbtn.active{background:var(--cyan);color:#06101f;border-color:var(--cyan)}
+  .opbtn.hx.active{background:var(--hex);color:#1a0512;border-color:var(--hex)}
+  input[type=text],input[type=number]{font-family:'JetBrains Mono',monospace;font-size:18px;background:#0a1c30;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;width:160px;outline:none;transition:.18s}
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #38bdf833}
+  label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+
+  .outcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}
+  @media(max-width:620px){.outcards{grid-template-columns:1fr}}
+  .outcard{background:#0a1c30;border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .outcard .lab{font-family:'JetBrains Mono';font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+  .outcard .val{font-family:'JetBrains Mono';font-weight:700;font-size:1.5rem;word-break:break-all;margin-top:4px}
+  .outcard.dec .val{color:var(--ink)} .outcard.hx .val{color:var(--hex)} .outcard.bin .val{color:var(--cyan)}
+
+  /* reference table */
+  .reftab{width:100%;border-collapse:collapse;font-family:'JetBrains Mono';font-size:13.5px}
+  .reftab td,.reftab th{padding:6px 10px;border-bottom:1px solid #14283f;text-align:center}
+  .reftab th{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .reftab .h{color:var(--hex);font-weight:700} .reftab .b{color:var(--cyan)} .reftab .d{color:var(--ink)}
+
+  /* color picker */
+  .swatch{height:120px;border-radius:14px;border:1px solid var(--line);box-shadow:inset 0 0 30px #00000044;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px}
+  .swatch .code{font-family:'JetBrains Mono';font-weight:700;font-size:1.5rem;color:#fff;text-shadow:0 1px 6px #000a;letter-spacing:2px}
+  .chrow{display:grid;grid-template-columns:34px 1fr 120px;gap:12px;align-items:center;margin-top:12px}
+  .chrow .nm{font-family:'JetBrains Mono';font-weight:700}
+  .chrow input[type=range]{width:100%;accent-color:var(--hex)}
+  .chrow .read{font-family:'JetBrains Mono';font-size:13px;color:var(--muted);text-align:right}
+  .chrow .read b{color:var(--hex)}
+
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:34px;gap:12px}
+  .kbd-hint{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted-2)}
+  kbd{background:#10243c;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)}
+
+  .prob{background:linear-gradient(180deg,var(--panel),#0b1c31);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .prob-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .prob-q{font-family:'JetBrains Mono';font-weight:700;font-size:1.05rem;color:var(--ink)}
+  .prob-q b{color:var(--amber)}
+  .tag{font-family:'JetBrains Mono';font-size:10.5px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .prob-in{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .prob-in input{width:150px;font-size:16px}
+  .feedback{font-family:'JetBrains Mono';font-size:13px;min-height:18px}
+  .feedback.ok{color:var(--good)} .feedback.no{color:var(--bad)}
+  .sol{display:none;border-top:1px dashed var(--line);padding-top:12px;margin-top:2px}
+  .sol.show{display:block;animation:fade .35s ease}
+  .sol-line{font-family:'JetBrains Mono';font-size:13px;color:var(--muted);padding:2px 0}
+  .sol-line b{color:var(--good)}
+
+  .scorebar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:22px}
+  .scorebar .big{font-family:'Space Grotesk';font-weight:700;font-size:1.6rem;color:var(--cyan)}
+
+  .cheat td,.cheat th{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}
+  .cheat th{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .cheat td:first-child{font-family:'JetBrains Mono';color:var(--hex);font-weight:700;white-space:nowrap}
+  .cheat td.mid{font-family:'JetBrains Mono';color:var(--cyan)}
+  table.wide{width:100%;border-collapse:collapse}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:9px}
+  ul.clean li{padding-left:24px;position:relative;color:#cdddf0}
+  ul.clean li::before{content:"▸";position:absolute;left:2px;color:var(--cyan)}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  @media(max-width:560px){.bit{width:30px;height:36px;font-size:14px}.hexcell{width:40px;height:44px;font-size:20px}.topbar .counter{display:none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="chip">MAC-283</span> Computer Architecture <small>· Khalid Kassou · LaGuardia CC</small></div>
+    <div class="progress-wrap"><div class="dots" id="dots"></div><span class="counter" id="counter"></span></div>
+  </div>
+</div>
+
+<div class="stage"><div class="deck">
+
+<!-- 1 TITLE -->
+<section class="slide active" data-title="Title">
+  <div class="eyebrow">Number Systems · Lecture 08</div>
+  <h1>The <span class="hexc">hexadecimal</span> system</h1>
+  <p class="lead" style="margin-top:18px">Hexadecimal is base <strong>16</strong> — sixteen digits: <span class="hexc mono">0–9</span> then <span class="hexc mono">A–F</span> for ten through fifteen. It exists because <strong>16 = 2⁴</strong>, so a single hex digit packs exactly four bits — half a byte. That makes it the standard shorthand for binary: colors, memory addresses, and byte dumps are all written in hex.</p>
+
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card" style="border-color:var(--hex-deep)"><div class="pill" style="color:var(--hex);border-color:var(--hex-deep)">Base 16</div><h3 style="margin-top:12px">Digits 0–9, A–F</h3><p style="font-size:14px;color:var(--muted)">Place values are powers of 16: 1, 16, 256…</p></div>
+    <div class="card" style="border-color:var(--cyan-dim)"><div class="pill cyan">The trick</div><h3 style="margin-top:12px">1 digit = 4 bits</h3><p style="font-size:14px;color:var(--muted)">A “nibble”. Two hex digits = one byte.</p></div>
+    <div class="card" style="border-color:#1f7a5a"><div class="pill" style="color:var(--good);border-color:#1f7a5a">In the wild</div><h3 style="margin-top:12px">#FF5733</h3><p style="font-size:14px;color:var(--muted)">Web colors and addresses are pure hex.</p></div>
+  </div>
+  <div class="note cyan" style="margin-top:26px">Move with <kbd>→</kbd> / <kbd>←</kbd>, the dots above, or the buttons below.</div>
+</section>
+
+<!-- 2 WHAT IS HEX -->
+<section class="slide" data-title="What is hex">
+  <div class="eyebrow">The basics</div>
+  <h2>Counting in base 16</h2>
+  <p class="lead">Each column is worth <strong>16 times</strong> the column to its right. We run out of normal digits after 9, so the next six values borrow letters: <span class="hexc mono">A=10, B=11, C=12, D=13, E=14, F=15</span>.</p>
+
+  <div class="card" style="margin-top:22px">
+    <div class="reg">
+      <div class="bitrow" id="hex-places"></div>
+      <div class="bitrow" id="hex-digits"></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:12px">The hex number <span class="hexc mono">2AF₁₆</span> means 2×256 + 10×16 + 15×1.</p>
+  </div>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card">
+      <h3 class="cyan">Counting up</h3>
+      <p class="mono" style="font-size:15px;color:var(--ink)">…8, 9, <span class="hexc">A, B, C, D, E, F</span>, <span class="accent">10</span>, 11, …, 1F, <span class="accent">20</span></p>
+      <p style="font-size:13.5px;color:var(--muted);margin-top:8px">After F the ones column resets and carries — so hex “10” is decimal 16.</p>
+    </div>
+    <div class="card">
+      <h3 class="hexc">Why it’s everywhere</h3>
+      <p style="font-size:14.5px">One byte (8 bits) is exactly <strong>two hex digits</strong>, so any byte is a tidy two-character code 00–FF. That's why you see hex in <span class="mono">#RRGGBB</span> colors, memory addresses (<span class="mono">0x7FFF…</span>), MAC addresses, and hex dumps.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 HEX -> DECIMAL -->
+<section class="slide" data-title="Hex → Decimal">
+  <div class="eyebrow">Conversion 1</div>
+  <h2>Hex → Decimal: weighted sum</h2>
+  <p class="lead">Multiply each digit by its place value (a power of 16) and add. Convert any letters to their values first: A=10 … F=15.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:8px">Convert <span class="hexc mono">2AF₁₆</span> to decimal</p>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div><div class="step-title">Replace letters, line up place values</div><div class="codeline"><span class="hexc">2</span>×256 &nbsp; <span class="hexc">A(10)</span>×16 &nbsp; <span class="hexc">F(15)</span>×1</div></div></div>
+      <div class="step"><div class="step-n">2</div><div><div class="step-title">Multiply out</div><div class="codeline">512 &nbsp; + &nbsp; 160 &nbsp; + &nbsp; 15</div></div></div>
+      <div class="step"><div class="step-n" style="background:var(--good);color:#06101f">=</div><div><div class="step-title">Add</div><div class="codeline">2AF₁₆ = <span class="accent">687₁₀</span></div></div></div>
+    </div>
+  </div>
+  <div class="note" style="margin-top:18px">Place values grow ×16 each step: <span class="mono">1, 16, 256, 4096, 65536…</span></div>
+</section>
+
+<!-- 4 DECIMAL -> HEX -->
+<section class="slide" data-title="Decimal → Hex">
+  <div class="eyebrow">Conversion 2</div>
+  <h2>Decimal → Hex: divide by 16</h2>
+  <p class="lead">Repeatedly divide by 16, recording each remainder. Remainders 10–15 become A–F. Read the column <strong>bottom-up</strong>.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:8px">Convert <span class="accent mono">687₁₀</span> to hex</p>
+    <table class="divt">
+      <tr><td>687 ÷ 16 =</td><td>42</td><td class="rem">remainder 15 → F</td></tr>
+      <tr><td>42 ÷ 16 =</td><td>2</td><td class="rem">remainder 10 → A</td></tr>
+      <tr><td>2 ÷ 16 =</td><td>0</td><td class="rem">remainder 2 → 2</td></tr>
+    </table>
+    <p class="arrowup">↑ read the remainders upward ↑</p>
+    <p style="text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:1.3rem;margin-top:6px">687₁₀ = <span class="hexc mono">2AF₁₆</span></p>
+  </div>
+  <div class="note good" style="margin-top:18px">Don't forget to translate remainders into letters: a remainder of 13 is the digit <span class="mono">D</span>, not “13”.</div>
+</section>
+
+<!-- 5 THE KEY: 16 = 2^4 -->
+<section class="slide" data-title="16 = 2⁴">
+  <div class="eyebrow">The key insight</div>
+  <h2>One hex digit = <span class="cyan">four binary bits</span></h2>
+  <p class="lead">Because <strong>16 = 2⁴</strong>, every hex digit maps to exactly one group of four bits — a <em>nibble</em>. Learn this table and binary ↔ hex is pure lookup, no arithmetic.</p>
+
+  <div class="card" style="margin-top:18px;padding:10px 14px">
+    <table class="reftab" id="hex-table"></table>
+  </div>
+  <div class="note cyan" style="margin-top:16px">This is the same idea as octal (1 digit = 3 bits), scaled up by one bit. Hex won because 4 bits divides a byte evenly: <strong>1 byte = 2 nibbles = 2 hex digits</strong>.</div>
+</section>
+
+<!-- 6 HEX -> BINARY -->
+<section class="slide" data-title="Hex → Binary">
+  <div class="eyebrow">Conversion 3</div>
+  <h2>Hex → Binary: expand each digit</h2>
+  <p class="lead">Replace every hex digit with its 4-bit nibble from the table, then concatenate. No math needed.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:12px">Convert <span class="hexc mono">2AF₁₆</span> to binary</p>
+    <div class="groups" id="h2b-groups"></div>
+    <p style="text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:1.2rem;margin-top:10px">2AF₁₆ = <span class="cyan mono">0010 1010 1111₂</span></p>
+  </div>
+  <div class="note" style="margin-top:18px">Keep all four bits per digit, including leading zeros (2 → <span class="mono">0010</span>). Trim leading zeros only from the very front of the final answer.</div>
+</section>
+
+<!-- 7 BINARY -> HEX -->
+<section class="slide" data-title="Binary → Hex">
+  <div class="eyebrow">Conversion 4</div>
+  <h2>Binary → Hex: group in fours</h2>
+  <p class="lead">Starting from the <strong>right</strong>, slice the binary into nibbles of 4 bits (pad the left with zeros if needed). Convert each nibble to its hex digit.</p>
+
+  <div class="card" style="margin-top:22px">
+    <p style="font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-bottom:12px">Convert <span class="cyan mono">001010101111₂</span> to hex</p>
+    <div class="groups" id="b2h-groups"></div>
+    <p style="text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:1.2rem;margin-top:10px">001010101111₂ = <span class="hexc mono">2AF₁₆</span></p>
+  </div>
+  <div class="note good" style="margin-top:18px"><strong>Always group from the right</strong>, because the rightmost bits are the ones place. An incomplete nibble goes on the <em>left</em> and gets padded with leading zeros.</div>
+</section>
+
+<!-- 8 UNIVERSAL CONVERTER -->
+<section class="slide" data-title="Converter">
+  <div class="eyebrow">Interactive tool</div>
+  <h2>Universal <span class="cyan">converter</span></h2>
+  <p class="lead">Type a number, tell it the base, and see all three at once — with the nibble-by-nibble grouping that links hex and binary.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+      <label class="fld">VALUE<input type="text" id="cv-in" value="2AF" spellcheck="false"></label>
+      <div style="display:flex;gap:8px">
+        <button class="opbtn hx active" data-base="16">Hex</button>
+        <button class="opbtn" data-base="10">Decimal</button>
+        <button class="opbtn" data-base="2">Binary</button>
+      </div>
+    </div>
+    <div id="cv-err" class="feedback no" style="margin-bottom:6px"></div>
+    <div class="outcards">
+      <div class="outcard dec"><div class="lab">Decimal</div><div class="val" id="cv-dec">—</div></div>
+      <div class="outcard hx"><div class="lab">Hex</div><div class="val" id="cv-hex">—</div></div>
+      <div class="outcard bin"><div class="lab">Binary</div><div class="val" id="cv-bin">—</div></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:12.5px;margin:16px 0 6px;font-family:'JetBrains Mono'">each hex digit ↔ its 4 bits</p>
+    <div class="groups" id="cv-groups"></div>
+  </div>
+</section>
+
+<!-- 9 COLORS -->
+<section class="slide" data-title="Hex colors">
+  <div class="eyebrow">Hex in the real world</div>
+  <h2>Web colors: <span class="hexc">#RRGGBB</span></h2>
+  <p class="lead">A color is three bytes — <strong>red, green, blue</strong> — each 0–255, each written as two hex digits. Drag the channels and watch the hex code and the color update together.</p>
+
+  <div class="grid g2" style="margin-top:20px;align-items:start">
+    <div class="card">
+      <div class="swatch" id="sw"><span class="code" id="sw-code">#FF5733</span></div>
+      <div class="chrow"><span class="nm" style="color:#f87171">R</span><input type="range" id="r-r" min="0" max="255" value="255"><span class="read" id="r-read"></span></div>
+      <div class="chrow"><span class="nm" style="color:#34d399">G</span><input type="range" id="r-g" min="0" max="255" value="87"><span class="read" id="g-read"></span></div>
+      <div class="chrow"><span class="nm" style="color:#38bdf8">B</span><input type="range" id="r-b" min="0" max="255" value="51"><span class="read" id="b-read"></span></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+        <button class="btn ghost" data-color="255,87,51">#FF5733</button>
+        <button class="btn ghost" data-color="56,189,248">#38BDF8</button>
+        <button class="btn ghost" data-color="251,191,36">#FBBF24</button>
+        <button class="btn ghost" data-color="0,0,0">#000000</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="hexc">How the code is built</h3>
+      <p style="font-size:14.5px;margin-bottom:8px">Each channel's decimal value (0–255) becomes one byte = two hex digits:</p>
+      <div id="color-break" class="mono" style="font-size:15px;line-height:2"></div>
+      <div class="note cyan" style="margin-top:14px"><span class="mono">FF</span> = 255 (brightest), <span class="mono">00</span> = 0 (off). So <span class="mono">#FF0000</span> is pure red, <span class="mono">#FFFFFF</span> white, <span class="mono">#000000</span> black.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 PRACTICE -->
+<section class="slide" data-title="Practice">
+  <div class="eyebrow">Your turn</div>
+  <h2>10 practice problems</h2>
+  <p class="lead">All four directions plus a color question. Type your answer in the base the problem asks for (use uppercase A–F for hex), hit <em>Check</em>, or reveal the steps. Extra leading zeros are fine.</p>
+
+  <div class="scorebar">
+    <div><div class="big" id="score">0 / 10</div><div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono'">CORRECT</div></div>
+    <button class="btn ghost" id="reveal-all">Reveal all solutions</button>
+    <button class="btn ghost" id="reset-prac">Reset</button>
+  </div>
+  <div class="grid g2" id="prac-grid"></div>
+</section>
+
+<!-- 11 CHEAT SHEET -->
+<section class="slide" data-title="Summary">
+  <div class="eyebrow">Take it with you</div>
+  <h2>One-page cheat sheet</h2>
+
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card">
+      <h3 class="cyan">Through decimal</h3>
+      <ul class="clean" style="margin-top:6px">
+        <li><strong>Hex → Dec:</strong> multiply digits by 1, 16, 256… and add</li>
+        <li><strong>Dec → Hex:</strong> divide by 16, read remainders bottom-up (10–15 → A–F)</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:var(--hex-deep)">
+      <h3 class="hexc">Through binary (no math)</h3>
+      <ul class="clean" style="margin-top:6px">
+        <li><strong>Hex → Binary:</strong> each digit → its 4 bits</li>
+        <li><strong>Binary → Hex:</strong> group bits in 4s from the right</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;padding:8px 6px">
+    <table class="wide cheat">
+      <thead><tr><th>Hex</th><th>Dec</th><th>Bits</th><th>Hex</th><th>Dec</th><th>Bits</th></tr></thead>
+      <tbody id="cheat-rows"></tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:18px;border-color:var(--hex)"><strong>Remember:</strong> A–F are 10–15, hex “10” is decimal 16, and <strong>1 byte = 2 hex digits</strong> (00–FF = 0–255). Hex values are often written with a <span class="mono">0x</span> prefix or <span class="mono">#</span> for colors.</div>
+  <p style="text-align:center;color:var(--muted);margin-top:26px;font-family:'JetBrains Mono';font-size:13px">MAC-283 · Computer Architecture & Assembler Language · Prof. Khalid Kassou</p>
+</section>
+
+<div class="nav">
+  <button class="btn ghost" id="prev">← Previous</button>
+  <span class="kbd-hint">Navigate with <kbd>←</kbd> <kbd>→</kbd></span>
+  <button class="btn" id="next">Next →</button>
+</div>
+
+</div></div>
+
+<script>
+/* ---------- helpers ---------- */
+const HX = '0123456789ABCDEF';
+function nibble(hexCh){ return parseInt(hexCh,16).toString(2).padStart(4,'0'); }
+function makeBitCell(ch){const d=document.createElement('div');d.className='bit'+(ch==='1'?' one':'');d.textContent=ch;return d;}
+function makeHexCell(ch){const d=document.createElement('div');d.className='hexcell';d.textContent=ch;return d;}
+
+/* group = hex digit above its 4-bit nibble */
+function makeGroup(hexDigit){
+  const g=document.createElement('div'); g.className='group';
+  g.appendChild(makeHexCell(hexDigit));
+  const nib=document.createElement('div'); nib.className='nib';
+  [...nibble(hexDigit)].forEach(b=>nib.appendChild(makeBitCell(b)));
+  g.appendChild(nib);
+  return g;
+}
+function renderGroups(container,hexStr){
+  container.innerHTML='';
+  [...hexStr.toUpperCase()].forEach(d=>container.appendChild(makeGroup(d)));
+}
+
+/* ---------- Slide 2: place strip for 2AF ---------- */
+(function(){
+  const places=document.getElementById('hex-places'), digits=document.getElementById('hex-digits');
+  const pv=['16²=256','16¹=16','16⁰=1'], dg=['2','A','F'];
+  pv.forEach(t=>{const d=document.createElement('div');d.className='placecell';d.style.width='50px';d.textContent=t;places.appendChild(d);});
+  dg.forEach(t=>digits.appendChild(makeHexCell(t)));
+})();
+
+/* ---------- Slide 5: 16-row reference table ---------- */
+(function(){
+  const t=document.getElementById('hex-table');
+  let html='<thead><tr><th>Hex</th><th>Dec</th><th>4 bits</th><th>Hex</th><th>Dec</th><th>4 bits</th></tr></thead><tbody>';
+  for(let i=0;i<8;i++){
+    const a=i, b=i+8;
+    html+=`<tr>
+      <td class="h">${HX[a]}</td><td class="d">${a}</td><td class="b">${a.toString(2).padStart(4,'0')}</td>
+      <td class="h">${HX[b]}</td><td class="d">${b}</td><td class="b">${b.toString(2).padStart(4,'0')}</td></tr>`;
+  }
+  t.innerHTML=html+'</tbody>';
+})();
+
+/* cheat-sheet rows */
+(function(){
+  const tb=document.getElementById('cheat-rows');
+  let html='';
+  for(let i=0;i<8;i++){const a=i,b=i+8;
+    html+=`<tr><td>${HX[a]}</td><td style="color:var(--ink)">${a}</td><td class="mid">${a.toString(2).padStart(4,'0')}</td>
+      <td>${HX[b]}</td><td style="color:var(--ink)">${b}</td><td class="mid">${b.toString(2).padStart(4,'0')}</td></tr>`;}
+  tb.innerHTML=html;
+})();
+
+/* ---------- Slides 6 & 7: grouping visuals ---------- */
+renderGroups(document.getElementById('h2b-groups'),'2AF');
+renderGroups(document.getElementById('b2h-groups'),'2AF');
+
+/* ---------- Slide 8: universal converter ---------- */
+(function(){
+  const inp=document.getElementById('cv-in'), err=document.getElementById('cv-err');
+  const decEl=document.getElementById('cv-dec'), hexEl=document.getElementById('cv-hex'), binEl=document.getElementById('cv-bin');
+  const groups=document.getElementById('cv-groups');
+  let base=16;
+  const valid={2:/^[01]+$/,10:/^[0-9]+$/,16:/^[0-9a-fA-F]+$/};
+  function run(){
+    err.textContent='';
+    const raw=inp.value.trim().replace(/\s+/g,'').replace(/^0x/i,'').replace(/^#/,'');
+    if(raw===''){ decEl.textContent=hexEl.textContent=binEl.textContent='—'; groups.innerHTML=''; return; }
+    if(!valid[base].test(raw)){ err.textContent='Not a valid base-'+base+' number (allowed: '+(base===2?'0–1':base===16?'0–9, A–F':'0–9')+').'; decEl.textContent=hexEl.textContent=binEl.textContent='—'; groups.innerHTML=''; return; }
+    const value=parseInt(raw,base);
+    decEl.textContent=value.toString(10);
+    const hexStr=value.toString(16).toUpperCase();
+    hexEl.textContent=hexStr;
+    binEl.textContent=value.toString(2);
+    renderGroups(groups,hexStr);
+  }
+  document.querySelectorAll('.opbtn[data-base]').forEach(btn=>btn.addEventListener('click',()=>{
+    base=parseInt(btn.dataset.base);
+    document.querySelectorAll('.opbtn[data-base]').forEach(b=>{b.classList.toggle('active',b===btn);b.classList.toggle('hx',b===btn&&base===16);});
+    run();
+  }));
+  inp.addEventListener('input',run);
+  run();
+})();
+
+/* ---------- Slide 9: color picker ---------- */
+(function(){
+  const rR=document.getElementById('r-r'), rG=document.getElementById('r-g'), rB=document.getElementById('r-b');
+  const sw=document.getElementById('sw'), code=document.getElementById('sw-code');
+  const reads={r:document.getElementById('r-read'),g:document.getElementById('g-read'),b:document.getElementById('b-read')};
+  const brk=document.getElementById('color-break');
+  function hx2(n){return n.toString(16).padStart(2,'0').toUpperCase();}
+  function run(){
+    const r=+rR.value,g=+rG.value,b=+rB.value;
+    const hex='#'+hx2(r)+hx2(g)+hx2(b);
+    sw.style.background=hex; code.textContent=hex;
+    reads.r.innerHTML=r+' = <b>'+hx2(r)+'</b>';
+    reads.g.innerHTML=g+' = <b>'+hx2(g)+'</b>';
+    reads.b.innerHTML=b+' = <b>'+hx2(b)+'</b>';
+    brk.innerHTML=`<span style="color:#f87171">R ${r}</span> → ${hx2(r)}<br><span style="color:#34d399">G ${g}</span> → ${hx2(g)}<br><span style="color:#38bdf8">B ${b}</span> → ${hx2(b)}<br><span style="color:var(--hex)">${hex}</span>`;
+  }
+  [rR,rG,rB].forEach(s=>s.addEventListener('input',run));
+  document.querySelectorAll('[data-color]').forEach(btn=>btn.addEventListener('click',()=>{
+    const [r,g,b]=btn.dataset.color.split(','); rR.value=r;rG.value=g;rB.value=b; run();
+  }));
+  run();
+})();
+
+/* ---------- Slide 10: practice ---------- */
+const DIGNAME={2:'0–1',10:'0–9',16:'0–9 and A–F'};
+const VALID={2:/^[01]+$/,10:/^[0-9]+$/,16:/^[0-9a-fA-F]+$/};
+const PROBLEMS=[
+  {q:'1F₁₆ → decimal',   fromB:16, ansB:10, value:31,  tag:'hex → dec'},
+  {q:'A0₁₆ → decimal',   fromB:16, ansB:10, value:160, tag:'hex → dec'},
+  {q:'255₁₀ → hex',      fromB:10, ansB:16, value:255, tag:'dec → hex'},
+  {q:'200₁₀ → hex',      fromB:10, ansB:16, value:200, tag:'dec → hex'},
+  {q:'C₁₆ → binary',     fromB:16, ansB:2,  value:12,  tag:'hex → bin'},
+  {q:'3F₁₆ → binary',    fromB:16, ansB:2,  value:63,  tag:'hex → bin'},
+  {q:'11010110₂ → hex',  fromB:2,  ansB:16, value:214, tag:'bin → hex'},
+  {q:'101111₂ → hex',    fromB:2,  ansB:16, value:47,  tag:'bin → hex'},
+  {q:'2AF₁₆ → decimal',  fromB:16, ansB:10, value:687, tag:'hex → dec'},
+  {q:'Green of #FF5733 → decimal', fromB:16, ansB:10, value:87, tag:'color byte'}
+];
+const solved=new Array(10).fill(false);
+function genSolution(p){
+  const v=p.value;
+  if(p.ansB===10){ // hex/bin -> dec weighted sum
+    const s=v.toString(p.fromB).toUpperCase(); let terms=[];
+    [...s].forEach((d,i)=>{ const pw=Math.pow(p.fromB,s.length-1-i); const dv=parseInt(d,p.fromB); if(dv!==0)terms.push((d+(p.fromB===16&&dv>9?'('+dv+')':''))+'×'+pw); });
+    return `<div class="sol-line">${terms.join(' + ')}</div><div class="sol-line">= <b>${v}</b></div>`;
+  }
+  if(p.fromB===10 && p.ansB===16){ // dec -> hex divide
+    let n=v, lines=[];
+    while(n>0){ const r=n%16; lines.push(`${n} ÷ 16 = ${Math.floor(n/16)} remainder ${r}${r>9?' → '+HX[r]:''}`); n=Math.floor(n/16); }
+    return lines.map(l=>`<div class="sol-line">${l}</div>`).join('')+`<div class="sol-line">read up: <b>${v.toString(16).toUpperCase()}₁₆</b></div>`;
+  }
+  if(p.ansB===2){ // hex -> binary
+    const h=v.toString(16).toUpperCase();
+    const nibs=[...h].map(d=>d+'→'+nibble(d));
+    return `<div class="sol-line">${nibs.join('  ')}</div><div class="sol-line">= <b>${v.toString(2)}₂</b></div>`;
+  }
+  if(p.fromB===2 && p.ansB===16){ // binary -> hex group by 4
+    let b=v.toString(2); const pad=(4-b.length%4)%4; const bp='0'.repeat(pad)+b;
+    let groups=bp.match(/.{4}/g);
+    const mapped=groups.map(g=>g+'→'+parseInt(g,2).toString(16).toUpperCase());
+    return `<div class="sol-line">pad: ${bp}</div><div class="sol-line">${mapped.join('  ')}</div><div class="sol-line">= <b>${v.toString(16).toUpperCase()}₁₆</b></div>`;
+  }
+  return `<div class="sol-line">= <b>${v}</b></div>`;
+}
+function buildProblem(p,idx){
+  const card=document.createElement('div'); card.className='prob';
+  const allowed=DIGNAME[p.ansB];
+  card.innerHTML=`
+    <div class="prob-head">
+      <div class="prob-q">${idx+1}.&nbsp; <b>${p.q}</b></div>
+      <span class="tag">${p.tag}</span>
+    </div>
+    <div class="prob-in">
+      <input type="text" placeholder="base-${p.ansB} answer" spellcheck="false">
+      <button class="btn check">Check</button>
+      <button class="btn ghost showbtn">Show steps</button>
+    </div>
+    <div class="feedback"></div>
+    <div class="sol">${genSolution(p)}</div>`;
+  const inp=card.querySelector('input'), fb=card.querySelector('.feedback'), sol=card.querySelector('.sol');
+  card.querySelector('.check').addEventListener('click',()=>{
+    const raw=inp.value.trim().replace(/\s+/g,'').replace(/^0x/i,'').replace(/^#/,'');
+    if(raw===''){ fb.className='feedback no'; fb.textContent='Type an answer first.'; return; }
+    if(!VALID[p.ansB].test(raw)){ fb.className='feedback no'; fb.textContent='Use only '+allowed+' for a base-'+p.ansB+' answer.'; return; }
+    if(parseInt(raw,p.ansB)===p.value){
+      fb.className='feedback ok'; fb.textContent='✓ Correct!';
+      if(!solved[idx]){solved[idx]=true;updateScore();}
+    } else { fb.className='feedback no'; fb.textContent='✕ Not quite — try the steps.'; }
+  });
+  card.querySelector('.showbtn').addEventListener('click',()=>sol.classList.toggle('show'));
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')card.querySelector('.check').click();});
+  return card;
+}
+(function(){ const g=document.getElementById('prac-grid'); PROBLEMS.forEach((p,i)=>g.appendChild(buildProblem(p,i))); })();
+function updateScore(){ document.getElementById('score').textContent=solved.filter(Boolean).length+' / 10'; }
+document.getElementById('reveal-all').addEventListener('click',()=>document.querySelectorAll('.sol').forEach(s=>s.classList.add('show')));
+document.getElementById('reset-prac').addEventListener('click',()=>{
+  document.querySelectorAll('.prob input').forEach(i=>i.value='');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.sol').forEach(s=>s.classList.remove('show'));
+  for(let i=0;i<solved.length;i++)solved[i]=false; updateScore();
+});
+
+/* ---------- navigation ---------- */
+const slides=[...document.querySelectorAll('.slide')];
+const dotsWrap=document.getElementById('dots'), counter=document.getElementById('counter');
+let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot'+(i===0?' active':'');b.title=s.dataset.title;b.addEventListener('click',()=>goto(i));dotsWrap.appendChild(b);});
+const dots=[...dotsWrap.children];
+function goto(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  dots.forEach((d,k)=>d.classList.toggle('active',k===cur));
+  counter.textContent=String(cur+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('next').addEventListener('click',()=>goto(cur+1));
+document.getElementById('prev').addEventListener('click',()=>goto(cur-1));
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return; if(e.key==='ArrowRight')goto(cur+1); if(e.key==='ArrowLeft')goto(cur-1); });
+goto(0);
+</script>
+</body>
+</html>
