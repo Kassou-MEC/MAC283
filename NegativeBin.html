@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Negative Numbers in Binary · MAC-283</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070f1e;
+    --bg-2:#0b1830;
+    --panel:#0f2138;
+    --panel-2:#13294480;
+    --line:#1d3a5f;
+    --trace:#2e6ad1;
+    --cyan:#38bdf8;
+    --cyan-dim:#1c5e87;
+    --amber:#fbbf24;
+    --amber-deep:#d99413;
+    --copper:#c08a3e;
+    --ink:#e8f0fb;
+    --muted:#8da4c0;
+    --muted-2:#5d7593;
+    --good:#34d399;
+    --bad:#f87171;
+    --bit0:#1a2f4d;
+    --bit0-ink:#6f88a8;
+    --bit1:#0e3a52;
+    --bit1-ink:#5fd2f8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #102a4a 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 110%, #0c2138 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  /* faint PCB trace texture */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.16;
+    background-image:
+      linear-gradient(90deg, #18406b 1px, transparent 1px),
+      linear-gradient(#18406b 1px, transparent 1px);
+    background-size:46px 46px;
+    mask-image:radial-gradient(circle at 50% 40%, #000 0%, transparent 80%);
+  }
+  .stage{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    background:linear-gradient(180deg,#070f1eee, #070f1ecc 70%, transparent);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-in{max-width:1120px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:.3px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#07101f;background:var(--amber);padding:3px 8px;border-radius:5px;letter-spacing:1px}
+  .brand small{color:var(--muted);font-weight:500;font-family:'Inter';font-size:12.5px;letter-spacing:0}
+  .progress-wrap{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .dots{display:flex;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#21456f;cursor:pointer;border:none;transition:.25s;padding:0}
+  .dot:hover{background:var(--cyan-dim)}
+  .dot.active{background:var(--cyan);box-shadow:0 0 0 4px #38bdf833}
+  .counter{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)}
+
+  /* ---------- Slides ---------- */
+  .deck{padding:30px 0 90px}
+  .slide{display:none;animation:fade .45s ease}
+  .slide.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.1rem,5.2vw,3.7rem);line-height:1.04;letter-spacing:-1px}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(1.5rem,3.6vw,2.3rem);line-height:1.12;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.18rem;margin-bottom:8px;color:var(--ink)}
+  p{color:#cdddf0}
+  .lead{font-size:1.12rem;color:var(--muted);max-width:60ch}
+  .accent{color:var(--amber)}
+  .cyan{color:var(--cyan)}
+  strong{color:#fff;font-weight:600}
+  .mono{font-family:'JetBrains Mono',monospace}
+
+  .card{background:linear-gradient(180deg,var(--panel),#0c1d33);border:1px solid var(--line);border-radius:16px;padding:24px 26px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:780px){.g2,.g3{grid-template-columns:1fr}}
+
+  .note{border-left:3px solid var(--amber);background:#1a1402;background:linear-gradient(90deg,#2a200733,transparent);padding:12px 16px;border-radius:0 10px 10px 0;color:#e9d9b3}
+  .note.cyan{border-color:var(--cyan);background:linear-gradient(90deg,#06283833,transparent);color:#bfe6f7}
+  .pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;background:#10314e;border:1px solid var(--line);color:var(--cyan);padding:3px 9px;border-radius:20px}
+
+  /* ---------- Bit register strip (signature element) ---------- */
+  .reg{display:flex;flex-direction:column;gap:6px;align-items:center;margin:6px 0}
+  .reg-row{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+  .place{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted-2);width:46px;text-align:center}
+  .bit{
+    width:46px;height:52px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;
+    background:var(--bit0);color:var(--bit0-ink);border:1px solid #21436a;
+    transition:background .3s, color .3s, transform .25s, box-shadow .3s;cursor:default;user-select:none;position:relative;
+  }
+  .bit.one{background:var(--bit1);color:var(--bit1-ink);border-color:#1f6c92;box-shadow:0 0 14px #38bdf833}
+  .bit.flip{animation:flip .5s ease}
+  .bit.hot{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber),0 0 18px #fbbf2455;color:var(--amber);background:#241a04}
+  .bit.sign{outline:2px dashed var(--amber);outline-offset:3px}
+  @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+  .bit-small{width:34px;height:38px;font-size:16px;border-radius:7px}
+  .bit-small + .place{width:34px}
+
+  /* ---------- Controls ---------- */
+  .btn{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;
+    background:var(--cyan);color:#06101f;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;transition:.18s;
+  }
+  .btn:hover{background:#5fcbfb;transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--cyan-dim)}
+  .btn.ghost:hover{background:#0e2740;color:#7dd6fb}
+  .btn.amber{background:var(--amber);color:#1a1200}
+  .btn.amber:hover{background:#ffcb4a}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  input[type=number],input[type=text]{
+    font-family:'JetBrains Mono',monospace;font-size:18px;background:#0a1c30;border:1px solid var(--line);
+    color:var(--ink);border-radius:10px;padding:11px 14px;width:140px;outline:none;transition:.18s;
+  }
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #38bdf833}
+  select{font-family:'JetBrains Mono',monospace;background:#0a1c30;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 12px;font-size:15px;cursor:pointer}
+  label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+
+  .steps{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+  .step{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start;padding:13px 15px;background:#0a1c30;border:1px solid var(--line);border-radius:12px;opacity:.35;transition:.4s}
+  .step.show{opacity:1}
+  .step-n{width:30px;height:30px;border-radius:8px;background:#10314e;color:var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
+  .step.done .step-n{background:var(--cyan);color:#06101f}
+  .step-body{display:flex;flex-direction:column;gap:8px}
+  .step-title{font-weight:600;color:#fff;font-size:14.5px}
+  .codeline{font-family:'JetBrains Mono',monospace;font-size:19px;letter-spacing:2px;color:var(--cyan)}
+  .codeline .b1{color:var(--cyan)}
+  .codeline .b0{color:var(--muted-2)}
+  .codeline .add{color:var(--amber)}
+
+  /* nav arrows */
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:34px;gap:12px}
+  .kbd-hint{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted-2)}
+  kbd{background:#10243c;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)}
+
+  /* practice */
+  .prob{background:linear-gradient(180deg,var(--panel),#0b1c31);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .prob-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .prob-q{font-family:'Space Grotesk';font-weight:600;font-size:1.1rem}
+  .prob-q b{color:var(--amber);font-family:'JetBrains Mono'}
+  .tag{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:20px}
+  .prob-in{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .prob-in input{width:175px;font-size:16px;letter-spacing:3px}
+  .feedback{font-family:'JetBrains Mono';font-size:13px;min-height:18px}
+  .feedback.ok{color:var(--good)}
+  .feedback.no{color:var(--bad)}
+  .sol{display:none;border-top:1px dashed var(--line);padding-top:12px;margin-top:2px}
+  .sol.show{display:block;animation:fade .35s ease}
+  .sol .codeline{font-size:15.5px}
+  .sol-row{display:grid;grid-template-columns:130px 1fr;gap:10px;align-items:center;padding:3px 0;font-size:13px}
+  .sol-row span:first-child{color:var(--muted);font-family:'JetBrains Mono';font-size:12px}
+
+  .scorebar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:22px}
+  .scorebar .big{font-family:'Space Grotesk';font-weight:700;font-size:1.6rem;color:var(--cyan)}
+
+  .cheat td,.cheat th{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}
+  .cheat th{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .cheat td:first-child{font-family:'JetBrains Mono';color:var(--amber);font-weight:700}
+  .cheat .mono{color:var(--cyan)}
+  table{width:100%;border-collapse:collapse}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:9px}
+  ul.clean li{padding-left:24px;position:relative;color:#cdddf0}
+  ul.clean li::before{content:"▸";position:absolute;left:2px;color:var(--cyan)}
+  .x li::before{content:"✕";color:var(--bad)}
+  .ok-list li::before{content:"✓";color:var(--good)}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  }
+  @media(max-width:560px){
+    .bit{width:36px;height:42px;font-size:17px}.place{width:36px}
+    .topbar .counter{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="chip">MAC-283</span> Computer Architecture <small>· Khalid Kassou · LaGuardia CC</small></div>
+    <div class="progress-wrap">
+      <div class="dots" id="dots"></div>
+      <span class="counter" id="counter">01 / 12</span>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+<div class="deck">
+
+<!-- ============ SLIDE 1 — TITLE ============ -->
+<section class="slide active" data-title="Title">
+  <div class="eyebrow">Number Systems · Lecture 04</div>
+  <h1>How computers store<br><span class="accent">negative</span> numbers</h1>
+  <p class="lead" style="margin-top:18px">A processor has no minus sign. It has only wires that are <span class="cyan">on (1)</span> or <span class="cyan">off (0)</span>. So how does it represent −5? This lecture builds the answer step by step — from the naïve idea to <strong>two's complement</strong>, the method real CPUs use — then gives you 10 problems to practice.</p>
+
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card"><div class="pill">Idea 1</div><h3 style="margin-top:12px">Sign-Magnitude</h3><p style="font-size:14px;color:var(--muted)">Steal one bit to mean “−”. Intuitive, but broken in two ways.</p></div>
+    <div class="card"><div class="pill">Idea 2</div><h3 style="margin-top:12px">One's Complement</h3><p style="font-size:14px;color:var(--muted)">Flip every bit. Better — but still has two zeros.</p></div>
+    <div class="card" style="border-color:var(--amber-deep)"><div class="pill" style="color:var(--amber);border-color:var(--amber-deep)">Idea 3 ★</div><h3 style="margin-top:12px">Two's Complement</h3><p style="font-size:14px;color:var(--muted)">Flip, then add 1. One zero, clean math — the real standard.</p></div>
+  </div>
+  <div class="note cyan" style="margin-top:26px">Use <kbd>→</kbd> / <kbd>←</kbd> arrow keys, the dots up top, or the buttons below to move through the lecture.</div>
+</section>
+
+<!-- ============ SLIDE 2 — THE PROBLEM ============ -->
+<section class="slide" data-title="The Problem">
+  <div class="eyebrow">Why this is hard</div>
+  <h2>A register is just a row of switches</h2>
+  <p class="lead">Below is one 8-bit register holding the number <strong>5</strong>. There is no slot for a “−” symbol. Every bit is already doing a job. To store −5, we must agree on a <span class="cyan">code</span> — a rule that turns some pattern of 0s and 1s into a negative value.</p>
+
+  <div class="card" style="margin-top:24px">
+    <div class="reg">
+      <div class="reg-row" id="p2-places"></div>
+      <div class="reg-row" id="p2-bits"></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:12px">8 bits → each column is a power of two. Add the <span class="cyan">lit</span> columns: 4 + 1 = <span class="accent mono">5</span></p>
+  </div>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="note">The hardware can only do two things to a bit: leave it <strong>0</strong> or make it <strong>1</strong>. Any meaning beyond that — like “this number is negative” — has to be a <em>convention we invent</em>.</div>
+    <div class="note cyan">The convention must also make <strong>arithmetic work</strong>. We want the CPU to add −5 the same way it adds +5, using one adder circuit. That requirement quietly decides the winner.</div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3 — SIGN MAGNITUDE ============ -->
+<section class="slide" data-title="Sign-Magnitude">
+  <div class="eyebrow">Idea 1</div>
+  <h2>Sign-Magnitude — the obvious guess</h2>
+  <p class="lead">Reserve the <span class="accent">leftmost bit</span> as the <strong>sign</strong>: 0 means +, 1 means −. The other 7 bits hold the plain magnitude. Click the sign bit to flip between +5 and −5.</p>
+
+  <div class="card" style="margin-top:22px">
+    <div class="reg">
+      <div class="reg-row" id="p3-labels"></div>
+      <div class="reg-row" id="p3-bits"></div>
+    </div>
+    <p style="text-align:center;margin-top:14px;font-size:1.25rem;font-family:'Space Grotesk';font-weight:600">Value: <span class="accent mono" id="p3-val">+5</span></p>
+    <p style="text-align:center;color:var(--muted);font-size:13px">(amber-outlined bit = sign · click it)</p>
+  </div>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card">
+      <h3 class="cyan">Why it’s tempting</h3>
+      <ul class="clean ok-list" style="margin-top:6px"><li>Reads like how humans write numbers</li><li>Easy to convert by eye</li></ul>
+    </div>
+    <div class="card" style="border-color:#5a2b2b">
+      <h3 style="color:var(--bad)">Why CPUs reject it</h3>
+      <ul class="clean x" style="margin-top:6px">
+        <li><strong>Two zeros:</strong> <span class="mono">00000000</span> = +0 and <span class="mono">10000000</span> = −0. Wasteful and confusing.</li>
+        <li><strong>Hard math:</strong> adding requires checking signs first — extra circuitry, slower.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4 — ONE'S COMPLEMENT ============ -->
+<section class="slide" data-title="One's Complement">
+  <div class="eyebrow">Idea 2</div>
+  <h2>One's Complement — flip every bit</h2>
+  <p class="lead">To negate a number, <strong>invert all its bits</strong> (every 0→1 and 1→0). Type a small positive number and watch the flip produce its negative form.</p>
+
+  <div class="card" style="margin-top:22px">
+    <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px">
+      <label class="fld">POSITIVE VALUE (0–127)
+        <input type="number" id="p4-in" min="0" max="127" value="6">
+      </label>
+      <button class="btn" id="p4-go">Flip the bits ⟲</button>
+    </div>
+    <div class="reg">
+      <div class="reg-row" id="p4-pos-lbl" style="margin-bottom:2px"></div>
+      <div class="reg-row" id="p4-pos"></div>
+      <div style="color:var(--amber);font-family:'JetBrains Mono';font-size:13px;margin:6px 0">flip every bit ↓</div>
+      <div class="reg-row" id="p4-neg"></div>
+      <div class="reg-row" id="p4-neg-lbl"></div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:20px"><strong>Progress:</strong> arithmetic is now much easier than sign-magnitude. <strong class="accent">But</strong> we <em>still</em> have two zeros — <span class="mono">00000000</span> (+0) flips to <span class="mono">11111111</span> (−0). One annoying flaw remains. The fix is tiny.</div>
+</section>
+
+<!-- ============ SLIDE 5 — TWO'S COMPLEMENT RECIPE ============ -->
+<section class="slide" data-title="Two's Complement">
+  <div class="eyebrow">Idea 3 ★ · the standard</div>
+  <h2>Two's Complement = flip, then <span class="accent">add 1</span></h2>
+  <p class="lead">One extra step erases the double-zero problem and makes addition “just work”. This is what virtually every modern CPU uses. The recipe to convert a negative number:</p>
+
+  <div class="grid g3" style="margin-top:24px">
+    <div class="card"><div class="step-n" style="margin-bottom:10px">1</div><h3>Write the magnitude</h3><p style="font-size:14px;color:var(--muted)">Take the positive version of the number in plain binary, padded to your bit width.</p></div>
+    <div class="card"><div class="step-n" style="margin-bottom:10px">2</div><h3>Flip all bits</h3><p style="font-size:14px;color:var(--muted)">Invert every digit (the one's complement): 0→1, 1→0.</p></div>
+    <div class="card" style="border-color:var(--amber-deep)"><div class="step-n" style="margin-bottom:10px;background:var(--amber);color:#1a1200">3</div><h3>Add 1</h3><p style="font-size:14px;color:var(--muted)">Add binary 1 to the result. Done — that pattern <em>is</em> the negative number.</p></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:24px">
+    <div class="note cyan"><strong>One zero only.</strong> +0 and the “flip+1” of 0 both come out to <span class="mono">00000000</span> (the overflow bit falls off the left). No more −0.</div>
+    <div class="note"><strong>Read the sign instantly:</strong> the leftmost bit is still 0 for positives and 1 for negatives — for free, no special rule needed.</div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6 — ANIMATED WALKTHROUGH ============ -->
+<section class="slide" data-title="Walkthrough −5">
+  <div class="eyebrow">Worked example · step animation</div>
+  <h2>Convert <span class="accent mono">−5</span> to 8-bit two's complement</h2>
+  <p class="lead">Press play and follow each stage. Watch the bits flip, then watch the +1 ripple through the carry.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;gap:12px;margin-bottom:18px">
+      <button class="btn amber" id="walk-play">▶ Play steps</button>
+      <button class="btn ghost" id="walk-reset">↺ Reset</button>
+    </div>
+    <div class="steps" id="walk-steps">
+      <div class="step" data-s="0"><div class="step-n">1</div><div class="step-body"><div class="step-title">Magnitude of 5 in 8 bits</div><div class="codeline"><span class="b0">0000</span><span class="b1">0101</span></div></div></div>
+      <div class="step" data-s="1"><div class="step-n">2</div><div class="step-body"><div class="step-title">Flip every bit → one's complement</div><div class="codeline"><span class="b1">1111</span><span class="b0">1010</span></div></div></div>
+      <div class="step" data-s="2"><div class="step-n" style="background:var(--amber);color:#1a1200">3</div><div class="step-body"><div class="step-title">Add 1</div><div class="codeline">1111 1010 <span class="add">+ 1</span></div></div></div>
+      <div class="step" data-s="3"><div class="step-n" style="background:var(--good);color:#06101f">=</div><div class="step-body"><div class="step-title">Result — this pattern means −5</div><div class="codeline" id="walk-final"><span class="b1">1111</span> <span class="b1">1011</span></div></div></div>
+    </div>
+    <div class="reg" style="margin-top:22px">
+      <div class="reg-row" id="walk-bits"></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:13px">leftmost bit = <span class="accent">1</span> → confirms the value is negative</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7 — SHORTCUT ============ -->
+<section class="slide" data-title="Shortcut">
+  <div class="eyebrow">Speed technique</div>
+  <h2>The exam shortcut — no addition needed</h2>
+  <p class="lead">There's a faster way that skips the “add 1” carry step. Scan the magnitude <strong>from the right</strong>:</p>
+
+  <div class="card" style="margin-top:22px">
+    <ul class="clean" style="font-size:1.05rem">
+      <li>Copy bits unchanged <strong>up to and including the first 1</strong> you meet.</li>
+      <li><strong>Flip everything</strong> after that first 1.</li>
+    </ul>
+    <div style="margin-top:22px;display:flex;flex-direction:column;gap:6px;align-items:center">
+      <div class="reg-row" id="sc-lbl"></div>
+      <div class="reg-row" id="sc-bits"></div>
+      <p style="color:var(--muted);font-size:13px;margin-top:6px"><span style="color:var(--good)">green</span> = copied as-is · <span style="color:var(--amber)">amber</span> = the pivot (first 1) · <span class="cyan">blue</span> = flipped</p>
+    </div>
+  </div>
+  <div class="note cyan" style="margin-top:20px"><strong>−5 again:</strong> magnitude <span class="mono">00000101</span>. From the right, copy <span class="mono">1</span> (the first 1), then flip the rest → <span class="mono">11111011</span>. Same answer, zero arithmetic.</div>
+</section>
+
+<!-- ============ SLIDE 8 — RANGE ============ -->
+<section class="slide" data-title="Range">
+  <div class="eyebrow">Limits & overflow</div>
+  <h2>How far can <span class="cyan">n</span> bits reach?</h2>
+  <p class="lead">In two's complement, the negative side reaches one step further than the positive side, because the single zero lives on the positive half.</p>
+
+  <div class="card" style="margin-top:22px;padding:8px 6px">
+    <table class="cheat">
+      <thead><tr><th>Bits</th><th>Most negative</th><th>Most positive</th><th>Pattern for the minimum</th></tr></thead>
+      <tbody>
+        <tr><td>4</td><td class="mono">−8</td><td class="mono">+7</td><td class="mono">1000</td></tr>
+        <tr><td>8</td><td class="mono">−128</td><td class="mono">+127</td><td class="mono">1000 0000</td></tr>
+        <tr><td>16</td><td class="mono">−32,768</td><td class="mono">+32,767</td><td class="mono">1000 0000 0000 0000</td></tr>
+        <tr><td>32</td><td class="mono">−2,147,483,648</td><td class="mono">+2,147,483,647</td><td class="mono">1000 … 0000</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="note">The formula: for <span class="mono">n</span> bits the range is <strong class="accent mono">−2ⁿ⁻¹</strong> to <strong class="accent mono">2ⁿ⁻¹ − 1</strong>.</div>
+    <div class="note cyan">Go past the limit and you get <strong>overflow</strong> — the value silently wraps around. A classic CompArch bug source.</div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9 — INTERACTIVE CONVERTER ============ -->
+<section class="slide" data-title="Live Converter">
+  <div class="eyebrow">Interactive tool</div>
+  <h2>Two's complement <span class="cyan">converter</span></h2>
+  <p class="lead">Type any negative number, choose a bit width, and watch all three steps build live. Use it to check your own work.</p>
+
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px">
+      <label class="fld">NEGATIVE DECIMAL
+        <input type="number" id="cv-in" value="-5" max="-1">
+      </label>
+      <label class="fld">BIT WIDTH
+        <select id="cv-bits"><option>4</option><option selected>8</option><option>16</option></select>
+      </label>
+      <button class="btn" id="cv-go">Convert →</button>
+    </div>
+    <div id="cv-err" class="feedback no" style="margin-bottom:4px"></div>
+
+    <div class="steps" id="cv-steps"></div>
+
+    <div class="reg" style="margin-top:22px" id="cv-regwrap">
+      <div class="reg-row" id="cv-bitrow"></div>
+    </div>
+    <p style="text-align:center;font-family:'Space Grotesk';font-weight:600;font-size:1.15rem;margin-top:8px" id="cv-result"></p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10 — PRACTICE ============ -->
+<section class="slide" data-title="Practice 1–5">
+  <div class="eyebrow">Your turn · part 1</div>
+  <h2>10 practice problems</h2>
+  <p class="lead">Convert each to <strong>8-bit two's complement</strong>. Type your answer (8 binary digits), hit <em>Check</em>, then reveal the worked steps. Spaces are ignored.</p>
+
+  <div class="scorebar">
+    <div><div class="big" id="score">0 / 10</div><div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono'">CORRECT</div></div>
+    <button class="btn ghost" id="reveal-all">Reveal all solutions</button>
+    <button class="btn ghost" id="reset-prac">Reset</button>
+    <div style="font-size:13px;color:var(--muted);margin-left:auto">Tip: the answer is always 8 digits.</div>
+  </div>
+
+  <div class="grid g2" id="prac-grid-1"></div>
+</section>
+
+<!-- ============ SLIDE 11 — PRACTICE 2 ============ -->
+<section class="slide" data-title="Practice 6–10">
+  <div class="eyebrow">Your turn · part 2</div>
+  <h2>Practice — problems 6 to 10</h2>
+  <p class="lead">Keep going. Problems 9 and 10 include the <span class="accent">edge cases</span> worth remembering: −128 and −1.</p>
+  <div class="grid g2" id="prac-grid-2" style="margin-top:8px"></div>
+  <div class="note cyan" style="margin-top:22px"><strong>−128</strong> is special: it's the most negative 8-bit value, and there's no +128 to mirror it. Its pattern <span class="mono">10000000</span> is its own two's complement.</div>
+</section>
+
+<!-- ============ SLIDE 12 — CHEAT SHEET ============ -->
+<section class="slide" data-title="Summary">
+  <div class="eyebrow">Take it with you</div>
+  <h2>One-page cheat sheet</h2>
+
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card">
+      <h3 class="cyan">The recipe (negative → binary)</h3>
+      <ul class="clean" style="margin-top:8px">
+        <li>Write the <strong>magnitude</strong> in binary, padded to width</li>
+        <li><strong>Flip</strong> every bit (one's complement)</li>
+        <li><strong>Add 1</strong> → that's the two's complement</li>
+      </ul>
+      <div class="note cyan" style="margin-top:14px">Shortcut: copy from the right through the first 1, flip the rest.</div>
+    </div>
+    <div class="card">
+      <h3 class="accent">Things to remember</h3>
+      <ul class="clean" style="margin-top:8px">
+        <li>Leftmost bit = sign (0 = +, 1 = −)</li>
+        <li>Two's complement has <strong>one</strong> zero</li>
+        <li>Range for n bits: <span class="mono">−2ⁿ⁻¹ … 2ⁿ⁻¹−1</span></li>
+        <li>To go back: flip + add 1 <em>again</em> returns the magnitude</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;padding:8px 6px">
+    <table class="cheat">
+      <thead><tr><th>Decimal</th><th>Magnitude</th><th>Flip</th><th class="mono">+1 = Two's Comp (8-bit)</th></tr></thead>
+      <tbody>
+        <tr><td>−1</td><td class="mono">00000001</td><td class="mono">11111110</td><td class="mono">11111111</td></tr>
+        <tr><td>−5</td><td class="mono">00000101</td><td class="mono">11111010</td><td class="mono">11111011</td></tr>
+        <tr><td>−45</td><td class="mono">00101101</td><td class="mono">11010010</td><td class="mono">11010011</td></tr>
+        <tr><td>−128</td><td class="mono">10000000</td><td class="mono">01111111</td><td class="mono">10000000</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="text-align:center;color:var(--muted);margin-top:26px;font-family:'JetBrains Mono';font-size:13px">MAC-283 · Computer Architecture & Assembler Language · Prof. Khalid Kassou</p>
+</section>
+
+<!-- nav -->
+<div class="nav">
+  <button class="btn ghost" id="prev">← Previous</button>
+  <span class="kbd-hint">Navigate with <kbd>←</kbd> <kbd>→</kbd></span>
+  <button class="btn" id="next">Next →</button>
+</div>
+
+</div><!--/deck-->
+</div><!--/stage-->
+
+<script>
+/* ---------------- helpers ---------------- */
+const PLACES8 = [128,64,32,16,8,4,2,1];
+function bitsToStr(n,width){ if(n<0) n = (n>>>0) & ((1<<width)-1); return n.toString(2).padStart(width,'0'); }
+function flip(str){ return [...str].map(b=>b==='1'?'0':'1').join(''); }
+function twosComp(dec,width){
+  const mag = Math.abs(dec);
+  const magBin = mag.toString(2).padStart(width,'0');
+  const ones = flip(magBin);
+  const val = (parseInt(ones,2)+1) & ((1<<width)-1);
+  const twos = val.toString(2).padStart(width,'0');
+  return {mag,magBin,ones,twos};
+}
+function makeBit(ch,opts={}){
+  const d=document.createElement('div');
+  d.className='bit'+(ch==='1'?' one':'')+(opts.small?' bit-small':'')+(opts.sign?' sign':'')+(opts.hot?' hot':'');
+  d.textContent=ch;
+  return d;
+}
+function makePlace(t,small){const d=document.createElement('div');d.className='place';if(small)d.style.width='34px';d.textContent=t;return d;}
+function renderRow(el,str,opts={}){ el.innerHTML=''; [...str].forEach((c,i)=>el.appendChild(makeBit(c,{small:opts.small,sign:opts.sign&&i===0}))); }
+
+/* ---------------- Slide 2: register of 5 ---------------- */
+(function(){
+  const places=document.getElementById('p2-places'), bits=document.getElementById('p2-bits');
+  PLACES8.forEach(p=>places.appendChild(makePlace(p)));
+  renderRow(bits,'00000101');
+})();
+
+/* ---------------- Slide 3: sign-magnitude toggle ---------------- */
+(function(){
+  const lbl=document.getElementById('p3-labels'), row=document.getElementById('p3-bits'), val=document.getElementById('p3-val');
+  let sign=0; const mag='0000101'; // 5 in 7 bits
+  ['SIGN','64','32','16','8','4','2','1'].forEach((t,i)=>lbl.appendChild(makePlace(t)));
+  function draw(){
+    row.innerHTML='';
+    const full=String(sign)+mag;
+    [...full].forEach((c,i)=>{
+      const b=makeBit(c,{sign:i===0});
+      if(i===0){b.style.cursor='pointer'; b.addEventListener('click',()=>{sign=sign?0:1;b.classList.add('flip');setTimeout(draw,160);});}
+      row.appendChild(b);
+    });
+    val.textContent=(sign?'−':'+')+'5';
+  }
+  draw();
+})();
+
+/* ---------------- Slide 4: one's complement ---------------- */
+(function(){
+  const inp=document.getElementById('p4-in'), go=document.getElementById('p4-go');
+  const pos=document.getElementById('p4-pos'), neg=document.getElementById('p4-neg');
+  const posL=document.getElementById('p4-pos-lbl'), negL=document.getElementById('p4-neg-lbl');
+  function run(){
+    let v=Math.max(0,Math.min(127,parseInt(inp.value)||0));
+    const p=v.toString(2).padStart(8,'0'); const n=flip(p);
+    posL.innerHTML=''; posL.appendChild(makePlace('+'+v));
+    negL.innerHTML=''; negL.appendChild(makePlace('one\u2019s comp'));
+    renderRow(pos,p);
+    neg.innerHTML='';
+    [...n].forEach((c)=>{const b=makeBit(c);b.classList.add('flip');neg.appendChild(b);});
+  }
+  go.addEventListener('click',run); inp.addEventListener('input',run); run();
+})();
+
+/* ---------------- Slide 6: animated walkthrough of -5 ---------------- */
+(function(){
+  const play=document.getElementById('walk-play'), reset=document.getElementById('walk-reset');
+  const steps=[...document.querySelectorAll('#walk-steps .step')];
+  const bitrow=document.getElementById('walk-bits');
+  const seq=['00000101','11111010','11111010','11111011'];
+  function show(i){
+    steps.forEach((s,k)=>{ s.classList.toggle('show',k<=i); s.classList.toggle('done',k<i); });
+    bitrow.innerHTML='';
+    [...seq[i]].forEach((c,idx)=>{const b=makeBit(c,{sign:i===3&&idx===0});if(i===1)b.classList.add('flip');if(i===3&&idx===0)b.classList.add('hot');bitrow.appendChild(b);});
+  }
+  let timer=null;
+  function playAll(){ clearAll(); let i=0; show(0); timer=setInterval(()=>{i++; if(i>3){clearInterval(timer);return;} show(i);},950); }
+  function clearAll(){ if(timer)clearInterval(timer); steps.forEach(s=>s.classList.remove('show','done')); bitrow.innerHTML=''; }
+  play.addEventListener('click',playAll);
+  reset.addEventListener('click',clearAll);
+  show(0); // initial first step visible
+})();
+
+/* ---------------- Slide 7: shortcut visual for -5 ---------------- */
+(function(){
+  const lbl=document.getElementById('sc-lbl'), row=document.getElementById('sc-bits');
+  const mag='00000101'; // 5
+  // find first 1 from right
+  let firstOne=-1; for(let i=mag.length-1;i>=0;i--){ if(mag[i]==='1'){firstOne=i;break;} }
+  PLACES8.forEach(p=>lbl.appendChild(makePlace(p)));
+  row.innerHTML='';
+  [...mag].forEach((c,i)=>{
+    let out=c, cls='';
+    if(i>firstOne){ out=c; cls='copy'; }          // right of/incl pivot copied
+    else if(i===firstOne){ out=c; cls='pivot'; }
+    else { out=c==='1'?'0':'1'; cls='flipped'; }
+    const b=makeBit(out);
+    if(i<firstOne){ b.classList.add('flip'); }
+    if(i===firstOne){ b.classList.add('hot'); }
+    else if(i>firstOne){ b.style.outline='2px solid #34d39966'; b.style.outlineOffset='2px'; }
+    row.appendChild(b);
+  });
+})();
+
+/* ---------------- Slide 9: live converter ---------------- */
+(function(){
+  const inp=document.getElementById('cv-in'), bitsSel=document.getElementById('cv-bits'), go=document.getElementById('cv-go');
+  const stepsEl=document.getElementById('cv-steps'), bitrow=document.getElementById('cv-bitrow'), result=document.getElementById('cv-result'), err=document.getElementById('cv-err');
+  function run(){
+    err.textContent='';
+    const w=parseInt(bitsSel.value);
+    const dec=parseInt(inp.value);
+    if(isNaN(dec)){ err.textContent='Enter a number.'; return; }
+    const min=-(2**(w-1)), max=-1;
+    if(dec>max){ err.textContent='Enter a negative number (this tool converts negatives).'; stepsEl.innerHTML=''; bitrow.innerHTML=''; result.textContent=''; return; }
+    if(dec<min){ err.textContent=`Out of range for ${w} bits — minimum is ${min}.`; stepsEl.innerHTML=''; bitrow.innerHTML=''; result.textContent=''; return; }
+    const r=twosComp(dec,w);
+    stepsEl.innerHTML='';
+    const data=[
+      ['1','Magnitude of '+Math.abs(dec)+' in '+w+' bits', r.magBin],
+      ['2','Flip every bit (one\u2019s complement)', r.ones],
+      ['3','Add 1', r.ones+'  + 1'],
+      ['=','Result → this is '+dec+' in '+w+'-bit two\u2019s complement', r.twos]
+    ];
+    data.forEach((d,i)=>{
+      const div=document.createElement('div'); div.className='step show'+(i<3?' done':'');
+      div.innerHTML=`<div class="step-n" ${i===2?'style="background:var(--amber);color:#1a1200"':''} ${i===3?'style="background:var(--good);color:#06101f"':''}>${d[0]}</div>
+      <div class="step-body"><div class="step-title">${d[1]}</div><div class="codeline">${d[2]}</div></div>`;
+      stepsEl.appendChild(div);
+    });
+    bitrow.innerHTML='';
+    [...r.twos].forEach((c,idx)=>{const b=makeBit(c,{sign:idx===0});bitrow.appendChild(b);});
+    result.innerHTML=`<span class="mono accent">${dec}</span>  =  <span class="mono cyan">${r.twos}</span>`;
+  }
+  go.addEventListener('click',run); inp.addEventListener('input',run); bitsSel.addEventListener('change',run); run();
+})();
+
+/* ---------------- Slides 10–11: practice ---------------- */
+const PROBLEMS=[
+  {d:-5},{d:-1},{d:-8},{d:-19},{d:-45},
+  {d:-64},{d:-100},{d:-127},{d:-128},{d:-3}
+];
+const solved=new Array(10).fill(false);
+
+function buildProblem(p,idx){
+  const r=twosComp(p.d,8);
+  const card=document.createElement('div'); card.className='prob'; card.dataset.idx=idx;
+  card.innerHTML=`
+    <div class="prob-head">
+      <div class="prob-q">${idx+1}. Convert <b>${p.d}</b> to binary</div>
+      <span class="tag">8-bit · two's comp</span>
+    </div>
+    <div class="prob-in">
+      <input type="text" placeholder="8 binary digits" maxlength="12" spellcheck="false">
+      <button class="btn check">Check</button>
+      <button class="btn ghost showbtn">Show steps</button>
+    </div>
+    <div class="feedback"></div>
+    <div class="sol">
+      <div class="sol-row"><span>magnitude</span><span class="codeline mono">${r.magBin}</span></div>
+      <div class="sol-row"><span>flip bits</span><span class="codeline mono">${r.ones}</span></div>
+      <div class="sol-row"><span>+ 1</span><span class="codeline mono" style="color:var(--amber)">${r.ones} + 1</span></div>
+      <div class="sol-row"><span>answer</span><span class="codeline mono" style="color:var(--good)">${r.twos}</span></div>
+    </div>`;
+  const inp=card.querySelector('input'), fb=card.querySelector('.feedback'), sol=card.querySelector('.sol');
+  card.querySelector('.check').addEventListener('click',()=>{
+    const guess=inp.value.replace(/\s+/g,'');
+    if(!/^[01]+$/.test(guess)){ fb.className='feedback no'; fb.textContent='Use only 0s and 1s.'; return; }
+    if(guess===r.twos){
+      fb.className='feedback ok'; fb.textContent='✓ Correct — '+p.d+' = '+r.twos;
+      if(!solved[idx]){solved[idx]=true;updateScore();}
+    } else {
+      fb.className='feedback no'; fb.textContent='✕ Not yet. Check your flip + carry, then try again.';
+    }
+  });
+  card.querySelector('.showbtn').addEventListener('click',()=>{ sol.classList.toggle('show'); });
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') card.querySelector('.check').click(); });
+  return card;
+}
+(function(){
+  const g1=document.getElementById('prac-grid-1'), g2=document.getElementById('prac-grid-2');
+  PROBLEMS.forEach((p,i)=>{ (i<5?g1:g2).appendChild(buildProblem(p,i)); });
+})();
+function updateScore(){ document.getElementById('score').textContent=solved.filter(Boolean).length+' / 10'; }
+document.getElementById('reveal-all').addEventListener('click',()=>{ document.querySelectorAll('.sol').forEach(s=>s.classList.add('show')); });
+document.getElementById('reset-prac').addEventListener('click',()=>{
+  document.querySelectorAll('.prob input').forEach(i=>i.value='');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.sol').forEach(s=>s.classList.remove('show'));
+  for(let i=0;i<solved.length;i++)solved[i]=false; updateScore();
+});
+
+/* ---------------- Slide navigation ---------------- */
+const slides=[...document.querySelectorAll('.slide')];
+const dotsWrap=document.getElementById('dots'), counter=document.getElementById('counter');
+let cur=0;
+slides.forEach((s,i)=>{ const b=document.createElement('button'); b.className='dot'+(i===0?' active':''); b.title=s.dataset.title; b.addEventListener('click',()=>goto(i)); dotsWrap.appendChild(b); });
+const dots=[...dotsWrap.children];
+function goto(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  dots.forEach((d,k)=>d.classList.toggle('active',k===cur));
+  counter.textContent=String(cur+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('next').addEventListener('click',()=>goto(cur+1));
+document.getElementById('prev').addEventListener('click',()=>goto(cur-1));
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  if(e.key==='ArrowRight')goto(cur+1);
+  if(e.key==='ArrowLeft')goto(cur-1);
+});
+goto(0);
+</script>
+</body>
+</html>
