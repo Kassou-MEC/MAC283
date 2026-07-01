@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC-283 · Lecture 3 Part 2 — Combinational Logic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-0:#060f1c;--navy-1:#0a1628;--navy-2:#0e1e36;--navy-3:#13294b;
+  --line:#1c3a63;--yellow:#ffd23f;--yellow-dim:#c9a227;
+  --green:#3ee08a;--red:#ff5d6c;--ink:#e8f0ff;--ink-dim:#8fa6c8;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --display:'Chakra Petch',var(--mono);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--mono);color:var(--ink);background-color:var(--navy-0);
+  background:radial-gradient(circle at 15% -5%,rgba(255,210,63,.06),transparent 42%),var(--navy-0);
+  line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+.pcb{position:fixed;inset:0;z-index:-1;opacity:.5;
+  background-image:linear-gradient(rgba(28,58,99,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(28,58,99,.22) 1px,transparent 1px);
+  background-size:34px 34px;}
+.pcb::after{content:"";position:absolute;inset:0;
+  background-image:radial-gradient(rgba(255,210,63,.09) 1.4px,transparent 1.6px);
+  background-size:68px 68px;background-position:34px 34px;}
+
+/* progress */
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--yellow);width:0;z-index:40;transition:width .3s}
+
+/* deck */
+.deck{max-width:900px;margin:0 auto;padding:40px 20px 120px;min-height:100vh}
+.slide{display:none;animation:fade .35s ease}
+.slide.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.eyebrow{font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--yellow);margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.eyebrow .chip{border:1px solid var(--yellow-dim);border-radius:2px;padding:2px 8px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(2rem,6vw,3.3rem);line-height:1.04;margin:8px 0 14px;letter-spacing:-.01em}
+h1 span{color:var(--yellow)}
+h2{font-family:var(--display);font-weight:600;font-size:clamp(1.5rem,4vw,2.2rem);margin:6px 0 18px;letter-spacing:-.005em}
+h2 span{color:var(--yellow)}
+h3{font-family:var(--display);font-size:1.1rem;margin:22px 0 10px;color:var(--ink)}
+p{color:var(--ink-dim);font-size:.95rem}
+p strong,li strong{color:var(--ink)}
+.lead{font-size:1.05rem;color:var(--ink);max-width:64ch}
+.muted{color:var(--ink-dim)}
+.card{border:1px solid var(--line);border-radius:8px;background:var(--navy-1);padding:18px 20px;margin:14px 0;
+  box-shadow:0 0 0 1px rgba(255,210,63,.03),0 18px 40px -34px #000}
+.callout{border-left:3px solid var(--yellow-dim);padding:10px 16px;background:var(--navy-2);border-radius:0 6px 6px 0;font-size:.85rem;color:var(--ink-dim);margin:16px 0}
+.callout b{color:var(--yellow)}
+.reallife{border:1px solid var(--line);border-left:3px solid var(--green);background:rgba(62,224,138,.06);border-radius:0 6px 6px 0;padding:12px 16px;margin:14px 0}
+.reallife .h{font-family:var(--display);color:var(--green);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.reallife p{margin:0 0 6px;color:var(--ink-dim);font-size:.88rem}
+.reallife p:last-child{margin-bottom:0}
+.reallife b{color:var(--ink)}
+.deep{font-size:.92rem;color:var(--ink-dim);margin:12px 0}
+.deep b{color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pill{display:inline-block;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:3px;padding:3px 8px;color:var(--ink-dim)}
+ul.clean{list-style:none;padding:0;margin:10px 0}
+ul.clean li{padding:7px 0 7px 26px;position:relative;font-size:.92rem;border-bottom:1px solid rgba(28,58,99,.5)}
+ul.clean li:last-child{border-bottom:0}
+ul.clean li::before{content:"▸";position:absolute;left:4px;color:var(--yellow)}
+table.tt{width:100%;border-collapse:collapse;font-size:.85rem;margin:10px 0}
+table.tt th,table.tt td{border:1px solid var(--line);padding:7px 10px;text-align:center}
+table.tt th{background:var(--navy-2);color:var(--yellow);font-weight:600;letter-spacing:.04em}
+table.tt td{font-family:var(--mono)}
+table.tt tr.hl td{background:rgba(255,210,63,.14);color:var(--ink)}
+.mono{font-family:var(--mono)}
+
+/* switches / bits */
+.switch{width:58px;height:32px;border-radius:20px;background:var(--navy-3);border:1px solid var(--line);position:relative;cursor:pointer;transition:.15s;flex-shrink:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--ink-dim);transition:.15s}
+.switch.on{background:var(--yellow);border-color:var(--yellow)}
+.switch.on::after{left:29px;background:#1a1300}
+.led{width:56px;height:56px;border-radius:50%;border:2px solid var(--line);background:var(--navy-0);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:1.5rem;color:var(--ink-dim);transition:.15s}
+.led.on{background:var(--yellow);color:#1a1300;border-color:var(--yellow);box-shadow:0 0 22px -2px rgba(255,210,63,.6)}
+.io-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:8px 0}
+.io-row .lbl{font-family:var(--display);font-size:1.1rem;min-width:26px}
+.io-row .val{font-family:var(--mono);color:var(--ink-dim);min-width:14px}
+
+/* gate lab */
+.gate-btns{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+.gate-btns button{font-family:var(--mono);font-weight:600;font-size:.82rem;padding:8px 12px;border-radius:5px;border:1px solid var(--line);background:var(--navy-3);color:var(--ink);cursor:pointer;transition:.12s}
+.gate-btns button:hover{border-color:var(--yellow);color:var(--yellow)}
+.gate-btns button.sel{background:var(--yellow);color:#1a1300;border-color:var(--yellow)}
+.eqn{font-family:var(--display);font-size:1.35rem;text-align:center;color:var(--yellow);margin:6px 0 2px;letter-spacing:.02em}
+.eqn .dim{color:var(--ink-dim)}
+
+/* block bar (mux/demux/pipeline) */
+.lines{display:flex;flex-direction:column;gap:8px}
+.dline{display:flex;align-items:center;gap:12px;background:var(--navy-0);border:1px solid var(--line);border-radius:6px;padding:8px 12px;transition:.15s}
+.dline.active{border-color:var(--yellow);background:rgba(255,210,63,.08)}
+.dline .tag{font-family:var(--mono);font-size:.82rem;min-width:52px;color:var(--ink-dim)}
+.dline.active .tag{color:var(--yellow)}
+.dline .bitval{font-family:var(--display);font-size:1.1rem;margin-left:auto}
+
+/* buttons */
+.btn{font-family:var(--mono);font-weight:600;cursor:pointer;border-radius:5px;padding:10px 15px;font-size:.84rem;
+  border:1px solid var(--line);background:var(--navy-3);color:var(--ink);transition:.15s}
+.btn:hover{border-color:var(--yellow);color:var(--yellow)}
+.btn.primary{background:var(--yellow);color:#1a1300;border-color:var(--yellow)}
+.btn.primary:hover{background:#ffe27a}
+.btn.sm{padding:7px 11px;font-size:.78rem}
+input.num{font-family:var(--mono);background:var(--navy-0);border:1px solid var(--line);color:var(--ink);
+  padding:9px 11px;border-radius:5px;font-size:1rem;width:90px;text-align:center}
+input.num:focus{outline:2px solid var(--yellow)}
+
+/* practice */
+.q-box{border:1px solid var(--line);border-radius:8px;background:var(--navy-1);padding:18px;margin:12px 0}
+.q-text{font-size:1.05rem;color:var(--ink);margin-bottom:14px}
+.q-text .mono{color:var(--yellow)}
+.ans-btns{display:flex;flex-wrap:wrap;gap:10px}
+.ans-btns button{font-family:var(--mono);font-weight:600;padding:11px 18px;border-radius:6px;border:1px solid var(--line);background:var(--navy-3);color:var(--ink);cursor:pointer;font-size:.9rem;transition:.12s}
+.ans-btns button:hover{border-color:var(--yellow)}
+.ans-btns button.correct{background:rgba(62,224,138,.16);border-color:var(--green);color:var(--green)}
+.ans-btns button.wrong{background:rgba(255,93,108,.14);border-color:var(--red);color:var(--red)}
+.feedback{margin-top:12px;font-size:.88rem;min-height:1.2em}
+.feedback.ok{color:var(--green)}
+.feedback.no{color:var(--red)}
+.score-line{font-size:.8rem;color:var(--ink-dim);margin-top:10px;letter-spacing:.04em}
+.score-line b{color:var(--yellow);font-family:var(--display)}
+
+/* full-adder / ripple table area */
+.addgrid{overflow-x:auto}
+
+/* nav */
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:35;background:linear-gradient(0deg,var(--navy-0),rgba(6,15,28,.85));
+  border-top:1px solid var(--line);backdrop-filter:blur(6px)}
+.nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 20px}
+.nav-inner .counter{font-family:var(--display);font-size:.9rem;color:var(--ink-dim);min-width:70px;text-align:center}
+.nav-inner .counter b{color:var(--yellow)}
+.nav-inner .title-mini{font-size:.78rem;color:var(--ink-dim);margin-left:auto;text-align:right;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-btn{font-family:var(--mono);font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--navy-3);color:var(--ink);border-radius:6px;padding:9px 14px;font-size:.9rem;transition:.12s}
+.nav-btn:hover{border-color:var(--yellow);color:var(--yellow)}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+#menuBtn{margin-left:6px}
+/* menu overlay */
+#menu{position:fixed;inset:0;z-index:60;background:rgba(6,15,28,.96);display:none;padding:40px 20px;overflow:auto}
+#menu.show{display:block}
+.menu-inner{max-width:640px;margin:0 auto}
+.menu-inner h2{margin-top:0}
+.toc{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+.toc li{border:1px solid var(--line);border-radius:6px;padding:11px 14px;cursor:pointer;font-size:.9rem;background:var(--navy-1);transition:.12s;display:flex;gap:12px}
+.toc li:hover{border-color:var(--yellow);color:var(--yellow)}
+.toc li .n{color:var(--yellow-dim);font-family:var(--display);min-width:26px}
+.foot{font-size:.76rem;color:var(--ink-dim);border-top:1px solid var(--line);margin-top:30px;padding-top:16px}
+.foot b{color:var(--ink)}
+@media(max-width:620px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  .nav-inner .title-mini{display:none}
+}
+</style>
+</head>
+<body>
+<div class="pcb" aria-hidden="true"></div>
+<div id="progress"></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active" data-title="Title">
+    <div class="eyebrow"><span class="chip">MAC-283</span><span>Computer Architecture &amp; Assembler</span><span>· Lecture 3 · Part 2</span></div>
+    <h1>Combinational <span>Logic</span></h1>
+    <p class="lead">Circuits with no memory — the output is decided purely by the inputs happening <em>right now</em>. In this deck you'll flip real gates, route data through a MUX, watch a ripple-carry adder compute 3&nbsp;+&nbsp;5 bit by bit, and trace one keystroke through an entire CPU. Every panel is interactive — poke at them.</p>
+    <div class="card">
+      <div class="grid3">
+        <div><div class="pill">Gates</div><p style="margin:8px 0 0">AND · OR · NOT · NAND · NOR · XOR · XNOR</p></div>
+        <div><div class="pill">Blocks</div><p style="margin:8px 0 0">MUX · DEMUX · Encoder · Decoder · Adders · Multipliers</p></div>
+        <div><div class="pill">Payoff</div><p style="margin:8px 0 0">How a CPU runs <span class="mono" style="color:var(--yellow)">ADD R1,R2,R3</span></p></div>
+      </div>
+    </div>
+    <div class="reallife">
+      <div class="h">🌍 Where you already meet it</div>
+      <p>You touched combinational logic before breakfast. The <b>toaster</b> that heats only while the lever is down, the <b>elevator</b> that lights the button you pressed, the <b>card reader</b> that beeps green only when your tap matches — each reads its inputs and answers <em>right now</em>, with no memory of earlier presses. This deck shows the gates and blocks doing that work.</p>
+    </div>
+    <p class="muted">Prof. Khalid Kassou · LaGuardia CC · MEC · Use <b class="mono">→</b> / <b class="mono">←</b> or the buttons below · <b class="mono">M</b> for the menu.</p>
+  </section>
+
+  <!-- 2 DEFINITION -->
+  <section class="slide" data-title="What is Combinational Logic?">
+    <div class="eyebrow"><span>Definition</span></div>
+    <h2>What is <span>Combinational Logic?</span></h2>
+    <p class="lead">Combinational logic is a digital circuit whose output depends <strong>only on the current inputs</strong> — never on past inputs. There is no memory and no stored state.</p>
+    <div class="card">
+      <h3 style="margin-top:0">The one-line test</h3>
+      <p>Change an input and the output <strong>updates immediately</strong>. If you cover the inputs, the circuit remembers nothing about what came before. That "no memory" property is the whole idea — and it's what separates combinational logic from the <em>sequential</em> logic (flip-flops, registers) coming later in the course.</p>
+    </div>
+    <div class="callout">Contrast: a light switch is combinational (position now = light now). A <b>counter</b> that remembers how many times you pressed it is <b>not</b> — it has memory, so it's sequential.</div>
+    <p class="deep">Why does "no memory" matter so much? Because it makes the circuit <b>predictable and instant</b>. Give it the same inputs and you always get the same output, every time, with no hidden history to trip you up. That reliability is exactly what you want for arithmetic and decision-making inside a processor — the ALU must give <b>0011 + 0101 = 1000</b> the same way on the first try and the millionth.</p>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — a doorbell</div>
+      <p>Press the button and it rings <b>now</b>; let go and it stops. It doesn't count how many times you rang or remember you were here yesterday. Output (ringing) depends only on the input (button pressed) at this instant — a perfect everyday picture of combinational logic.</p>
+      <p>Compare a <b>parking-garage counter</b> that tracks how many cars have entered: it must <em>remember</em> the running total, so it needs memory — that's sequential logic, coming later in the course.</p>
+    </div>
+  </section>
+
+  <!-- 3 CHARACTERISTICS -->
+  <section class="slide" data-title="Characteristics & Real Life">
+    <div class="eyebrow"><span>The Rules</span></div>
+    <h2>Characteristics &amp; <span>everyday examples</span></h2>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">Four defining traits</h3>
+        <ul class="clean">
+          <li><strong>No memory elements</strong> — nothing is stored</li>
+          <li><strong>No feedback</strong> — signals flow forward, no loops</li>
+          <li><strong>Instant output</strong> for a given input</li>
+          <li><strong>Built from logic gates</strong></li>
+        </ul>
+        <p class="muted" style="margin:8px 0 0">Examples: adders, multiplexers, encoders.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Compare to real life</h3>
+        <p><strong>💡 Light switch</strong> — flip it and the light is ON or OFF instantly. It doesn't remember yesterday, only what the switch is doing now.</p>
+        <p><strong>🔢 Calculator button</strong> — press <span class="mono" style="color:var(--yellow)">3 + 5 =</span> and logic circuits (adders) compute right away. It doesn't care what you pressed before.</p>
+      </div>
+    </div>
+    <p class="deep">Each trait has a practical reason: <b>no memory</b> keeps the answer honest to the current inputs; <b>no feedback loops</b> means signals never chase their own tail, so the output settles in a fixed, tiny amount of time; <b>instant output</b> is what lets a CPU do billions of these per second; and being <b>built only from gates</b> means anything here can be drawn as a wiring diagram of AND/OR/NOT.</p>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — a microwave keypad</div>
+      <p>Punch in <b>90</b> and the display shows 90 the instant you press each digit — the decoder driving the screen reacts immediately to whichever key is down, with no feedback and no memory of the last thing you cooked. The <em>timer</em> that counts down afterward is a different animal (it must remember the remaining seconds) — that part is sequential.</p>
+    </div>
+  </section>
+
+  <!-- 4 GATE LAB -->
+  <section class="slide" data-title="The 7 Logic Gates — Live Lab">
+    <div class="eyebrow"><span>Interactive · The Foundation</span></div>
+    <h2>The 7 logic gates — <span>live lab</span></h2>
+    <p>Flip inputs <strong>A</strong> and <strong>B</strong>, pick a gate, and watch the output and the highlighted truth-table row react. (NOT ignores B.)</p>
+    <p class="deep">A logic gate is a tiny <b>decision maker</b>: it takes one or two yes/no signals (1 = on, 0 = off) and produces one yes/no answer by a fixed rule. Every gate <em>is</em> its truth table — the complete list of "for these inputs, this output." Master these seven rules and you can read any digital circuit, because everything else on the chip is just these gates wired together.</p>
+    <div class="card">
+      <div class="gate-btns" id="gateBtns"></div>
+      <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div>
+          <div class="io-row"><span class="lbl">A</span><div class="switch" id="glA"></div><span class="val" id="glAv">0</span></div>
+          <div class="io-row"><span class="lbl">B</span><div class="switch" id="glB"></div><span class="val" id="glBv">0</span></div>
+        </div>
+        <div style="text-align:center">
+          <div class="eqn" id="glEqn">A · B</div>
+          <div class="muted" style="font-size:.75rem" id="glDesc">True if both A and B are 1</div>
+        </div>
+        <div style="text-align:center">
+          <div class="led" id="glLed">0</div>
+          <div class="muted" style="font-size:.72rem;margin-top:6px">OUTPUT</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto"><table class="tt" id="glTable"></table></div>
+    </div>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — a car's seatbelt chime</div>
+      <p>Think of it as an <b>AND</b> gate: the warning sounds only when <b>engine is on</b> (A=1) <em>and</em> <b>seatbelt is unbuckled</b> (B=1). Buckle up (B=0) and the AND output drops to 0 — chime off. Swap in a different gate and you get a different rule: an <b>OR</b> gate for a burglar alarm (any one sensor triggers it), a <b>NOT</b> gate for a night-light (dark = light on).</p>
+    </div>
+  </section>
+
+  <!-- 5 GATE REAL-LIFE CARDS -->
+  <section class="slide" data-title="Gates in the Real World">
+    <div class="eyebrow"><span>Reference</span></div>
+    <h2>Each gate has a <span>real-world job</span></h2>
+    <p class="deep">Gates aren't abstract — engineers pick them to encode a <b>rule for when something should happen</b>. Read each card as "the output turns on when…". Notice the family resemblances: <b>NAND/NOR</b> are just AND/OR with the answer flipped, and <b>XOR/XNOR</b> ask about <em>difference</em> vs <em>sameness</em>. Tap through and match each everyday device to the gate that governs it.</p>
+    <div class="grid2" id="gateCards"></div>
+  </section>
+
+  <!-- 6 PRACTICE 1 -->
+  <section class="slide" data-title="Practice · Gate Outputs">
+    <div class="eyebrow"><span>Practice Round 1</span></div>
+    <h2>Predict the <span>gate output</span></h2>
+    <p>Work out the output in your head, then tap 0 or 1. New question each time — keep going until it's automatic.</p>
+    <p class="deep"><b>Shortcut tips:</b> AND needs <em>all</em> 1s; OR needs <em>any</em> 1; XOR wants the two bits <em>different</em>; the "N" gates (NAND/NOR/XNOR) are just the flipped answer of AND/OR/XOR.</p>
+    <div class="reallife">
+      <div class="h">🌍 Why this pays off</div>
+      <p>An engineer wiring a <b>smart-home rule</b> — "turn on the porch light when it's dark AND motion is detected" — is doing exactly this in their head: AND of two sensors. Fluency with gate outputs is fluency with real control logic.</p>
+    </div>
+    <div class="q-box">
+      <div class="q-text" id="p1q">—</div>
+      <div class="ans-btns" id="p1btns">
+        <button data-v="0">Output = 0</button>
+        <button data-v="1">Output = 1</button>
+      </div>
+      <div class="feedback" id="p1fb"></div>
+      <div class="score-line">Score: <b id="p1correct">0</b> / <b id="p1total">0</b> &nbsp;·&nbsp; streak <b id="p1streak">0</b></div>
+      <button class="btn sm" id="p1next" style="margin-top:12px">New question →</button>
+    </div>
+  </section>
+
+  <!-- 7 GATES -> BLOCKS -->
+  <section class="slide" data-title="Gates → Logic Blocks">
+    <div class="eyebrow"><span>Big Picture</span></div>
+    <h2>From gates to <span>building blocks</span></h2>
+    <div class="grid2">
+      <div class="card">
+        <p style="margin-top:0">Think of <strong>logic gates</strong> as LEGO bricks, and <strong>logic blocks</strong> as the buildings you make from them. Gates do basic Boolean operations; blocks combine many gates to do higher-level jobs.</p>
+        <table class="tt">
+          <tr><th>Concept</th><th>Logic Gate</th><th>Logic Block</th></tr>
+          <tr><td>Role</td><td>Basic Boolean op</td><td>Higher-level task</td></tr>
+          <tr><td>Examples</td><td>AND, OR, NOT, XOR</td><td>MUX, Decoder, Adder</td></tr>
+          <tr><td>Relationship</td><td>Foundation units</td><td>Combinations of gates</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Common combinational blocks</h3>
+        <ul class="clean">
+          <li><strong>MUX</strong> — selects one input from many</li>
+          <li><strong>DEMUX</strong> — routes one input to many outputs</li>
+          <li><strong>Encoder</strong> — 2ⁿ inputs → n-bit code</li>
+          <li><strong>Decoder</strong> — n-bit input → 2ⁿ output lines</li>
+          <li><strong>Adders / Subtractors</strong> — binary arithmetic</li>
+          <li><strong>Multipliers</strong> — fast multiply in CPUs/GPUs</li>
+        </ul>
+      </div>
+    </div>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — building a house</div>
+      <p>Bricks (gates) are simple and identical. Combine them one way and you get a <b>wall</b>; another way, a <b>staircase</b> — those are your logic blocks (MUX, decoder, adder). Combine <em>blocks</em> and you get a whole <b>house</b>: the ALU, then the CPU, then your phone. Same handful of brick types the whole way down; the cleverness is in the arrangement.</p>
+    </div>
+  </section>
+
+  <!-- 8 MUX -->
+  <section class="slide" data-title="MUX — Multiplexer">
+    <div class="eyebrow"><span>Interactive Block</span></div>
+    <h2>MUX — <span>the input selector</span></h2>
+    <p>A 4-to-1 multiplexer picks <strong>one of four data lines</strong> to pass through, chosen by the two select bits <span class="mono">S1 S0</span>. Set the inputs and the selector, and watch which line reaches the output.</p>
+    <p class="deep">The rule is simple counting in binary: the select bits <b>name a line number</b>. <span class="mono">00</span>→I0, <span class="mono">01</span>→I1, <span class="mono">10</span>→I2, <span class="mono">11</span>→I3. With <b>n select lines you can choose among 2ⁿ inputs</b>, so 2 selects handle 4 inputs, 3 selects handle 8. A MUX is how a chip shares one wire (the output) among many possible sources — a traffic cop waving through one lane at a time.</p>
+    <div class="card">
+      <div class="grid2">
+        <div>
+          <h3 style="margin-top:0">Data inputs</h3>
+          <div class="lines" id="muxInputs"></div>
+        </div>
+        <div>
+          <h3 style="margin-top:0">Select lines</h3>
+          <div class="io-row"><span class="lbl">S1</span><div class="switch" id="muxS1"></div></div>
+          <div class="io-row"><span class="lbl">S0</span><div class="switch" id="muxS0"></div></div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:20px">
+            <div>
+              <div class="muted" style="font-size:.72rem">SELECTED</div>
+              <div class="eqn" id="muxSel" style="margin:2px 0">I0</div>
+            </div>
+            <div style="text-align:center">
+              <div class="led" id="muxLed">0</div>
+              <div class="muted" style="font-size:.72rem;margin-top:6px">OUTPUT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callout">Real life: your <b>TV input selector</b>. HDMI1, HDMI2, AV all arrive; the remote's select lines choose which single source shows on screen.</div>
+    <div class="reallife">
+      <div class="h">🌍 One more — a restaurant's single pickup window</div>
+      <p>Four cooks (I0–I3) finish plates, but there's one pickup window (the output). The expediter's ticket number (the select lines) decides <b>whose plate goes out next</b>. Only one passes at a time; the rest wait. Inside a CPU, a MUX does this to choose which register's value flows into the ALU.</p>
+    </div>
+  </section>
+
+  <!-- 9 DEMUX -->
+  <section class="slide" data-title="DEMUX — Demultiplexer">
+    <div class="eyebrow"><span>Interactive Block</span></div>
+    <h2>DEMUX — <span>the router</span></h2>
+    <p>The opposite of a MUX: <strong>one input</strong> is routed to <strong>one of four outputs</strong>, chosen by <span class="mono">S1 S0</span>. Only the selected line carries the input value; the rest stay 0.</p>
+    <p class="deep">If a MUX is "many-in, one-out," a DEMUX is <b>"one-in, many-out."</b> The select bits again name a line number, but this time they decide the <b>destination</b>. Everywhere else stays 0, which matters: it means the input signal is delivered to exactly one place and nowhere else — no crosstalk, no leaks.</p>
+    <div class="card">
+      <div class="grid2">
+        <div>
+          <h3 style="margin-top:0">Input &amp; select</h3>
+          <div class="io-row"><span class="lbl">IN</span><div class="switch" id="demuxIn"></div></div>
+          <div class="io-row"><span class="lbl">S1</span><div class="switch" id="demuxS1"></div></div>
+          <div class="io-row"><span class="lbl">S0</span><div class="switch" id="demuxS0"></div></div>
+        </div>
+        <div>
+          <h3 style="margin-top:0">Outputs</h3>
+          <div class="lines" id="demuxOutputs"></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout">Real life: a <b>smart irrigation system</b> — one water source routed to whichever garden zone's valve is opened.</div>
+    <div class="reallife">
+      <div class="h">🌍 One more — a railroad switch yard</div>
+      <p>One incoming track (the input) carries a train, and a <b>switch lever</b> (the select lines) sends it down exactly one of several branch lines. Flip the lever and the same train heads to a different platform. A DEMUX is that switch for electrical signals — and it's how a CPU decides which register receives a computed result.</p>
+    </div>
+  </section>
+
+  <!-- 10 ENCODER -->
+  <section class="slide" data-title="Encoder (8-to-3)">
+    <div class="eyebrow"><span>Interactive Block</span></div>
+    <h2>Encoder — <span>many lines to a code</span></h2>
+    <p>An <strong>8-to-3 encoder</strong> takes 8 input lines (one active at a time) and outputs the 3-bit binary code of <em>which</em> line is active. Click an input line.</p>
+    <p class="deep">Encoders <b>compress</b> "which one of many?" into a compact number. 8 lines need only <b>3 bits</b> because 2³ = 8; 16 lines would need 4 bits. Instead of running 8 separate wires across a chip, you run 3 and send the <em>code</em> — far fewer wires, same information. That's why encoders sit wherever many buttons or sensors must report to a processor.</p>
+    <div class="card">
+      <div class="grid2">
+        <div>
+          <h3 style="margin-top:0">Active input line (D0–D7)</h3>
+          <div class="lines" id="encInputs"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div class="muted" style="font-size:.72rem;letter-spacing:.14em">3-BIT OUTPUT CODE</div>
+          <div class="eqn" id="encOut" style="font-size:2.4rem;margin:10px 0">000</div>
+          <div class="muted" id="encDec" style="font-size:.8rem">line 0 active</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout">Real life: a <b>keyboard</b>. Press one key and the encoder sends its binary code to the CPU — the pressed key is <em>encoded</em> into a number.</div>
+    <div class="reallife">
+      <div class="h">🌍 One more — an elevator call panel</div>
+      <p>Eight floor buttons, but the controller doesn't want eight wires — it wants a floor <em>number</em>. Press "floor 5" and the encoder outputs <span class="mono">101</span>. One button in, a tidy 3-bit code out. The same trick turns a game controller's buttons into the compact codes your console reads.</p>
+    </div>
+  </section>
+
+  <!-- 11 DECODER -->
+  <section class="slide" data-title="Decoder (2-to-4)">
+    <div class="eyebrow"><span>Interactive Block</span></div>
+    <h2>Decoder — <span>a code to one line</span></h2>
+    <p>The reverse of an encoder: a <strong>2-to-4 decoder</strong> reads a 2-bit code <span class="mono">A1 A0</span> and activates exactly <strong>one</strong> of its four output lines.</p>
+    <p class="deep">A decoder <b>expands</b> a compact code back into "point at exactly one thing." n input bits light up 1 of 2ⁿ outputs — 2 bits pick 1 of 4, 3 bits pick 1 of 8. This is how a processor selects <b>one memory cell</b> out of billions: the address bits feed a giant decoder that enables only the addressed location.</p>
+    <div class="card">
+      <div class="grid2">
+        <div>
+          <h3 style="margin-top:0">Input code</h3>
+          <div class="io-row"><span class="lbl">A1</span><div class="switch" id="decA1"></div></div>
+          <div class="io-row"><span class="lbl">A0</span><div class="switch" id="decA0"></div></div>
+          <div class="muted" style="margin-top:12px">Code = <span class="mono" id="decCode" style="color:var(--yellow)">00</span> → activates line <span class="mono" id="decWhich" style="color:var(--yellow)">Y0</span></div>
+        </div>
+        <div>
+          <h3 style="margin-top:0">Output lines</h3>
+          <div class="lines" id="decOutputs"></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout">Real life: an <b>elevator floor selector</b>. Press floor 3, and the decoder activates only the circuit that drives the elevator to that exact floor.</div>
+    <div class="reallife">
+      <div class="h">🌍 One more — the digits on a microwave clock</div>
+      <p>A <b>seven-segment decoder</b> takes the 4-bit code for a digit and lights exactly the right bars to draw it — code for "8" lights all seven segments, code for "1" lights just two. One small number in, one specific pattern out. Every glowing number on an appliance display is a decoder at work.</p>
+    </div>
+  </section>
+
+  <!-- 12 ADDERS -->
+  <section class="slide" data-title="Half Adder & Full Adder">
+    <div class="eyebrow"><span>Interactive Block</span></div>
+    <h2>Half adder &amp; <span>full adder</span></h2>
+    <p>A <strong>half adder</strong> adds 2 bits. A <strong>full adder</strong> adds 3 bits — including a <strong>carry-in</strong> from the previous column, which is what lets us chain them into wide adders. Flip A, B, and Cin below.</p>
+    <p class="deep">Why is the carry-in the whole point? Because real numbers have many columns. When you add <b>1 + 1</b> you get <b>10</b> — a 0 with a carry into the next column, exactly like <b>9 + 1 = 10</b> in decimal. A half adder can't accept a carry <em>from the right</em>, so it can only ever do the rightmost column. A full adder can, so you can stack them to add 4-bit, 8-bit, 64-bit numbers.</p>
+    <div class="card">
+      <div style="display:flex;gap:30px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div>
+          <div class="io-row"><span class="lbl">A</span><div class="switch" id="faA"></div></div>
+          <div class="io-row"><span class="lbl">B</span><div class="switch" id="faB"></div></div>
+          <div class="io-row"><span class="lbl" style="font-size:.9rem">Cin</span><div class="switch" id="faCin"></div></div>
+        </div>
+        <div style="text-align:center">
+          <div class="muted" style="font-size:.72rem">SUM = A ⊕ B ⊕ Cin</div>
+          <div class="led" id="faSum" style="margin:8px auto">0</div>
+          <div class="muted" style="font-size:.72rem;margin-top:14px">CARRY-OUT = AB + Cin(A⊕B)</div>
+          <div class="led" id="faCout" style="margin:8px auto">0</div>
+        </div>
+        <div style="text-align:center">
+          <div class="muted" style="font-size:.72rem">READS AS</div>
+          <div class="eqn" id="faEqn" style="font-size:1.6rem">0 + 0 + 0 = 00</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto"><table class="tt" id="faTable"></table></div>
+    </div>
+    <p class="muted">Subtraction reuses this hardware: <strong>subtraction = addition + 2's complement</strong>.</p>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — grade-school column addition</div>
+      <p>You already run a "ripple carry" by hand. Adding <b>27 + 15</b>, you do the ones column (7+5=12, write 2, <b>carry 1</b>), then the tens column with that carried 1 (2+1+1=4) → 42. Each column is a full adder: two digits plus the carry coming in from the right. Binary works identically — just with 0s and 1s and the rule 1+1=10.</p>
+    </div>
+  </section>
+
+  <!-- 13 RIPPLE ADDER -->
+  <section class="slide" data-title="Ripple-Carry Adder — 3+5">
+    <div class="eyebrow"><span>Interactive · The Core Example</span></div>
+    <h2>Ripple-carry adder — <span>add it bit by bit</span></h2>
+    <p>Chain four full adders and the carry <em>ripples</em> left. Enter two 4-bit numbers (0–15) and step through each column, exactly as the ALU does. Try the classic <span class="mono" style="color:var(--yellow)">3 + 5</span> first.</p>
+    <p class="deep">"Ripple" describes the timing: bit 0 must finish before bit 1 knows its carry-in, which must finish before bit 2, and so on — the carry <b>travels left like a wave</b>. It's simple and cheap, but the wider the number, the longer the ripple takes; that speed limit is why fast CPUs use cleverer "carry-lookahead" adders later on. Same math, less waiting.</p>
+    <div class="card">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">
+        <label style="font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim)">A (0–15)<br><input class="num" id="rcA" type="number" min="0" max="15" value="3"></label>
+        <label style="font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim)">B (0–15)<br><input class="num" id="rcB" type="number" min="0" max="15" value="5"></label>
+        <button class="btn primary" id="rcStep">Step ▶</button>
+        <button class="btn sm" id="rcAll">Run all</button>
+        <button class="btn sm" id="rcReset">Reset</button>
+      </div>
+      <div class="addgrid"><table class="tt" id="rcTable"></table></div>
+      <div class="eqn" id="rcResult" style="margin-top:12px">— — — —</div>
+      <p class="muted" id="rcNote" style="text-align:center;margin:2px 0 0">Press Step to add bit 0 (rightmost).</p>
+    </div>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — a bucket brigade</div>
+      <p>Picture people in a line passing water buckets. Each person (a full adder) can only pass their bucket (the carry) <em>after</em> receiving one from the right. The water "ripples" down the line — and the longer the line, the longer the last bucket takes to arrive. Widen the adder from 4 bits to 64 and you've simply added more people to the brigade.</p>
+    </div>
+  </section>
+
+  <!-- 14 MULTIPLIERS -->
+  <section class="slide" data-title="Multipliers">
+    <div class="eyebrow"><span>Block</span></div>
+    <h2>Multipliers — <span>fast by design</span></h2>
+    <p class="deep">Multiplying in binary is just <b>shift-and-add</b>: each 1-bit in one number copies the other number, shifted into place, and all those partial products are summed. A hardware multiplier does every shift at once with a grid of <b>AND gates</b> (to form partial products) feeding a tree of <b>adders</b> (to total them) — so a multiply that would take many addition steps happens in a single pass.</p>
+    <div class="grid2">
+      <div class="card">
+        <p style="margin-top:0">A multiplier performs <strong>binary multiplication</strong> far faster than repeated addition. It's built from <strong>arrays of AND gates and adders</strong> — the AND gates form partial products, the adders sum them.</p>
+        <p class="muted">Used heavily in <strong>DSP</strong>, AI math, and graphics.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Where you feel it</h3>
+        <p>A <strong>GPU</strong> rotating, scaling, and rendering 3D objects runs multipliers constantly for matrix and vector math — thousands of them in parallel, every frame.</p>
+      </div>
+    </div>
+    <div class="callout">Pattern to notice: even a "multiply" block is really just <b>gates + adders</b> arranged cleverly. Blocks are always made of simpler blocks and gates.</div>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — an Instagram filter</div>
+      <p>When you brighten or blur a photo, every pixel's color is <b>multiplied</b> by a number, millions of times per image. On video (30+ frames a second) that's billions of multiplications — which is exactly why phones and GPUs pack thousands of hardware multipliers running in parallel. The same silicon powers game graphics and AI models.</p>
+    </div>
+  </section>
+
+  <!-- 15 CPU PIPELINE -->
+  <section class="slide" data-title="CPU Scenario: 3 + 5">
+    <div class="eyebrow"><span>Putting It Together</span></div>
+    <h2>Inside the CPU: <span>3 + 5</span></h2>
+    <p>You type <span class="mono" style="color:var(--yellow)">3 + 5</span>. Step through the pipeline and watch which combinational block does each job.</p>
+    <p class="deep">This is the whole lecture in one journey. No single block is smart — the <b>encoder</b> just makes a code, the <b>decoder</b> just enables a unit, the <b>MUX</b> just picks inputs, the <b>adder</b> just sums, the <b>DEMUX</b> just routes. Chained together, these dumb little combinational blocks add two numbers and show the answer. Intelligence lives in the <em>arrangement</em>, not any one part.</p>
+    <div class="card">
+      <div class="lines" id="cpuStages"></div>
+      <div style="margin:16px 0 6px;min-height:64px">
+        <div class="eyebrow" id="cpuStepTitle" style="margin-bottom:6px">Step 0</div>
+        <p id="cpuStepBody" style="margin:0;color:var(--ink)">Press Step to begin the trip from keyboard to screen.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn primary" id="cpuStep">Step ▶</button>
+        <button class="btn sm" id="cpuReset">Reset</button>
+      </div>
+    </div>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — a factory assembly line</div>
+      <p>Raw parts enter one end; each station does one small job and hands off to the next, until a finished product rolls out. Your keystroke is the raw part, each combinational block is a station, and "3 + 5 = 8 on screen" is the finished product — assembled in <b>billionths of a second</b>.</p>
+    </div>
+  </section>
+
+  <!-- 16 GATE COUNT -->
+  <section class="slide" data-title="Gate Count for 3+5">
+    <div class="eyebrow"><span>How Deep It Goes</span></div>
+    <h2>How many gates to add <span>3 + 5?</span></h2>
+    <p>Each full adder is built from <strong>2 XOR + 3 AND + 2 OR</strong> gates. To add two 4-bit numbers you chain <span class="mono">N</span> full adders. Change N and count.</p>
+    <p class="deep">28 gates for a 4-bit add sounds like a lot — until you scale it. A 64-bit adder is ~448 gates, and that's <em>one</em> operation. A modern CPU holds <b>tens of billions of transistors</b> (gates are built from transistors), which is how a chip the size of a fingernail runs an entire adder, multiplier, decoders, and more, all at once. Small rules, staggering scale.</p>
+    <div class="card">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px">
+        <label style="font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim)">Full adders (N)<br><input class="num" id="gcN" type="number" min="1" max="64" value="4"></label>
+      </div>
+      <table class="tt" id="gcTable"></table>
+      <div class="eqn" id="gcTotal" style="margin-top:10px">Total = 28 logic gates</div>
+    </div>
+    <div class="callout">Every keystroke you make fires <b>hundreds</b> of these arithmetic and logic operations per second — all of it built from a handful of gate types.</div>
+    <div class="reallife">
+      <div class="h">🌍 Real-world example — bricks in a skyscraper</div>
+      <p>No single brick is impressive, but stack millions with intent and you get the Empire State Building. Gates are those bricks: seven simple types, repeated billions of times, become a processor that streams video and runs AI. When you feel your laptop is "powerful," you're really feeling <b>scale plus arrangement</b>.</p>
+    </div>
+  </section>
+
+  <!-- 17 PRACTICE 2 -->
+  <section class="slide" data-title="Practice · Mixed Check">
+    <div class="eyebrow"><span>Practice Round 2</span></div>
+    <h2>Mixed <span>knowledge check</span></h2>
+    <p>Blocks, adders, and selectors together. Pick an answer — a new question loads each time.</p>
+    <div class="reallife">
+      <div class="h">🌍 Think in devices</div>
+      <p>When a question asks about a MUX, picture the <b>TV input selector</b>; for a decoder, the <b>elevator floor</b>; for a full adder, <b>column addition with a carry</b>. Anchoring each block to a real device makes the right answer obvious.</p>
+    </div>
+    <div class="q-box">
+      <div class="q-text" id="p2q">—</div>
+      <div class="ans-btns" id="p2btns"></div>
+      <div class="feedback" id="p2fb"></div>
+      <div class="score-line">Score: <b id="p2correct">0</b> / <b id="p2total">0</b></div>
+      <button class="btn sm" id="p2next" style="margin-top:12px">New question →</button>
+    </div>
+  </section>
+
+  <!-- 18 SUMMARY -->
+  <section class="slide" data-title="Summary">
+    <div class="eyebrow"><span>Committed to Memory</span></div>
+    <h2>Combinational logic — <span>the recap</span></h2>
+    <div class="grid2">
+      <div class="card">
+        <ul class="clean">
+          <li>Output depends <strong>only on current inputs</strong> — no memory</li>
+          <li>Built from <strong>gates</strong>: AND, OR, NOT, NAND, NOR, XOR, XNOR</li>
+          <li><strong>MUX</strong> selects one of many; <strong>DEMUX</strong> routes to one of many</li>
+          <li><strong>Encoder</strong>: 2ⁿ→n bits · <strong>Decoder</strong>: n bits→2ⁿ lines</li>
+          <li><strong>Full adders</strong> chain into ripple-carry adders (the ALU)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">The takeaway</h3>
+        <p>When you write Python or C, it becomes instructions like <span class="mono" style="color:var(--yellow)">ADD R1,R2,R3</span> — and everything that runs it is <strong>logic gates combined into logic blocks</strong>. You're not just learning theory; you're learning the language of the machine.</p>
+        <p class="muted">Next: Boolean Algebra vs Karnaugh Maps — simplifying these gate networks.</p>
+      </div>
+    </div>
+    <div class="reallife">
+      <div class="h">🌍 The one thing to remember</div>
+      <p>Every device you own — phone, car, microwave, game console — makes instant decisions with the exact seven gates and handful of blocks in this deck. Learn to see the <b>MUX in a TV remote</b>, the <b>decoder in an elevator</b>, and the <b>adder in a calculator</b>, and the digital world stops being magic and starts being readable.</p>
+    </div>
+    <div class="foot"><b>MAC-283 · Computer Architecture &amp; Assembler Language</b> — Lecture 3, Part 2<br>Prof. Khalid Kassou · kkassou@lagcc.cuny.edu · LaGuardia Community College · MEC Department</div>
+  </section>
+
+</div>
+
+<!-- MENU -->
+<div id="menu">
+  <div class="menu-inner">
+    <h2>Jump to a slide</h2>
+    <ul class="toc" id="toc"></ul>
+    <button class="btn" id="menuClose" style="margin-top:18px">Close menu</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div id="nav">
+  <div class="nav-inner">
+    <button class="nav-btn" id="prevBtn">← Back</button>
+    <div class="counter"><b id="cur">1</b> / <span id="total">18</span></div>
+    <button class="nav-btn" id="nextBtn">Next →</button>
+    <button class="nav-btn" id="menuBtn">☰ Menu</button>
+    <div class="title-mini" id="titleMini"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- slide framework ---------- */
+const slides=[...document.querySelectorAll('.slide')];
+const TOTAL=slides.length;
+let cur=0;
+document.getElementById('total').textContent=TOTAL;
+function show(i){
+  cur=Math.max(0,Math.min(TOTAL-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  document.getElementById('cur').textContent=cur+1;
+  document.getElementById('progress').style.width=((cur+1)/TOTAL*100)+'%';
+  document.getElementById('prevBtn').disabled=cur===0;
+  document.getElementById('nextBtn').disabled=cur===TOTAL-1;
+  document.getElementById('titleMini').textContent=slides[cur].dataset.title||'';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('prevBtn').onclick=()=>show(cur-1);
+document.getElementById('nextBtn').onclick=()=>show(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight')show(cur+1);
+  else if(e.key==='ArrowLeft')show(cur-1);
+  else if(e.key.toLowerCase()==='m')toggleMenu();
+});
+/* menu */
+const menu=document.getElementById('menu');
+function toggleMenu(){menu.classList.toggle('show');}
+document.getElementById('menuBtn').onclick=toggleMenu;
+document.getElementById('menuClose').onclick=toggleMenu;
+const toc=document.getElementById('toc');
+slides.forEach((s,i)=>{
+  const li=document.createElement('li');
+  li.innerHTML='<span class="n">'+String(i+1).padStart(2,'0')+'</span><span>'+(s.dataset.title||'')+'</span>';
+  li.onclick=()=>{show(i);menu.classList.remove('show');};
+  toc.appendChild(li);
+});
+
+/* ---------- gate helpers ---------- */
+const GATES={
+  AND :{sym:'A · B',    desc:'True only if both A and B are 1', f:(a,b)=>a&b},
+  OR  :{sym:'A + B',    desc:'True if A or B is 1',             f:(a,b)=>a|b},
+  NOT :{sym:'¬A',       desc:'Inverts A (uses A only)',         f:(a,b)=>a?0:1, unary:true},
+  NAND:{sym:'¬(A · B)', desc:'False only if both A and B are 1',f:(a,b)=>(a&b)?0:1},
+  NOR :{sym:'¬(A + B)', desc:'True only if both A and B are 0', f:(a,b)=>(a|b)?0:1},
+  XOR :{sym:'A ⊕ B',    desc:'True if A and B are different',   f:(a,b)=>a^b},
+  XNOR:{sym:'¬(A ⊕ B)', desc:'True if A and B are the same',    f:(a,b)=>(a^b)?0:1}
+};
+function toggle(el,onClass){el.classList.toggle(onClass||'on');}
+
+/* ---------- SLIDE 4: gate lab ---------- */
+let glGate='AND', glA=0, glB=0;
+const gbWrap=document.getElementById('gateBtns');
+Object.keys(GATES).forEach(g=>{
+  const b=document.createElement('button');b.textContent=g;b.dataset.g=g;
+  if(g===glGate)b.classList.add('sel');
+  b.onclick=()=>{glGate=g;[...gbWrap.children].forEach(c=>c.classList.remove('sel'));b.classList.add('sel');glRender();};
+  gbWrap.appendChild(b);
+});
+document.getElementById('glA').onclick=function(){glA^=1;this.classList.toggle('on',!!glA);document.getElementById('glAv').textContent=glA;glRender();};
+document.getElementById('glB').onclick=function(){glB^=1;this.classList.toggle('on',!!glB);document.getElementById('glBv').textContent=glB;glRender();};
+function glRender(){
+  const G=GATES[glGate];
+  document.getElementById('glEqn').textContent=G.sym;
+  document.getElementById('glDesc').textContent=G.desc;
+  const out=G.f(glA,glB);
+  const led=document.getElementById('glLed');led.textContent=out;led.classList.toggle('on',!!out);
+  // truth table
+  const rows=G.unary?[[0],[1]]:[[0,0],[0,1],[1,0],[1,1]];
+  let h='<tr><th>A</th>'+(G.unary?'':'<th>B</th>')+'<th>OUT</th></tr>';
+  rows.forEach(r=>{
+    const o=G.f(r[0],G.unary?0:r[1]);
+    const hl=(r[0]===glA && (G.unary || r[1]===glB))?' class="hl"':'';
+    h+='<tr'+hl+'><td>'+r[0]+'</td>'+(G.unary?'':'<td>'+r[1]+'</td>')+'<td>'+o+'</td></tr>';
+  });
+  document.getElementById('glTable').innerHTML=h;
+}
+glRender();
+
+/* ---------- SLIDE 5: gate real-life cards ---------- */
+const GATE_RL=[
+  ['AND','🔐 Two-key safe','Opens only when both keys are turned at once (A=1 AND B=1).'],
+  ['OR','💡 Two light switches','Light turns on if either switch is flipped — only one needs to be ON.'],
+  ['NOT','🚪 Motion-sensor door','Closed when no one is detected; opens only when NOT A = 1 (someone there).'],
+  ['NAND','🚨 Washing-machine lock','Runs unless both door-closed AND water-full are true, then it disables (opposite of AND).'],
+  ['NOR','🔕 Do-not-disturb','Phone stays silent only if no calls AND no messages arrive (both 0).'],
+  ['XOR','🚗 Car interior light','Turns on only when exactly one door is open; both open or both closed = off.'],
+  ['XNOR','🔓 Password match','"Access granted" only if entered password exactly matches the stored one (same = 1).']
+];
+const gcards=document.getElementById('gateCards');
+GATE_RL.forEach(([g,t,d])=>{
+  const c=document.createElement('div');c.className='card';
+  c.innerHTML='<div class="pill">'+g+'</div><h3 style="margin:10px 0 6px">'+t+'</h3><p style="margin:0">'+d+'</p>';
+  gcards.appendChild(c);
+});
+
+/* ---------- SLIDE 6: practice 1 ---------- */
+let p1={gate:'AND',a:0,b:0,ans:0,correct:0,total:0,streak:0,answered:false};
+function p1new(){
+  const keys=Object.keys(GATES);
+  p1.gate=keys[(Math.random()*keys.length)|0];
+  p1.a=(Math.random()<.5)?0:1; p1.b=(Math.random()<.5)?0:1;
+  p1.ans=GATES[p1.gate].f(p1.a,p1.b);
+  p1.answered=false;
+  const G=GATES[p1.gate];
+  const inputs=G.unary?('A = <span class="mono">'+p1.a+'</span>'):('A = <span class="mono">'+p1.a+'</span>, B = <span class="mono">'+p1.b+'</span>');
+  document.getElementById('p1q').innerHTML='Gate: <span class="mono">'+p1.gate+'</span> ('+G.sym+') &nbsp;with &nbsp;'+inputs+'. &nbsp;What is the output?';
+  [...document.querySelectorAll('#p1btns button')].forEach(b=>b.className='');
+  document.getElementById('p1fb').textContent='';
+}
+document.querySelectorAll('#p1btns button').forEach(btn=>{
+  btn.onclick=()=>{
+    if(p1.answered)return;
+    p1.answered=true; p1.total++;
+    const v=+btn.dataset.v;
+    const fb=document.getElementById('p1fb');
+    if(v===p1.ans){p1.correct++;p1.streak++;btn.classList.add('correct');fb.className='feedback ok';fb.textContent='Correct — '+p1.gate+'('+p1.a+(GATES[p1.gate].unary?'':','+p1.b)+') = '+p1.ans+'.';}
+    else{p1.streak=0;btn.classList.add('wrong');[...document.querySelectorAll('#p1btns button')].forEach(b=>{if(+b.dataset.v===p1.ans)b.classList.add('correct');});fb.className='feedback no';fb.textContent='Not quite — '+p1.gate+' gives '+p1.ans+' here.';}
+    document.getElementById('p1correct').textContent=p1.correct;
+    document.getElementById('p1total').textContent=p1.total;
+    document.getElementById('p1streak').textContent=p1.streak;
+  };
+});
+document.getElementById('p1next').onclick=p1new;
+p1new();
+
+/* ---------- SLIDE 8: MUX ---------- */
+let muxIn=[0,0,0,0], muxS1=0, muxS0=0;
+const muxWrap=document.getElementById('muxInputs');
+muxIn.forEach((_,i)=>{
+  const row=document.createElement('div');row.className='dline';row.id='muxI'+i;
+  row.innerHTML='<span class="tag">I'+i+'</span><div class="switch" data-i="'+i+'"></div><span class="bitval">0</span>';
+  row.querySelector('.switch').onclick=function(){muxIn[i]^=1;this.classList.toggle('on',!!muxIn[i]);row.querySelector('.bitval').textContent=muxIn[i];muxRender();};
+  muxWrap.appendChild(row);
+});
+document.getElementById('muxS1').onclick=function(){muxS1^=1;this.classList.toggle('on',!!muxS1);muxRender();};
+document.getElementById('muxS0').onclick=function(){muxS0^=1;this.classList.toggle('on',!!muxS0);muxRender();};
+function muxRender(){
+  const sel=(muxS1<<1)|muxS0;
+  document.getElementById('muxSel').textContent='I'+sel;
+  const out=muxIn[sel];
+  const led=document.getElementById('muxLed');led.textContent=out;led.classList.toggle('on',!!out);
+  muxIn.forEach((_,i)=>document.getElementById('muxI'+i).classList.toggle('active',i===sel));
+}
+muxRender();
+
+/* ---------- SLIDE 9: DEMUX ---------- */
+let demuxIn=0, dS1=0, dS0=0;
+const demuxWrap=document.getElementById('demuxOutputs');
+for(let i=0;i<4;i++){
+  const row=document.createElement('div');row.className='dline';row.id='demuxY'+i;
+  row.innerHTML='<span class="tag">Y'+i+'</span><span class="bitval">0</span>';
+  demuxWrap.appendChild(row);
+}
+document.getElementById('demuxIn').onclick=function(){demuxIn^=1;this.classList.toggle('on',!!demuxIn);demuxRender();};
+document.getElementById('demuxS1').onclick=function(){dS1^=1;this.classList.toggle('on',!!dS1);demuxRender();};
+document.getElementById('demuxS0').onclick=function(){dS0^=1;this.classList.toggle('on',!!dS0);demuxRender();};
+function demuxRender(){
+  const sel=(dS1<<1)|dS0;
+  for(let i=0;i<4;i++){
+    const row=document.getElementById('demuxY'+i);
+    const val=(i===sel)?demuxIn:0;
+    row.classList.toggle('active',i===sel);
+    row.querySelector('.bitval').textContent=val;
+  }
+}
+demuxRender();
+
+/* ---------- SLIDE 10: Encoder ---------- */
+let encActive=0;
+const encWrap=document.getElementById('encInputs');
+for(let i=0;i<8;i++){
+  const row=document.createElement('div');row.className='dline';row.id='encD'+i;
+  row.innerHTML='<span class="tag">D'+i+'</span><span class="bitval">'+(i===0?1:0)+'</span>';
+  row.style.cursor='pointer';
+  row.onclick=()=>{encActive=i;encRender();};
+  encWrap.appendChild(row);
+}
+function encRender(){
+  for(let i=0;i<8;i++){
+    const row=document.getElementById('encD'+i);
+    row.classList.toggle('active',i===encActive);
+    row.querySelector('.bitval').textContent=(i===encActive)?1:0;
+  }
+  document.getElementById('encOut').textContent=encActive.toString(2).padStart(3,'0');
+  document.getElementById('encDec').textContent='line '+encActive+' active';
+}
+encRender();
+
+/* ---------- SLIDE 11: Decoder ---------- */
+let decA1=0, decA0=0;
+const decWrap=document.getElementById('decOutputs');
+for(let i=0;i<4;i++){
+  const row=document.createElement('div');row.className='dline';row.id='decY'+i;
+  row.innerHTML='<span class="tag">Y'+i+'</span><span class="bitval">0</span>';
+  decWrap.appendChild(row);
+}
+document.getElementById('decA1').onclick=function(){decA1^=1;this.classList.toggle('on',!!decA1);decRender();};
+document.getElementById('decA0').onclick=function(){decA0^=1;this.classList.toggle('on',!!decA0);decRender();};
+function decRender(){
+  const code=(decA1<<1)|decA0;
+  document.getElementById('decCode').textContent=''+decA1+decA0;
+  document.getElementById('decWhich').textContent='Y'+code;
+  for(let i=0;i<4;i++){
+    const row=document.getElementById('decY'+i);
+    row.classList.toggle('active',i===code);
+    row.querySelector('.bitval').textContent=(i===code)?1:0;
+  }
+}
+decRender();
+
+/* ---------- SLIDE 12: Full adder ---------- */
+let faA=0,faB=0,faCin=0;
+document.getElementById('faA').onclick=function(){faA^=1;this.classList.toggle('on',!!faA);faRender();};
+document.getElementById('faB').onclick=function(){faB^=1;this.classList.toggle('on',!!faB);faRender();};
+document.getElementById('faCin').onclick=function(){faCin^=1;this.classList.toggle('on',!!faCin);faRender();};
+function faCompute(a,b,c){return {sum:a^b^c, cout:(a&b)|(c&(a^b))};}
+function faRender(){
+  const r=faCompute(faA,faB,faCin);
+  const s=document.getElementById('faSum');s.textContent=r.sum;s.classList.toggle('on',!!r.sum);
+  const co=document.getElementById('faCout');co.textContent=r.cout;co.classList.toggle('on',!!r.cout);
+  const total=faA+faB+faCin;
+  document.getElementById('faEqn').textContent=faA+' + '+faB+' + '+faCin+' = '+r.cout+''+r.sum+'  ('+total+')';
+  // table
+  let h='<tr><th>A</th><th>B</th><th>Cin</th><th>Sum</th><th>Cout</th></tr>';
+  for(let a=0;a<2;a++)for(let b=0;b<2;b++)for(let c=0;c<2;c++){
+    const rr=faCompute(a,b,c);
+    const hl=(a===faA&&b===faB&&c===faCin)?' class="hl"':'';
+    h+='<tr'+hl+'><td>'+a+'</td><td>'+b+'</td><td>'+c+'</td><td>'+rr.sum+'</td><td>'+rr.cout+'</td></tr>';
+  }
+  document.getElementById('faTable').innerHTML=h;
+}
+faRender();
+
+/* ---------- SLIDE 13: ripple-carry adder ---------- */
+let rcStepIdx=0, rcRows=[];
+function rcBuild(){
+  const a=Math.max(0,Math.min(15,parseInt(document.getElementById('rcA').value)||0));
+  const b=Math.max(0,Math.min(15,parseInt(document.getElementById('rcB').value)||0));
+  rcRows=[]; let cin=0;
+  for(let i=0;i<4;i++){
+    const ai=(a>>i)&1, bi=(b>>i)&1;
+    const s=ai^bi^cin, cout=(ai&bi)|(cin&(ai^bi));
+    rcRows.push({i,ai,bi,cin,s,cout});
+    cin=cout;
+  }
+  rcRows.finalCarry=cin; rcRows.a=a; rcRows.b=b;
+}
+function rcRender(revealed){
+  let h='<tr><th>Bit</th><th>A</th><th>B</th><th>Cin</th><th>Sum</th><th>Cout</th></tr>';
+  // display from bit3 (left) down to bit0 (right) for readability
+  for(let i=3;i>=0;i--){
+    const r=rcRows[i];
+    const shown=i<revealed;
+    const hl=(i===revealed-1)?' class="hl"':'';
+    h+='<tr'+hl+'><td>'+i+'</td><td>'+r.ai+'</td><td>'+r.bi+'</td>'+
+      '<td>'+(shown?r.cin:'·')+'</td><td>'+(shown?r.s:'·')+'</td><td>'+(shown?r.cout:'·')+'</td></tr>';
+  }
+  document.getElementById('rcTable').innerHTML=h;
+}
+function rcResultText(revealed){
+  if(revealed<4){
+    document.getElementById('rcResult').textContent='— — — —';
+    document.getElementById('rcNote').textContent=revealed===0?'Press Step to add bit 0 (rightmost).':'Added bit '+(revealed-1)+'. Carry '+rcRows[revealed-1].cout+' ripples left. Keep stepping.';
+  }else{
+    let bits='';for(let i=3;i>=0;i--)bits+=rcRows[i].s;
+    const dec=rcRows.a+rcRows.b;
+    const carry=rcRows.finalCarry;
+    document.getElementById('rcResult').textContent=(carry?carry:'')+bits+'  =  '+dec;
+    document.getElementById('rcNote').textContent=rcRows.a+' + '+rcRows.b+' = '+dec+(carry?' (final carry-out = 1, so a 5th bit)':'')+'.';
+  }
+}
+function rcRestart(){rcBuild();rcStepIdx=0;rcRender(0);rcResultText(0);}
+document.getElementById('rcStep').onclick=()=>{if(rcStepIdx===0)rcBuild();if(rcStepIdx<4){rcStepIdx++;rcRender(rcStepIdx);rcResultText(rcStepIdx);}};
+document.getElementById('rcAll').onclick=()=>{rcBuild();rcStepIdx=4;rcRender(4);rcResultText(4);};
+document.getElementById('rcReset').onclick=rcRestart;
+document.getElementById('rcA').onchange=rcRestart;
+document.getElementById('rcB').onchange=rcRestart;
+rcRestart();
+
+/* ---------- SLIDE 15: CPU pipeline ---------- */
+const CPU_STAGES=[
+  ['Encoder','keyboard → binary'],
+  ['Decoder','read the "+" opcode'],
+  ['MUX','pick registers R2,R3'],
+  ['Adder','ALU: 0011 + 0101'],
+  ['DEMUX','route result to R1'],
+  ['Display','show 8 on screen']
+];
+const CPU_STEPS=[
+  ['Step 1 · Encoder','You press 3, +, 5. The keyboard encoder converts each keypress to binary (ASCII): 3 → 00110011, 5 → 00110101. Built from AND/OR gates.'],
+  ['Step 2 · Decoder','The Control Unit uses a decoder to interpret the opcode "+" as "perform addition", enabling the ALU. Decoder = AND + NOT gates.'],
+  ['Step 3 · MUX','A multiplexer selects the correct registers — R2 holds 0011 (3) and R3 holds 0101 (5) — and routes only those into the ALU.'],
+  ['Step 4 · Adder','The ALU\'s ripple-carry adder adds 0011 + 0101 bit by bit → 1000 (8). Each full adder = XOR, AND, OR gates.'],
+  ['Step 5 · DEMUX','A demultiplexer (bus control) routes the result 1000 to exactly one destination: register R1.'],
+  ['Step 6 · Display','To show it, 8 is encoded to ASCII 00111000 and sent to the display. On screen: 3 + 5 = 8.']
+];
+const cpuWrap=document.getElementById('cpuStages');
+CPU_STAGES.forEach((s,i)=>{
+  const row=document.createElement('div');row.className='dline';row.id='cpuS'+i;
+  row.innerHTML='<span class="tag">'+(i+1)+'</span><strong style="font-family:var(--display)">'+s[0]+'</strong><span class="bitval muted" style="font-size:.8rem;font-family:var(--mono)">'+s[1]+'</span>';
+  cpuWrap.appendChild(row);
+});
+let cpuIdx=0;
+function cpuRender(){
+  CPU_STAGES.forEach((_,i)=>document.getElementById('cpuS'+i).classList.toggle('active',i===cpuIdx-1));
+  if(cpuIdx===0){
+    document.getElementById('cpuStepTitle').textContent='Step 0';
+    document.getElementById('cpuStepBody').textContent='Press Step to begin the trip from keyboard to screen.';
+  }else{
+    document.getElementById('cpuStepTitle').textContent=CPU_STEPS[cpuIdx-1][0];
+    document.getElementById('cpuStepBody').textContent=CPU_STEPS[cpuIdx-1][1];
+  }
+}
+document.getElementById('cpuStep').onclick=()=>{if(cpuIdx<6){cpuIdx++;cpuRender();}};
+document.getElementById('cpuReset').onclick=()=>{cpuIdx=0;cpuRender();};
+cpuRender();
+
+/* ---------- SLIDE 16: gate count ---------- */
+function gcRender(){
+  const n=Math.max(1,Math.min(64,parseInt(document.getElementById('gcN').value)||1));
+  const xor=2*n, and=3*n, or=2*n, total=xor+and+or;
+  document.getElementById('gcTable').innerHTML=
+    '<tr><th>Gate</th><th>Per full adder</th><th>× '+n+' adders</th></tr>'+
+    '<tr><td>XOR</td><td>2</td><td>'+xor+'</td></tr>'+
+    '<tr><td>AND</td><td>3</td><td>'+and+'</td></tr>'+
+    '<tr><td>OR</td><td>2</td><td>'+or+'</td></tr>';
+  document.getElementById('gcTotal').textContent='Total = '+xor+' + '+and+' + '+or+' = '+total+' logic gates';
+}
+document.getElementById('gcN').oninput=gcRender;
+gcRender();
+
+/* ---------- SLIDE 17: practice 2 (mixed) ---------- */
+const P2=[
+  ()=>{const s1=(Math.random()<.5)?0:1,s0=(Math.random()<.5)?0:1,sel=(s1<<1)|s0;
+    return {q:'In a 4-to-1 MUX, the select lines are S1 S0 = <span class="mono">'+s1+s0+'</span>. Which input reaches the output?',
+      opts:['I0','I1','I2','I3'],ans:sel,exp:'Select '+s1+s0+' (binary) = '+sel+', so I'+sel+' passes through.'};},
+  ()=>{const a=(Math.random()<.5)?0:1,b=(Math.random()<.5)?0:1,c=(Math.random()<.5)?0:1;const r=faCompute(a,b,c);
+    return {q:'A full adder has A='+a+', B='+b+', Cin='+c+'. What is the <b>Sum</b> bit?',
+      opts:['0','1'],ans:r.sum,exp:'Sum = A⊕B⊕Cin = '+r.sum+' (carry-out '+r.cout+').'};},
+  ()=>{return {q:'Which block converts 2ⁿ input lines into an n-bit binary code?',
+      opts:['Decoder','Encoder','MUX','DEMUX'],ans:1,exp:'An encoder outputs the code of which input line is active.'};},
+  ()=>{return {q:'Which block takes one input and routes it to one of many outputs?',
+      opts:['MUX','Encoder','DEMUX','Adder'],ans:2,exp:'A DEMUX (demultiplexer) sends one input to a selected output.'};},
+  ()=>{const bits=(Math.random()<.5)?3:2;return {q:'A '+bits+'-to-'+(1<<bits)+' decoder activates how many output lines at once?',
+      opts:['0','1',''+(1<<bits),''+bits],ans:1,exp:'A decoder activates exactly one output line for each input code.'};},
+  ()=>{return {q:'What actually performs the binary addition inside the ALU?',
+      opts:['A MUX','A ripple-carry adder','An encoder','A decoder'],ans:1,exp:'Chained full adders form the ripple-carry adder in the ALU.'};},
+  ()=>{return {q:'A circuit whose output depends only on current inputs (no memory) is called…',
+      opts:['Sequential logic','Combinational logic','A register','A flip-flop'],ans:1,exp:'No memory + instant output = combinational logic.'};}
+];
+let p2={cur:null,correct:0,total:0,answered:false};
+function p2new(){
+  p2.cur=P2[(Math.random()*P2.length)|0]();
+  p2.answered=false;
+  document.getElementById('p2q').innerHTML=p2.cur.q;
+  const wrap=document.getElementById('p2btns');wrap.innerHTML='';
+  p2.cur.opts.forEach((o,i)=>{
+    const b=document.createElement('button');b.innerHTML=o;
+    b.onclick=()=>{
+      if(p2.answered)return;p2.answered=true;p2.total++;
+      const fb=document.getElementById('p2fb');
+      if(i===p2.cur.ans){p2.correct++;b.classList.add('correct');fb.className='feedback ok';fb.textContent='Correct. '+p2.cur.exp;}
+      else{b.classList.add('wrong');[...wrap.children].forEach((c,k)=>{if(k===p2.cur.ans)c.classList.add('correct');});fb.className='feedback no';fb.textContent='Not quite. '+p2.cur.exp;}
+      document.getElementById('p2correct').textContent=p2.correct;
+      document.getElementById('p2total').textContent=p2.total;
+    };
+    wrap.appendChild(b);
+  });
+  document.getElementById('p2fb').textContent='';
+}
+document.getElementById('p2next').onclick=p2new;
+p2new();
+
+/* init */
+show(0);
+</script>
+</body>
+</html>
