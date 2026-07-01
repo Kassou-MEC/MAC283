@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC-283 · Diagnostic Bench Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-0:#060f1c;--navy-1:#0a1628;--navy-2:#0e1e36;--navy-3:#13294b;
+  --line:#1c3a63;--yellow:#ffd23f;--yellow-dim:#c9a227;--amber:#f4c430;
+  --green:#3ee08a;--red:#ff5d6c;--ink:#e8f0ff;--ink-dim:#8fa6c8;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --display:'Chakra Petch',var(--mono);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--mono);color:var(--ink);background-color:var(--navy-0);
+  background:radial-gradient(circle at 20% 0%,rgba(255,210,63,.06),transparent 40%),var(--navy-0);
+  line-height:1.55;-webkit-font-smoothing:antialiased;}
+.pcb{position:fixed;inset:0;z-index:-1;opacity:.5;
+  background-image:linear-gradient(rgba(28,58,99,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(28,58,99,.25) 1px,transparent 1px);
+  background-size:34px 34px;}
+.pcb::after{content:"";position:absolute;inset:0;
+  background-image:radial-gradient(rgba(255,210,63,.10) 1.4px,transparent 1.6px);
+  background-size:68px 68px;background-position:34px 34px;}
+.wrap{max-width:920px;margin:0 auto;padding:0 20px 90px}
+header.hero{border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--navy-2),transparent);margin-bottom:34px;}
+.hero-inner{max-width:920px;margin:0 auto;padding:34px 20px 30px}
+.eyebrow{font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--yellow);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.eyebrow .chip{border:1px solid var(--yellow-dim);border-radius:2px;padding:2px 8px;color:var(--yellow)}
+h1.title{font-family:var(--display);font-weight:700;line-height:1.02;font-size:clamp(2rem,6vw,3.4rem);margin:16px 0 6px;letter-spacing:-.01em;}
+h1.title span{color:var(--yellow)}
+.subtitle{color:var(--ink-dim);max-width:62ch;font-size:.95rem}
+.metabar{display:flex;gap:10px 26px;flex-wrap:wrap;margin-top:22px;font-size:.8rem;color:var(--ink-dim);align-items:center;}
+.metabar b{color:var(--ink);font-weight:600}
+.console{border:1px solid var(--line);border-radius:8px;background:var(--navy-1);padding:18px 18px 16px;margin-bottom:30px;
+  box-shadow:0 0 0 1px rgba(255,210,63,.04),0 18px 40px -30px #000;}
+.console h2{font-family:var(--display);font-size:1rem;margin:0 0 4px;letter-spacing:.04em}
+.console p.hint{color:var(--ink-dim);font-size:.8rem;margin:0 0 14px}
+.id-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+label.fld{display:flex;flex-direction:column;gap:6px;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+input[type=text],input[type=password]{font-family:var(--mono);background:var(--navy-0);border:1px solid var(--line);
+  color:var(--ink);padding:11px 12px;border-radius:5px;font-size:.95rem;min-width:220px;}
+input:focus{outline:2px solid var(--yellow);outline-offset:1px}
+.btn{font-family:var(--mono);font-weight:600;cursor:pointer;border-radius:5px;padding:11px 16px;font-size:.85rem;
+  border:1px solid var(--line);background:var(--navy-3);color:var(--ink);transition:.15s;letter-spacing:.03em;}
+.btn:hover{border-color:var(--yellow);color:var(--yellow)}
+.btn.primary{background:var(--yellow);color:#1a1300;border-color:var(--yellow)}
+.btn.primary:hover{background:#ffe27a;color:#1a1300}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.save-note{font-size:.74rem;color:var(--green);margin-top:10px;min-height:1em}
+.station{border:1px solid var(--line);border-radius:8px;background:var(--navy-1);margin-bottom:22px;overflow:hidden;}
+.st-head{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,var(--navy-2),transparent);}
+.bay-no{font-family:var(--display);font-weight:700;font-size:.9rem;color:#1a1300;background:var(--yellow);
+  border-radius:4px;padding:4px 9px;letter-spacing:.05em;white-space:nowrap;}
+.st-head h3{font-family:var(--display);font-size:1.08rem;margin:0;letter-spacing:.01em}
+.st-head .pts{margin-left:auto;font-size:.72rem;color:var(--ink-dim);letter-spacing:.1em;white-space:nowrap}
+.st-head .tag{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:3px;padding:2px 6px;color:var(--ink-dim)}
+.st-body{padding:18px}
+.prompt{color:var(--ink-dim);font-size:.9rem;margin:0 0 16px}
+.prompt strong{color:var(--yellow)}
+.callout{border-left:3px solid var(--yellow-dim);padding:8px 14px;background:var(--navy-2);border-radius:0 5px 5px 0;font-size:.82rem;color:var(--ink-dim);margin:14px 0}
+.trace-list{list-style:none;margin:0;padding:0}
+.trace-item{display:flex;align-items:center;gap:12px;background:var(--navy-0);border:1px solid var(--line);border-radius:6px;padding:11px 12px;margin-bottom:8px;}
+.trace-item .grip{color:var(--yellow-dim);font-size:.75rem;letter-spacing:.1em;min-width:2ch}
+.trace-item .txt{flex:1;font-size:.86rem}
+.trace-item .mv{display:flex;flex-direction:column;gap:3px}
+.mv button{background:var(--navy-3);border:1px solid var(--line);color:var(--ink);border-radius:3px;cursor:pointer;width:26px;height:18px;line-height:1;font-size:.7rem;padding:0}
+.mv button:hover{border-color:var(--yellow);color:var(--yellow)}
+.sort-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.sort-row{display:flex;align-items:center;gap:12px;background:var(--navy-0);border:1px solid var(--line);border-radius:6px;padding:9px 12px;flex-wrap:wrap;}
+.sort-row .part{flex:1;min-width:150px;font-size:.88rem}
+.sort-row .part small{display:block;color:var(--ink-dim);font-size:.72rem;letter-spacing:.02em}
+select{font-family:var(--mono);background:var(--navy-3);border:1px solid var(--line);color:var(--ink);padding:8px 10px;border-radius:5px;font-size:.82rem;min-width:190px;cursor:pointer;}
+select:focus{outline:2px solid var(--yellow)}
+.decode{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
+.tok{background:var(--navy-0);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:120px;flex:1}
+.tok .base{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--yellow);margin-bottom:6px}
+.tok .val{font-family:var(--mono);font-size:1.05rem;color:var(--ink);margin-bottom:10px;letter-spacing:.08em}
+.tok input{min-width:0;width:100%;text-align:center;text-transform:uppercase;font-size:1.1rem}
+.reveal-word{font-family:var(--display);letter-spacing:.4em;font-size:1.15rem;color:var(--yellow);text-align:center;margin-top:10px}
+.ascii-ref{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.ascii-ref span{font-size:.7rem;background:var(--navy-2);border:1px solid var(--line);border-radius:3px;padding:2px 6px;color:var(--ink-dim)}
+.ascii-ref b{color:var(--yellow)}
+.forge{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end}
+.forge .eq{font-family:var(--display);font-size:1.6rem;color:var(--yellow);align-self:center;padding-top:18px}
+.forge .op{font-size:1.6rem;color:var(--ink-dim);align-self:center;padding-top:18px}
+.num-chip{font-family:var(--display);font-size:1.6rem;background:var(--navy-0);border:1px solid var(--line);border-radius:6px;padding:8px 16px;color:var(--ink)}
+.base-target{font-family:var(--display);font-size:2.4rem;color:var(--yellow);text-align:center;background:var(--navy-0);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:16px}
+.base-target small{display:block;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);font-family:var(--mono)}
+.base-inputs{display:grid;gap:12px}
+.base-inputs .brow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.base-inputs .blabel{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);min-width:150px}
+.base-inputs .blabel b{color:var(--ink)}
+.byte-board{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0 14px}
+.bit{width:52px;text-align:center;cursor:pointer;user-select:none;}
+.bit .place{font-size:.62rem;color:var(--ink-dim);margin-bottom:4px;letter-spacing:.05em}
+.bit .sw{width:52px;height:52px;border:1px solid var(--line);border-radius:6px;background:var(--navy-0);
+  display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:1.4rem;transition:.12s;color:var(--ink-dim);}
+.bit.on .sw{background:var(--yellow);color:#1a1300;border-color:var(--yellow);box-shadow:0 0 16px -2px rgba(255,210,63,.5)}
+.readout{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-size:.85rem;margin-bottom:14px}
+.readout b{color:var(--yellow)}
+.checklist{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.checklist li{display:flex;align-items:center;gap:10px;font-size:.83rem;color:var(--ink-dim)}
+.checklist .box{width:16px;height:16px;border:1px solid var(--line);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
+.checklist li.ok{color:var(--green)}
+.checklist li.ok .box{border-color:var(--green);color:var(--green);background:rgba(62,224,138,.12)}
+.opts{display:grid;gap:8px;margin:4px 0 4px}
+.opt{display:flex;gap:11px;align-items:flex-start;background:var(--navy-0);border:1px solid var(--line);border-radius:6px;padding:11px 13px;cursor:pointer;font-size:.86rem}
+.opt:hover{border-color:var(--yellow-dim)}
+.opt input{margin-top:3px;accent-color:var(--yellow);flex-shrink:0}
+.opt.sel{border-color:var(--yellow);background:rgba(255,210,63,.06)}
+.mini-label{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--yellow);margin:16px 0 8px}
+.submit-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:6px}
+#results{display:none;border:1px solid var(--yellow-dim);border-radius:8px;background:var(--navy-1);padding:22px;margin-top:26px}
+#results.show{display:block;animation:rise .4s ease}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.score-huge{font-family:var(--display);font-size:3.6rem;font-weight:700;line-height:1;color:var(--yellow)}
+.score-huge small{font-size:1.1rem;color:var(--ink-dim)}
+.grade-badge{display:inline-block;font-family:var(--display);font-size:1.6rem;border:1px solid var(--yellow);border-radius:6px;padding:6px 16px;margin-left:14px;color:var(--yellow)}
+.breakdown{width:100%;border-collapse:collapse;margin:18px 0;font-size:.84rem}
+.breakdown th,.breakdown td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.breakdown th{color:var(--ink-dim);font-weight:500;letter-spacing:.06em;font-size:.72rem;text-transform:uppercase}
+.breakdown td.s{text-align:right;font-family:var(--display);color:var(--ink)}
+.bar{height:6px;border-radius:3px;background:var(--navy-3);overflow:hidden;margin-top:4px}
+.bar > i{display:block;height:100%;background:var(--yellow)}
+.receipt{margin-top:16px}
+.receipt textarea{width:100%;font-family:var(--mono);font-size:.72rem;background:var(--navy-0);color:var(--green);border:1px solid var(--line);border-radius:6px;padding:10px;resize:vertical;min-height:70px}
+.dash-link{text-align:center;margin:36px 0 0}
+.dash-link a{color:var(--ink-dim);font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;border-bottom:1px dotted var(--line)}
+.dash-link a:hover{color:var(--yellow);border-color:var(--yellow)}
+#dashboard{display:none;position:fixed;inset:0;z-index:50;background:var(--navy-0);overflow:auto;padding:34px 20px 60px}
+#dashboard.show{display:block}
+.dash-inner{max-width:1040px;margin:0 auto}
+.dash-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}
+.dash-head h2{font-family:var(--display);margin:0;font-size:1.4rem}
+.dash-head .close{margin-left:auto}
+.gate{max-width:360px;margin:12vh auto 0;text-align:center}
+.gate h2{font-family:var(--display)}
+.gate .fld{align-items:center;margin:18px 0}
+.roster{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:14px}
+.roster th,.roster td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left}
+.roster th{color:var(--yellow);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;user-select:none}
+.roster td.n{font-family:var(--display);color:var(--ink)}
+.roster td.g{text-align:center}
+.roster tr:hover td{background:var(--navy-1)}
+.stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.stat{border:1px solid var(--line);border-radius:7px;background:var(--navy-1);padding:14px 18px;flex:1;min-width:130px}
+.stat .k{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim)}
+.stat .v{font-family:var(--display);font-size:1.9rem;color:var(--yellow)}
+.dash-tools{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 18px}
+.import-box{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.import-box input{flex:1}
+.empty{color:var(--ink-dim);text-align:center;padding:40px 10px;font-size:.9rem}
+footer{border-top:1px solid var(--line);margin-top:40px;padding-top:20px;color:var(--ink-dim);font-size:.78rem;text-align:center}
+footer b{color:var(--ink)}
+.warn{font-size:.74rem;color:var(--red);margin-top:8px}
+@media(max-width:560px){
+  .id-row{flex-direction:column;align-items:stretch}
+  input[type=text],input[type=password]{min-width:0;width:100%}
+  select{width:100%}
+  .base-inputs .blabel{min-width:0}
+}
+</style>
+</head>
+<body>
+<div class="pcb" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow"><span class="chip">MAC-283</span><span>Computer Architecture &amp; Assembler</span><span>· Lab 01</span></div>
+    <h1 class="title">Diagnostic <span>Bench</span></h1>
+    <p class="subtitle">Seven bays. No multiple-guess. Each station hands you a real machine-level problem and expects you to reason your way to the answer — trace a live signal, decode a message from raw bits, convert across number bases, forge a binary sum, and engineer a byte to spec.</p>
+    <div class="metabar">
+      <span>Instructor: <b>Prof. Khalid Kassou</b></span>
+      <span>Assigned: <b id="dateStamp">—</b></span>
+      <span>Points: <b>100</b> · auto-graded</span>
+      <span>Coverage: <b>Intro to Computer Systems · Motherboard &amp; Bus · Data Representation</b></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="console">
+    <h2>Sign in to your bench</h2>
+    <p class="hint">Enter your name to begin. Use <b>Save progress</b> anytime to store your work in this browser and come back later — your answers reload automatically. <b>Submit</b> locks and grades your bench.</p>
+    <div class="id-row">
+      <label class="fld">Student name
+        <input type="text" id="studentName" placeholder="e.g. Ada Lovelace" autocomplete="name">
+      </label>
+      <button class="btn" id="saveBtn">Save progress</button>
+      <button class="btn ghost" id="loadBtn">Reload saved</button>
+    </div>
+    <div class="save-note" id="saveNote"></div>
+  </section>
+
+  <!-- BAY 1 -->
+  <section class="station" data-st="1">
+    <div class="st-head"><span class="bay-no">BAY 01</span><h3>Signal Trace</h3><span class="tag">Architecture</span><span class="pts">12 pts</span></div>
+    <div class="st-body">
+      <p class="prompt">A user taps <strong>5 + 7 =</strong> on a calculator app. Below are the eight things that happen inside a von&nbsp;Neumann machine — but they're scrambled. Put them in the exact order the data actually flows, from keypress to pixels. Use the arrows to reorder.</p>
+      <ul class="trace-list" id="traceList"></ul>
+      <div class="callout">Think about the loop: input → memory → CPU (fetch, decode, execute) → output. One shared bus carries the bits both ways.</div>
+    </div>
+  </section>
+
+  <!-- BAY 2 -->
+  <section class="station" data-st="2">
+    <div class="st-head"><span class="bay-no">BAY 02</span><h3>Component Sort</h3><span class="tag">Architecture</span><span class="pts">20 pts</span></div>
+    <div class="st-body">
+      <p class="prompt">Open the case. For each part, choose where it truly belongs. Watch the traps — a register is not just "internal," and RAM is not a peripheral.</p>
+      <div class="sort-grid" id="sortGrid"></div>
+    </div>
+  </section>
+
+  <!-- BAY 3 -->
+  <section class="station" data-st="3">
+    <div class="st-head"><span class="bay-no">BAY 03</span><h3>Decode the Boot Message</h3><span class="tag">Data Representation</span><span class="pts">15 pts</span></div>
+    <div class="st-body">
+      <p class="prompt">A bootloader printed a 5-letter word as raw bytes. Each tile is one character in <strong>8-bit binary</strong>. Read it the way the lecture taught: give each position its power of two, add up the <strong>on</strong> bits to get the ASCII decimal, then look up the letter. Type each letter to reveal the word.</p>
+      <div class="decode" id="decode"></div>
+      <div class="reveal-word" id="revealWord">_ _ _ _ _</div>
+      <div class="callout">
+        Place values (right→left): <b>128 64 32 16 8 4 2 1</b>. Uppercase letters run A=65 … Z=90.
+        <div class="ascii-ref" id="asciiRef"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BAY 4 -->
+  <section class="station" data-st="4">
+    <div class="st-head"><span class="bay-no">BAY 04</span><h3>Binary Forge</h3><span class="tag">Data Representation</span><span class="pts">15 pts</span></div>
+    <div class="st-body">
+      <p class="prompt">The ALU never adds in decimal. Do what the hardware does: convert both operands to binary, add them column by column, and report the result <strong>in binary</strong> plus <strong>how many carries</strong> the addition generated.</p>
+      <div class="forge">
+        <span class="num-chip" id="forgeA">25</span><span class="op">+</span>
+        <span class="num-chip" id="forgeB">13</span><span class="eq">=</span>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:18px">
+        <label class="fld">Sum (binary)
+          <input type="text" id="forgeSum" placeholder="e.g. 101010" inputmode="numeric">
+        </label>
+        <label class="fld">Number of carries
+          <input type="text" id="forgeCarry" placeholder="e.g. 3" inputmode="numeric" style="min-width:130px">
+        </label>
+      </div>
+      <div class="callout">A carry happens whenever a column sums to 2 or more and pushes a 1 into the next column left. Count every one.</div>
+    </div>
+  </section>
+
+  <!-- BAY 5 -->
+  <section class="station" data-st="5">
+    <div class="st-head"><span class="bay-no">BAY 05</span><h3>Base Converter Bench</h3><span class="tag">Data Representation</span><span class="pts">12 pts</span></div>
+    <div class="st-body">
+      <p class="prompt">Same value, three ways. The decimal number below needs to be written in <strong>binary, octal, and hexadecimal</strong> — the three bases from the number-base playground. Fill in all three.</p>
+      <div class="base-target"><small>Decimal value</small><span id="baseTarget">156</span></div>
+      <div class="base-inputs">
+        <div class="brow"><span class="blabel"><b>Binary</b> · base 2</span><input type="text" id="baseBin" placeholder="e.g. 11001010"></div>
+        <div class="brow"><span class="blabel"><b>Octal</b> · base 8</span><input type="text" id="baseOct" placeholder="e.g. 312"></div>
+        <div class="brow"><span class="blabel"><b>Hex</b> · base 16</span><input type="text" id="baseHex" placeholder="e.g. CA"></div>
+      </div>
+      <div class="callout">Tip: convert to binary first, then group the bits — <b>3 bits</b> make one octal digit, <b>4 bits</b> make one hex digit.</div>
+    </div>
+  </section>
+
+  <!-- BAY 6 -->
+  <section class="station" data-st="6">
+    <div class="st-head"><span class="bay-no">BAY 06</span><h3>Engineer a Byte</h3><span class="tag">Data Representation</span><span class="pts">12 pts</span></div>
+    <div class="st-body">
+      <p class="prompt">No single right answer — <strong>invent</strong> one. Flip the eight switches to build a byte that meets <em>both</em> goals at once. Several bytes work; find one and the checklist turns green.</p>
+      <div class="byte-board" id="byteBoard"></div>
+      <div class="readout">
+        <span>Binary: <b id="byteBin">00000000</b></span>
+        <span>Decimal: <b id="byteDec">0</b></span>
+        <span>ASCII: <b id="byteChar">·</b></span>
+      </div>
+      <ul class="checklist" id="byteChecks">
+        <li data-c="letter"><span class="box"></span>Its ASCII character is an <b>&nbsp;uppercase letter (A–Z)</b></li>
+        <li data-c="odd"><span class="box"></span>Its decimal value is an <b>&nbsp;odd number</b></li>
+      </ul>
+      <div class="callout">Uppercase A–Z spans decimal 65–90. An odd value always has its rightmost bit (the 1s place) switched on.</div>
+    </div>
+  </section>
+
+  <!-- BAY 7 -->
+  <section class="station" data-st="7">
+    <div class="st-head"><span class="bay-no">BAY 07</span><h3>Binary Adder</h3><span class="tag">Data Representation</span><span class="pts">14 pts</span></div>
+    <div class="st-body">
+      <p class="prompt">Two <strong>8-bit binary numbers</strong> arrive on the data bus. Add them the way the ALU does — column by column, right to left, carrying whenever a column overflows — then build the binary sum on the switch board below.</p>
+      <div class="forge" style="align-items:center">
+        <span class="num-chip" id="addA">01101110</span><span class="op">+</span>
+        <span class="num-chip" id="addB">00111011</span><span class="eq">=</span>
+      </div>
+      <div style="text-align:center;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);margin:18px 0 8px">Build the sum — click each switch</div>
+      <div class="byte-board" id="addBoard"></div>
+      <div class="readout"><span>Your sum: <b id="addBin">00000000</b></span><span>Decimal: <b id="addDec">0</b></span></div>
+      <div class="callout">Remember the carry rule: <b>1 + 1 = 10</b> — write a 0 and carry the 1 into the next column left. The correct total fits in these 8 bits.</div>
+    </div>
+  </section>
+
+  <div class="submit-bar">
+    <button class="btn primary" id="submitBtn">Submit &amp; grade bench</button>
+    <button class="btn ghost" id="saveBtn2">Save progress</button>
+    <span class="save-note" id="submitNote"></span>
+  </div>
+
+  <section id="results">
+    <div><span class="score-huge" id="scoreBig">0<small>/100</small></span><span class="grade-badge" id="gradeBadge">—</span></div>
+    <p id="resultMsg" style="color:var(--ink-dim);margin:12px 0 0"></p>
+    <table class="breakdown" id="breakTable"><tbody></tbody></table>
+    <div class="receipt">
+      <label class="fld" style="width:100%">Submission receipt — copy this and send it to your instructor if the class dashboard is on another device
+        <textarea id="receiptOut" readonly></textarea>
+      </label>
+      <button class="btn" id="copyReceipt" style="margin-top:8px">Copy receipt</button>
+    </div>
+  </section>
+
+  <div class="dash-link"><a href="#" id="openDash">Instructor dashboard →</a></div>
+
+  <footer>
+    <p><b>MAC-283 · Computer Architecture &amp; Assembler Language</b><br>
+    Prof. Khalid Kassou · kkassou@lagcc.cuny.edu · LaGuardia Community College · MEC Department<br>
+    Assigned <b id="dateStamp2">—</b> · Auto-graded interactive lab</p>
+  </footer>
+</main>
+
+<div id="dashboard">
+  <div class="dash-inner">
+    <div id="dashGate" class="gate">
+      <h2>Instructor Dashboard</h2>
+      <p style="color:var(--ink-dim);font-size:.85rem">Enter the access code to view the class roster.</p>
+      <label class="fld" style="align-items:stretch">Access code
+        <input type="password" id="dashPass" placeholder="••••">
+      </label>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+        <button class="btn primary" id="dashEnter">Unlock</button>
+        <button class="btn ghost" id="dashCancel">Cancel</button>
+      </div>
+      <div class="warn" id="dashErr"></div>
+    </div>
+    <div id="dashPanel" style="display:none">
+      <div class="dash-head">
+        <h2>Class Roster · MAC-283 Lab 01</h2>
+        <button class="btn ghost close" id="dashClose">Close ✕</button>
+      </div>
+      <div class="stat-row" id="dashStats"></div>
+      <div class="dash-tools">
+        <button class="btn" id="exportCsv">Export CSV</button>
+        <button class="btn ghost" id="clearRoster">Clear roster</button>
+      </div>
+      <label class="fld" style="width:100%">Import a student receipt (paste a code a student sent you)
+        <div class="import-box">
+          <input type="text" id="importCode" placeholder="paste receipt code here…">
+          <button class="btn" id="importBtn">Add to roster</button>
+        </div>
+      </label>
+      <div class="warn" id="importErr"></div>
+      <table class="roster" id="rosterTable"><thead>
+        <tr><th data-k="name">Student</th><th data-k="score">Score</th><th data-k="letter" class="g">Grade</th>
+        <th data-k="s1">B1</th><th data-k="s2">B2</th><th data-k="s3">B3</th><th data-k="s4">B4</th>
+        <th data-k="s5">B5</th><th data-k="s6">B6</th><th data-k="s7">B7</th>
+        <th data-k="ts">Submitted</th></tr></thead>
+        <tbody></tbody></table>
+      <div class="empty" id="rosterEmpty">No submissions recorded on this device yet.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const DASH_CODE="kkq1";
+const K_ROSTER="mac283_lab01_roster";
+const K_PROG="mac283_lab01_progress";
+
+const mem={};
+const store={
+  get(k){try{return localStorage.getItem(k);}catch(e){return mem[k]??null;}},
+  set(k,v){try{localStorage.setItem(k,v);}catch(e){mem[k]=v;}},
+  del(k){try{localStorage.removeItem(k);}catch(e){delete mem[k];}}
+};
+
+const assigned=new Date(2026,6,1); // July 1, 2026
+const dateStr=assigned.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+document.getElementById('dateStamp').textContent=dateStr;
+document.getElementById('dateStamp2').textContent=dateStr;
+
+/* BAY 1 — Signal Trace */
+const TRACE_CORRECT=[
+  "Keyboard converts the keypresses into binary signals",
+  "The I/O controller places those bits onto the system bus",
+  "The values 5 and 7 are stored in RAM (main memory)",
+  "The Control Unit fetches and decodes the ADD instruction",
+  "The ALU executes the operation: 5 + 7 = 12",
+  "The result 12 is written back to a CPU register",
+  "The system bus carries 12 to the display controller",
+  "The monitor lights up pixels to show the result: 12"
+];
+let traceOrder=shuffle([...TRACE_CORRECT.keys()]);
+const traceListEl=document.getElementById('traceList');
+function renderTrace(){
+  traceListEl.innerHTML="";
+  traceOrder.forEach((idx,pos)=>{
+    const li=document.createElement('li');li.className='trace-item';
+    li.innerHTML='<span class="grip">'+String(pos+1).padStart(2,'0')+'</span>'+
+      '<span class="txt">'+TRACE_CORRECT[idx]+'</span>'+
+      '<span class="mv"><button data-dir="-1" aria-label="move up">&#9650;</button>'+
+      '<button data-dir="1" aria-label="move down">&#9660;</button></span>';
+    li.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const dir=+b.dataset.dir,np=pos+dir;
+      if(np<0||np>=traceOrder.length)return;
+      [traceOrder[pos],traceOrder[np]]=[traceOrder[np],traceOrder[pos]];renderTrace();
+    });
+    traceListEl.appendChild(li);
+  });
+}
+function gradeTrace(){let c=0;traceOrder.forEach((idx,pos)=>{if(idx===pos)c++;});return Math.round(12*c/TRACE_CORRECT.length);}
+
+/* BAY 2 — Component Sort */
+const SORT_OPTS=["CPU-internal part","Internal component (in the case)","External peripheral","System-bus lane"];
+const SORT_ITEMS=[
+  {p:"ALU",s:"performs add / AND / OR",a:"CPU-internal part"},
+  {p:"Control Unit",s:"decodes & directs",a:"CPU-internal part"},
+  {p:"Program Counter register",s:"holds next address",a:"CPU-internal part"},
+  {p:"DDR4 memory stick",s:"snaps into a DIMM slot",a:"Internal component (in the case)"},
+  {p:"Solid-state drive (SSD)",s:"non-volatile storage",a:"Internal component (in the case)"},
+  {p:"Keyboard",s:"sends data in",a:"External peripheral"},
+  {p:"Monitor",s:"shows results",a:"External peripheral"},
+  {p:"Address bus",s:"carries the 'where'",a:"System-bus lane"},
+  {p:"Data bus",s:"carries the actual data",a:"System-bus lane"},
+  {p:"Control bus",s:"carries read/write & clock",a:"System-bus lane"}
+];
+let sortItems=shuffle([...SORT_ITEMS]);
+const sortGridEl=document.getElementById('sortGrid');
+function renderSort(){
+  sortGridEl.innerHTML="";
+  sortItems.forEach((it,i)=>{
+    const row=document.createElement('div');row.className='sort-row';
+    const opts=SORT_OPTS.map(o=>'<option value="'+o+'"'+(it.pick===o?' selected':'')+'>'+o+'</option>').join('');
+    row.innerHTML='<div class="part">'+it.p+'<small>'+it.s+'</small></div>'+
+      '<select data-i="'+i+'"><option value="">— choose —</option>'+opts+'</select>';
+    row.querySelector('select').onchange=e=>{sortItems[i].pick=e.target.value;};
+    sortGridEl.appendChild(row);
+  });
+}
+function gradeSort(){let c=0;sortItems.forEach(it=>{if(it.pick===it.a)c++;});return c*2;}
+
+/* BAY 3 — Decode the Boot Message (binary -> ASCII), word REBEL */
+const DECODE=[
+  {bin:"01010010",ch:"R"},{bin:"01000101",ch:"E"},{bin:"01000010",ch:"B"},
+  {bin:"01000101",ch:"E"},{bin:"01001100",ch:"L"}
+];
+const decodeEl=document.getElementById('decode');
+DECODE.forEach((t,i)=>{
+  const d=document.createElement('div');d.className='tok';
+  d.innerHTML='<div class="base">8-bit binary</div><div class="val">'+t.bin+'</div>'+
+    '<input type="text" maxlength="1" data-i="'+i+'" aria-label="decoded character '+(i+1)+'">';
+  decodeEl.appendChild(d);
+});
+decodeEl.addEventListener('input',e=>{if(e.target.tagName==='INPUT'){e.target.value=e.target.value.toUpperCase();updateReveal();}});
+function updateReveal(){
+  const chars=[...decodeEl.querySelectorAll('input')].map(i=>i.value.trim()||'_');
+  document.getElementById('revealWord').textContent=chars.join(' ');
+}
+function gradeDecode(){let c=0;decodeEl.querySelectorAll('input').forEach((inp,i)=>{if(inp.value.trim().toUpperCase()===DECODE[i].ch)c++;});return c*3;}
+// ASCII reference A–Z
+(function(){const r=document.getElementById('asciiRef');let h='';for(let i=65;i<=90;i++){h+='<span><b>'+String.fromCharCode(i)+'</b>='+i+'</span>';}r.innerHTML=h;})();
+
+/* BAY 4 — Binary Forge (25 + 13 = 38 = 100110, carries 3) */
+const FA=25,FB=13;
+function countCarries(a,b){let carry=0,count=0;while(a>0||b>0||carry>0){const s=(a&1)+(b&1)+carry;if(s>1){count++;carry=1;}else{carry=0;}a>>=1;b>>=1;if(a===0&&b===0&&carry===0)break;}return count;}
+function gradeForge(){
+  let pts=0;
+  const sumRaw=(document.getElementById('forgeSum').value||'').trim();
+  if(/^[01]+$/.test(sumRaw)&&parseInt(sumRaw,2)===(FA+FB))pts+=8;
+  const carry=(document.getElementById('forgeCarry').value||'').trim();
+  if(carry===String(countCarries(FA,FB)))pts+=7;
+  return pts;
+}
+
+/* BAY 5 — Base Converter (156 -> bin 10011100, oct 234, hex 9C) */
+const BASE_TARGET=156;
+function cleanNum(s,prefix){s=(s||'').trim().replace(/\s+/g,'');if(prefix)s=s.replace(prefix,'');return s;}
+function gradeBase(){
+  let pts=0;
+  const b=cleanNum(document.getElementById('baseBin').value);
+  if(/^[01]+$/.test(b)&&parseInt(b,2)===BASE_TARGET)pts+=4;
+  const o=cleanNum(document.getElementById('baseOct').value,/^0o/i);
+  if(/^[0-7]+$/.test(o)&&parseInt(o,8)===BASE_TARGET)pts+=4;
+  const h=cleanNum(document.getElementById('baseHex').value,/^0x/i);
+  if(/^[0-9a-fA-F]+$/.test(h)&&parseInt(h,16)===BASE_TARGET)pts+=4;
+  return pts;
+}
+
+/* BAY 6 — Engineer a Byte (uppercase letter 65–90 AND odd) */
+let bits=[0,0,0,0,0,0,0,0];
+const PLACES=[128,64,32,16,8,4,2,1];
+const byteBoardEl=document.getElementById('byteBoard');
+PLACES.forEach((p,i)=>{
+  const b=document.createElement('div');b.className='bit';b.dataset.i=i;
+  b.innerHTML='<div class="place">'+p+'</div><div class="sw">0</div>';
+  b.onclick=()=>{bits[i]^=1;b.classList.toggle('on',!!bits[i]);b.querySelector('.sw').textContent=bits[i];updateByte();};
+  byteBoardEl.appendChild(b);
+});
+function byteVal(){return bits.reduce((v,b,i)=>v+(b?PLACES[i]:0),0);}
+function updateByte(){
+  const v=byteVal();
+  document.getElementById('byteBin').textContent=bits.join('');
+  document.getElementById('byteDec').textContent=v;
+  document.getElementById('byteChar').textContent=(v>=32&&v<=126)?String.fromCharCode(v):'·';
+  mark('letter',v>=65&&v<=90);
+  mark('odd',v%2===1);
+}
+function mark(c,ok){document.querySelector('#byteChecks li[data-c="'+c+'"]').classList.toggle('ok',ok);}
+function gradeByte(){const v=byteVal();let pts=0;if(v>=65&&v<=90)pts+=6;if(v%2===1)pts+=6;return pts;}
+
+/* BAY 7 — Binary Adder (01101110 + 00111011 = 10101001 = 169) */
+const ADD_A="01101110", ADD_B="00111011";
+const ADD_SUM=parseInt(ADD_A,2)+parseInt(ADD_B,2); // 169
+let addBits=[0,0,0,0,0,0,0,0];
+const addBoardEl=document.getElementById('addBoard');
+PLACES.forEach((p,i)=>{
+  const b=document.createElement('div');b.className='bit';b.dataset.i=i;
+  b.innerHTML='<div class="place">'+p+'</div><div class="sw">0</div>';
+  b.onclick=()=>{addBits[i]^=1;b.classList.toggle('on',!!addBits[i]);b.querySelector('.sw').textContent=addBits[i];updateAdder();};
+  addBoardEl.appendChild(b);
+});
+function addVal(){return addBits.reduce((v,b,i)=>v+(b?PLACES[i]:0),0);}
+function updateAdder(){
+  document.getElementById('addBin').textContent=addBits.join('');
+  document.getElementById('addDec').textContent=addVal();
+}
+function gradeVerdict(){
+  let pts=0;
+  if(addVal()===ADD_SUM)pts+=14;
+  return pts;
+}
+
+/* GRADING */
+function gradeAll(){
+  const s1=gradeTrace(),s2=gradeSort(),s3=gradeDecode(),s4=gradeForge(),
+        s5=gradeBase(),s6=gradeByte(),s7=gradeVerdict();
+  return {s1,s2,s3,s4,s5,s6,s7,total:s1+s2+s3+s4+s5+s6+s7};
+}
+function letterFor(t){
+  if(t>=93)return"A";if(t>=90)return"A-";if(t>=87)return"B+";if(t>=83)return"B";
+  if(t>=80)return"B-";if(t>=77)return"C+";if(t>=73)return"C";if(t>=70)return"C-";
+  if(t>=67)return"D+";if(t>=60)return"D";return"F";
+}
+const STATION_META=[
+  ["Bay 01 · Signal Trace",12],["Bay 02 · Component Sort",20],["Bay 03 · Decode the Boot Message",15],
+  ["Bay 04 · Binary Forge",15],["Bay 05 · Base Converter",12],["Bay 06 · Engineer a Byte",12],
+  ["Bay 07 · Binary Adder",14]
+];
+
+document.getElementById('submitBtn').onclick=()=>{
+  const name=document.getElementById('studentName').value.trim();
+  if(!name){flash('submitNote','Enter your name before submitting.',true);document.getElementById('studentName').focus();return;}
+  const g=gradeAll();
+  const rec={name,score:g.total,letter:letterFor(g.total),
+    breakdown:[g.s1,g.s2,g.s3,g.s4,g.s5,g.s6,g.s7],ts:new Date().toISOString()};
+  saveToRoster(rec);showResults(rec);
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+};
+function showResults(rec){
+  const box=document.getElementById('results');box.classList.add('show');
+  document.getElementById('scoreBig').innerHTML=rec.score+'<small>/100</small>';
+  document.getElementById('gradeBadge').textContent=rec.letter;
+  const msg=rec.score>=90?"Bench certified. Clean diagnostic work.":
+            rec.score>=75?"Solid run — review the bays that lost points.":
+            rec.score>=60?"Passing, but several stations need another look.":
+            "Re-open the lectures and rerun the bench — you can resubmit.";
+  document.getElementById('resultMsg').textContent=msg;
+  const tb=document.querySelector('#breakTable tbody');tb.innerHTML="";
+  STATION_META.forEach((m,i)=>{
+    const got=rec.breakdown[i],max=m[1],pct=Math.round(100*got/max);
+    tb.innerHTML+='<tr><td>'+m[0]+'</td><td class="s">'+got+' / '+max+'</td>'+
+      '<td style="width:38%"><div class="bar"><i style="width:'+pct+'%"></i></div></td></tr>';
+  });
+  document.getElementById('receiptOut').value=makeReceipt(rec);
+}
+function makeReceipt(rec){try{return "MAC283-"+btoa(unescape(encodeURIComponent(JSON.stringify(rec))));}catch(e){return JSON.stringify(rec);}}
+document.getElementById('copyReceipt').onclick=()=>{
+  const ta=document.getElementById('receiptOut');ta.select();
+  if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(()=>flash('submitNote','Receipt copied.',false),()=>{document.execCommand('copy');flash('submitNote','Receipt copied.',false);});}
+  else{document.execCommand('copy');flash('submitNote','Receipt copied.',false);}
+};
+
+/* ROSTER */
+function readRoster(){try{return JSON.parse(store.get(K_ROSTER)||"[]");}catch(e){return [];}}
+function writeRoster(r){store.set(K_ROSTER,JSON.stringify(r));}
+function saveToRoster(rec){
+  const r=readRoster();
+  const idx=r.findIndex(x=>x.name.toLowerCase()===rec.name.toLowerCase());
+  if(idx>=0)r[idx]=rec;else r.push(rec);
+  writeRoster(r);
+}
+
+/* SAVE / LOAD */
+function snapshot(){
+  return {
+    name:document.getElementById('studentName').value,
+    trace:traceOrder,
+    sort:sortItems.map(it=>({p:it.p,pick:it.pick||""})),
+    decode:[...decodeEl.querySelectorAll('input')].map(i=>i.value),
+    forgeSum:document.getElementById('forgeSum').value,
+    forgeCarry:document.getElementById('forgeCarry').value,
+    baseBin:document.getElementById('baseBin').value,
+    baseOct:document.getElementById('baseOct').value,
+    baseHex:document.getElementById('baseHex').value,
+    bits:bits.slice(),
+    addBits:addBits.slice()
+  };
+}
+function saveProgress(){
+  const name=document.getElementById('studentName').value.trim();
+  if(!name){flash('saveNote','Enter your name first so we can save under it.',true);return;}
+  store.set(K_PROG+"_"+name.toLowerCase(),JSON.stringify(snapshot()));
+  store.set(K_PROG+"_last",name.toLowerCase());
+  flash('saveNote','Progress saved in this browser as "'+name+'".',false);
+  flash('submitNote','Progress saved.',false);
+}
+function loadProgress(){
+  const name=document.getElementById('studentName').value.trim().toLowerCase()||store.get(K_PROG+"_last")||"";
+  if(!name){flash('saveNote','No saved work found — enter your name and save first.',true);return;}
+  const raw=store.get(K_PROG+"_"+name);
+  if(!raw){flash('saveNote','No saved bench found for that name.',true);return;}
+  try{
+    const s=JSON.parse(raw);
+    document.getElementById('studentName').value=s.name||"";
+    if(Array.isArray(s.trace)&&s.trace.length===8){traceOrder=s.trace;renderTrace();}
+    if(Array.isArray(s.sort)){s.sort.forEach(sv=>{const it=sortItems.find(x=>x.p===sv.p);if(it)it.pick=sv.pick;});renderSort();}
+    if(Array.isArray(s.decode)){decodeEl.querySelectorAll('input').forEach((inp,i)=>inp.value=s.decode[i]||"");updateReveal();}
+    document.getElementById('forgeSum').value=s.forgeSum||"";
+    document.getElementById('forgeCarry').value=s.forgeCarry||"";
+    document.getElementById('baseBin').value=s.baseBin||"";
+    document.getElementById('baseOct').value=s.baseOct||"";
+    document.getElementById('baseHex').value=s.baseHex||"";
+    if(Array.isArray(s.bits)&&s.bits.length===8){
+      bits=s.bits.slice();
+      [...byteBoardEl.children].forEach((el,i)=>{el.classList.toggle('on',!!bits[i]);el.querySelector('.sw').textContent=bits[i];});
+      updateByte();
+    }
+    if(Array.isArray(s.addBits)&&s.addBits.length===8){
+      addBits=s.addBits.slice();
+      [...addBoardEl.children].forEach((el,i)=>{el.classList.toggle('on',!!addBits[i]);el.querySelector('.sw').textContent=addBits[i];});
+      updateAdder();
+    }
+    flash('saveNote','Reloaded saved bench for "'+(s.name||name)+'".',false);
+  }catch(e){flash('saveNote','Saved data was unreadable.',true);}
+}
+document.getElementById('saveBtn').onclick=saveProgress;
+document.getElementById('saveBtn2').onclick=saveProgress;
+document.getElementById('loadBtn').onclick=loadProgress;
+
+/* DASHBOARD */
+const dash=document.getElementById('dashboard');
+document.getElementById('openDash').onclick=e=>{e.preventDefault();dash.classList.add('show');
+  document.getElementById('dashGate').style.display='block';
+  document.getElementById('dashPanel').style.display='none';
+  document.getElementById('dashPass').value='';document.getElementById('dashErr').textContent='';
+  document.getElementById('dashPass').focus();};
+document.getElementById('dashCancel').onclick=()=>dash.classList.remove('show');
+document.getElementById('dashClose').onclick=()=>dash.classList.remove('show');
+document.getElementById('dashPass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('dashEnter').click();});
+document.getElementById('dashEnter').onclick=()=>{
+  if(document.getElementById('dashPass').value===DASH_CODE){
+    document.getElementById('dashGate').style.display='none';
+    document.getElementById('dashPanel').style.display='block';renderRoster();
+  }else{document.getElementById('dashErr').textContent='Incorrect access code.';}
+};
+let sortKey='score',sortDir=-1;
+function renderRoster(){
+  const r=readRoster();
+  const tbody=document.querySelector('#rosterTable tbody');tbody.innerHTML="";
+  const table=document.getElementById('rosterTable'),empty=document.getElementById('rosterEmpty');
+  if(!r.length){table.style.display='none';empty.style.display='block';document.getElementById('dashStats').innerHTML='';return;}
+  table.style.display='table';empty.style.display='none';
+  const sorted=[...r].sort((a,b)=>{
+    let av,bv;
+    if(sortKey.length===2&&sortKey[0]==='s'){const i=+sortKey[1]-1;av=a.breakdown[i];bv=b.breakdown[i];}
+    else if(sortKey==='name'){av=a.name.toLowerCase();bv=b.name.toLowerCase();}
+    else if(sortKey==='ts'){av=a.ts;bv=b.ts;}
+    else{av=a[sortKey];bv=b[sortKey];}
+    return av<bv?-sortDir:av>bv?sortDir:0;
+  });
+  sorted.forEach(x=>{
+    const d=new Date(x.ts);
+    const when=isNaN(d)?'—':d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    tbody.innerHTML+='<tr><td class="n">'+esc(x.name)+'</td><td>'+x.score+'/100</td><td class="g">'+x.letter+'</td>'+
+      x.breakdown.map(b=>'<td>'+b+'</td>').join('')+'<td>'+when+'</td></tr>';
+  });
+  const avg=Math.round(r.reduce((s,x)=>s+x.score,0)/r.length);
+  const top=Math.max(...r.map(x=>x.score));
+  const passing=r.filter(x=>x.score>=60).length;
+  document.getElementById('dashStats').innerHTML=
+    '<div class="stat"><div class="k">Submissions</div><div class="v">'+r.length+'</div></div>'+
+    '<div class="stat"><div class="k">Class average</div><div class="v">'+avg+'</div></div>'+
+    '<div class="stat"><div class="k">Top score</div><div class="v">'+top+'</div></div>'+
+    '<div class="stat"><div class="k">Passing (≥60)</div><div class="v">'+passing+'</div></div>';
+}
+document.querySelectorAll('#rosterTable th').forEach(th=>{
+  th.onclick=()=>{const k=th.dataset.k;if(k===sortKey)sortDir*=-1;else{sortKey=k;sortDir=(k==='name')?1:-1;}renderRoster();};
+});
+document.getElementById('exportCsv').onclick=()=>{
+  const r=readRoster();if(!r.length){alert('Roster is empty.');return;}
+  const head=["Name","Score","Grade","Bay1","Bay2","Bay3","Bay4","Bay5","Bay6","Bay7","Submitted"];
+  const rows=r.map(x=>[x.name,x.score,x.letter].concat(x.breakdown).concat([x.ts]).map(csv).join(","));
+  const blob=new Blob([head.join(",")+"\n"+rows.join("\n")],{type:"text/csv"});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download="MAC283_Lab01_grades.csv";a.click();URL.revokeObjectURL(a.href);
+};
+document.getElementById('clearRoster').onclick=()=>{
+  if(confirm("Delete every submission stored on this device? This cannot be undone.")){store.del(K_ROSTER);renderRoster();}
+};
+document.getElementById('importBtn').onclick=()=>{
+  const raw=document.getElementById('importCode').value.trim();
+  document.getElementById('importErr').textContent='';
+  if(!raw)return;
+  try{
+    const json=raw.indexOf('MAC283-')===0?decodeURIComponent(escape(atob(raw.slice(7)))):raw;
+    const rec=JSON.parse(json);
+    if(!rec.name||typeof rec.score!=='number'||!Array.isArray(rec.breakdown))throw 0;
+    saveToRoster(rec);document.getElementById('importCode').value='';renderRoster();
+  }catch(e){document.getElementById('importErr').textContent='That receipt code could not be read.';}
+};
+
+/* helpers */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+function flash(id,msg,isErr){const el=document.getElementById(id);el.textContent=msg;el.style.color=isErr?'var(--red)':'var(--green)';setTimeout(()=>{if(el.textContent===msg)el.textContent='';},4000);}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function csv(v){v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+
+/* init */
+renderTrace();renderSort();updateReveal();updateByte();updateAdder();
+document.getElementById('studentName').addEventListener('input',()=>document.getElementById('saveNote').textContent='');
+</script>
+</body>
+</html>
