@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 · Lecture 3 Part 3 — Sequential Logic (Interactive)</title>
+<style>
+:root{
+  --navy-deep:#071527;
+  --navy:#0b1e33;
+  --navy-panel:#0f2740;
+  --navy-line:#1d3a5c;
+  --gold:#f5c518;
+  --gold-soft:#ffd166;
+  --gold-dim:rgba(245,197,24,.14);
+  --cyan:#4cc9f0;
+  --green:#41d97e;
+  --red:#ff5d5d;
+  --ink:#e8eef6;
+  --ink-dim:#9fb3c8;
+  --mono:"Cascadia Code","JetBrains Mono",Consolas,ui-monospace,Menlo,monospace;
+  --sans:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--navy-deep);
+  color:var(--ink);
+  font-family:var(--sans);
+  overflow:hidden;
+}
+/* PCB trace backdrop */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.10;
+  background-image:
+    linear-gradient(var(--gold) 1px,transparent 1px),
+    linear-gradient(90deg,var(--gold) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse at 30% 20%,black 0%,transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse at 30% 20%,black 0%,transparent 70%);
+}
+/* ---------- Header ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:50;
+  display:flex;align-items:center;gap:16px;padding:0 20px;
+  background:linear-gradient(180deg,rgba(7,21,39,.97),rgba(7,21,39,.88));
+  border-bottom:1px solid var(--navy-line);
+}
+.brand{font-family:var(--mono);font-weight:700;color:var(--gold);letter-spacing:.5px;font-size:15px;white-space:nowrap}
+.brand small{color:var(--ink-dim);font-weight:400}
+#headerClock{height:30px;flex:0 0 190px;opacity:.9}
+.spacer{flex:1}
+.counter{font-family:var(--mono);font-size:13px;color:var(--ink-dim);white-space:nowrap}
+.counter b{color:var(--gold)}
+#progressBar{position:fixed;top:58px;left:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-soft));z-index:51;transition:width .3s ease;box-shadow:0 0 8px rgba(245,197,24,.6)}
+/* ---------- Slides ---------- */
+main{position:fixed;inset:61px 0 64px 0;overflow:hidden}
+.slide{
+  position:absolute;inset:0;overflow-y:auto;
+  padding:34px clamp(20px,6vw,90px) 40px;
+  opacity:0;transform:translateX(40px);pointer-events:none;
+  transition:opacity .35s ease,transform .35s ease;
+}
+.slide.active{opacity:1;transform:none;pointer-events:auto}
+.slide.prev{transform:translateX(-40px)}
+@media (prefers-reduced-motion:reduce){.slide{transition:none;transform:none}}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:10px;
+}
+.eyebrow::before{content:"▸ ";color:var(--cyan)}
+h1{font-size:clamp(30px,5vw,54px);line-height:1.06;margin-bottom:18px;font-weight:800}
+h1 .hl{color:var(--gold)}
+h2{font-size:clamp(24px,3.4vw,36px);margin-bottom:16px;font-weight:800}
+h2 .hl{color:var(--gold)}
+h3{font-size:19px;margin:18px 0 8px;color:var(--gold-soft)}
+p.lead{font-size:clamp(16px,1.6vw,19px);color:var(--ink-dim);max-width:900px;line-height:1.65}
+p{line-height:1.6}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:18px;margin-top:20px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:20px}
+.panel{
+  background:var(--navy-panel);border:1px solid var(--navy-line);border-radius:12px;
+  padding:20px 22px;position:relative;
+}
+.panel.gold{border-color:rgba(245,197,24,.45);box-shadow:0 0 0 1px rgba(245,197,24,.12),0 8px 30px rgba(0,0,0,.35)}
+.panel h3{margin-top:0}
+.tag{
+  display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:1px;
+  background:var(--gold-dim);color:var(--gold);border:1px solid rgba(245,197,24,.4);
+  padding:3px 9px;border-radius:99px;margin-bottom:10px;text-transform:uppercase;
+}
+ul.clean{list-style:none;margin-top:8px}
+ul.clean li{padding:7px 0 7px 26px;position:relative;color:var(--ink);line-height:1.55}
+ul.clean li::before{content:"▣";position:absolute;left:0;color:var(--gold);font-size:13px;top:9px}
+ul.clean li b{color:var(--gold-soft)}
+.mono{font-family:var(--mono)}
+code.k{font-family:var(--mono);background:#08182c;border:1px solid var(--navy-line);padding:2px 7px;border-radius:6px;color:var(--cyan);font-size:.92em}
+.ascii{
+  font-family:var(--mono);font-size:13.5px;line-height:1.5;white-space:pre;overflow-x:auto;
+  background:#08182c;border:1px solid var(--navy-line);border-left:3px solid var(--gold);
+  border-radius:10px;padding:16px 18px;color:#cfe3f5;margin-top:14px;
+}
+.note{
+  margin-top:16px;padding:13px 16px;border-radius:10px;background:rgba(76,201,240,.08);
+  border:1px solid rgba(76,201,240,.3);color:var(--ink);font-size:15px;line-height:1.55;
+}
+.note b{color:var(--cyan)}
+.warn{background:rgba(255,93,93,.08);border-color:rgba(255,93,93,.35)}
+.warn b{color:var(--red)}
+.win{background:rgba(65,217,126,.08);border-color:rgba(65,217,126,.35)}
+.win b{color:var(--green)}
+table.t{width:100%;border-collapse:collapse;margin-top:14px;font-size:15px}
+table.t th{
+  text-align:left;font-family:var(--mono);font-size:12px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--gold);border-bottom:2px solid var(--gold);padding:9px 12px;
+}
+table.t td{padding:10px 12px;border-bottom:1px solid var(--navy-line);vertical-align:top}
+table.t tr.hot td{background:var(--gold-dim);box-shadow:inset 3px 0 0 var(--gold)}
+/* ---------- Buttons & controls ---------- */
+.btn{
+  font-family:var(--mono);font-size:14px;font-weight:700;cursor:pointer;
+  background:var(--gold);color:#081527;border:none;border-radius:9px;padding:11px 20px;
+  transition:transform .12s ease,box-shadow .12s ease;letter-spacing:.4px;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(245,197,24,.35)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:transparent;color:var(--gold);border:1.5px solid var(--gold)}
+.btn.small{padding:8px 14px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn:focus-visible,.chip:focus-visible,footer button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+.switch{
+  display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none;
+  font-family:var(--mono);font-size:14px;
+}
+.switch .track{
+  width:52px;height:28px;border-radius:99px;background:#12314f;border:1px solid var(--navy-line);
+  position:relative;transition:background .2s;
+}
+.switch .track::after{
+  content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:var(--ink-dim);transition:all .2s;
+}
+.switch.on .track{background:rgba(245,197,24,.35);border-color:var(--gold)}
+.switch.on .track::after{left:27px;background:var(--gold)}
+input[type=range]{accent-color:var(--gold);width:220px}
+input[type=number]{
+  font-family:var(--mono);background:#08182c;color:var(--ink);border:1px solid var(--navy-line);
+  border-radius:8px;padding:9px 12px;width:130px;font-size:15px;
+}
+input[type=number]:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.led{
+  display:inline-block;width:18px;height:18px;border-radius:50%;background:#1a2f47;
+  border:2px solid var(--navy-line);vertical-align:middle;transition:all .15s;
+}
+.led.on-g{background:var(--green);border-color:var(--green);box-shadow:0 0 14px var(--green)}
+.led.on-y{background:var(--gold);border-color:var(--gold);box-shadow:0 0 14px var(--gold)}
+.led.on-r{background:var(--red);border-color:var(--red);box-shadow:0 0 14px var(--red)}
+.big-led{width:56px;height:56px;border-radius:50%;background:#152a42;border:3px solid var(--navy-line);transition:all .2s;margin:6px auto}
+.big-led.g{background:var(--green);box-shadow:0 0 30px var(--green)}
+.big-led.y{background:var(--gold);box-shadow:0 0 30px var(--gold)}
+.big-led.r{background:var(--red);box-shadow:0 0 30px var(--red)}
+.readout{
+  font-family:var(--mono);font-size:15px;background:#08182c;border:1px solid var(--navy-line);
+  border-radius:10px;padding:12px 16px;margin-top:12px;line-height:1.8;
+}
+.readout b{color:var(--gold)}
+.bit{
+  display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:44px;
+  font-family:var(--mono);font-size:22px;font-weight:700;border-radius:10px;
+  background:#08182c;border:2px solid var(--navy-line);color:var(--ink-dim);transition:all .2s;
+}
+.bit.one{color:#081527;background:var(--gold);border-color:var(--gold);box-shadow:0 0 16px rgba(245,197,24,.5)}
+/* Pipeline grid */
+.pipe{display:grid;gap:6px;margin-top:16px;font-family:var(--mono);font-size:14px}
+.pipe .cell{
+  height:42px;display:flex;align-items:center;justify-content:center;border-radius:8px;
+  background:#0a1c30;border:1px solid var(--navy-line);color:var(--ink-dim);transition:all .25s;
+}
+.pipe .cell.lbl{background:transparent;border:none;justify-content:flex-start;color:var(--ink);font-weight:700}
+.pipe .cell.F{background:rgba(76,201,240,.2);border-color:var(--cyan);color:var(--cyan);font-weight:700}
+.pipe .cell.D{background:rgba(245,197,24,.2);border-color:var(--gold);color:var(--gold);font-weight:700}
+.pipe .cell.E{background:rgba(65,217,126,.2);border-color:var(--green);color:var(--green);font-weight:700}
+.pipe .cell.now{box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(245,197,24,.45)}
+/* FDE stage boxes */
+.fde{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.stage{
+  border:2px solid var(--navy-line);border-radius:12px;padding:16px;text-align:center;
+  background:var(--navy-panel);transition:all .25s;
+}
+.stage .big{font-size:34px;margin-bottom:6px}
+.stage h4{font-family:var(--mono);letter-spacing:1px}
+.stage p{font-size:13.5px;color:var(--ink-dim);margin-top:6px}
+.stage.live{border-color:var(--gold);box-shadow:0 0 24px rgba(245,197,24,.35);transform:translateY(-3px)}
+.stage.live h4{color:var(--gold)}
+/* Flip-flop type cards */
+.ffcard{cursor:pointer;transition:all .18s;border:1px solid var(--navy-line)}
+.ffcard:hover{transform:translateY(-3px);border-color:var(--gold)}
+.ffcard.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 10px 30px rgba(0,0,0,.4)}
+.ffcard .sym{font-family:var(--mono);font-size:26px;font-weight:800;color:var(--gold)}
+/* Quiz */
+.qopt{
+  display:block;width:100%;text-align:left;font-size:15.5px;font-family:var(--sans);
+  background:#0a1c30;color:var(--ink);border:1.5px solid var(--navy-line);border-radius:10px;
+  padding:13px 16px;margin-top:10px;cursor:pointer;transition:all .15s;
+}
+.qopt:hover{border-color:var(--gold);background:#0e2338}
+.qopt.right{border-color:var(--green);background:rgba(65,217,126,.15)}
+.qopt.wrong{border-color:var(--red);background:rgba(255,93,93,.12)}
+.qopt:disabled{cursor:default}
+.qfeed{margin-top:12px;font-size:15px;min-height:24px;line-height:1.5}
+.qfeed.ok{color:var(--green)} .qfeed.no{color:var(--red)}
+.scorebox{font-family:var(--mono);font-size:15px;color:var(--gold)}
+/* Reveal buttons */
+.reveal-body{display:none;margin-top:12px}
+.reveal-body.open{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* Traffic light housing */
+.tl-house{
+  width:96px;margin:0 auto;background:#0a1626;border:2px solid var(--navy-line);
+  border-radius:16px;padding:14px 0;display:flex;flex-direction:column;gap:10px;align-items:center;
+}
+/* Chips (real-life FSM gallery) */
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.chip{
+  font-family:var(--mono);font-size:14px;padding:10px 16px;border-radius:99px;cursor:pointer;
+  background:#0a1c30;color:var(--ink);border:1.5px solid var(--navy-line);transition:all .15s;
+}
+.chip:hover{border-color:var(--gold)}
+.chip.sel{background:var(--gold);color:#081527;border-color:var(--gold);font-weight:700}
+/* SVG generic */
+svg text{font-family:var(--mono)}
+/* Footer nav */
+footer{
+  position:fixed;bottom:0;left:0;right:0;height:64px;z-index:50;
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  background:linear-gradient(0deg,rgba(7,21,39,.97),rgba(7,21,39,.86));
+  border-top:1px solid var(--navy-line);
+}
+footer button{
+  font-family:var(--mono);font-size:14px;font-weight:700;cursor:pointer;border-radius:9px;
+  padding:10px 22px;background:transparent;color:var(--gold);border:1.5px solid var(--gold);
+  transition:all .15s;
+}
+footer button:hover{background:var(--gold);color:#081527}
+footer .hint{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+.dots{display:flex;gap:5px;align-items:center;max-width:44vw;flex-wrap:wrap;justify-content:center}
+.dot{width:8px;height:8px;border-radius:50%;background:#1c3a5c;cursor:pointer;transition:all .2s;border:none;padding:0}
+.dot.on{background:var(--gold);transform:scale(1.35);box-shadow:0 0 8px rgba(245,197,24,.7)}
+@media (max-width:720px){
+  #headerClock{display:none}
+  .hint{display:none}
+  .dots{display:none}
+  h1{font-size:30px}
+  .fde{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MAC283 <small>· Computer Architecture — Lecture 3 · Part 3</small></div>
+  <svg id="headerClock" viewBox="0 0 190 30" aria-hidden="true"><path id="hdrWave" fill="none" stroke="#f5c518" stroke-width="2"/></svg>
+  <div class="spacer"></div>
+  <div class="counter">SLIDE <b id="slideNow">1</b> / <span id="slideTotal">?</span></div>
+</header>
+<div id="progressBar"></div>
+<main id="deck">
+
+<!-- 1 · TITLE -->
+<section class="slide">
+  <div class="eyebrow">MEC Department · LaGuardia Community College</div>
+  <h1>Lecture 3 · Part 3<br><span class="hl">Sequential Logic</span></h1>
+  <p class="lead">Clocks · Flip-Flops · Finite State Machines · The Huffman Model — with live simulators you can drive yourself.</p>
+  <div class="grid3">
+    <div class="panel"><div class="tag">You will build</div><p>A working <b>D flip-flop</b>, a <b>CPU pipeline</b>, and a <b>traffic-light FSM</b> — all interactive, right in these slides.</p></div>
+    <div class="panel"><div class="tag">Big idea</div><p>Combinational logic <i>computes</i>. Sequential logic <i>remembers</i>. Memory + timing = a computer.</p></div>
+    <div class="panel"><div class="tag">How to navigate</div><p>Use <code class="k">←</code> <code class="k">→</code> arrow keys, the buttons below, or tap the dots. Anything gold is clickable.</p></div>
+  </div>
+  <div class="note" style="margin-top:24px"><b>Real-life hook:</b> every device you touched today — your phone, the elevator, the traffic light on the corner, the MetroCard turnstile — is running sequential logic right now.</div>
+</section>
+
+<!-- 2 · SEQ VS COMB -->
+<section class="slide">
+  <div class="eyebrow">Overview</div>
+  <h2>Sequential vs. <span class="hl">Combinational</span> Logic</h2>
+  <p class="lead">Sequential logic's output depends on the <b>present input AND the history of inputs</b>. Combinational logic depends only on the current input. Try it below — same button, different behavior:</p>
+  <div class="grid2">
+    <div class="panel">
+      <div class="tag">Combinational · no memory</div>
+      <h3>Light switch → bulb</h3>
+      <p>Output = f(input). Nothing is remembered.</p>
+      <div class="controls">
+        <label class="switch" id="swComb"><span>INPUT</span><span class="track"></span></label>
+        <span class="led" id="ledComb"></span><span class="mono" id="txtComb">OFF</span>
+      </div>
+      <div class="readout">Release the switch → the state is <b>gone</b>. It only mirrors the input.</div>
+    </div>
+    <div class="panel gold">
+      <div class="tag">Sequential · has memory</div>
+      <h3>Push-button toggle lamp</h3>
+      <p>Output = f(input, <b>state</b>). Each press flips the stored state.</p>
+      <div class="controls">
+        <button class="btn" id="btnSeqPulse">PRESS (pulse)</button>
+        <span class="led" id="ledSeq"></span><span class="mono" id="txtSeq">OFF · presses: 0</span>
+      </div>
+      <div class="readout">The lamp <b>remembers</b> what happened before. That "remembering" is exactly what a flip-flop does.</div>
+    </div>
+  </div>
+  <div class="note"><b>Real life:</b> a doorbell is combinational (rings only while pressed). A ceiling-fan pull chain is sequential (each pull advances OFF → LOW → HIGH → OFF: it stores state).</div>
+</section>
+
+<!-- 3 · KEY CHARACTERISTICS -->
+<section class="slide">
+  <div class="eyebrow">Overview</div>
+  <h2>Key Characteristics of <span class="hl">Sequential Circuits</span></h2>
+  <div class="grid2">
+    <div class="panel">
+      <ul class="clean">
+        <li>Contain <b>memory elements</b> — typically flip-flops</li>
+        <li>Output depends on <b>current input + current state</b></li>
+        <li>Require a <b>clock signal</b> for synchronization (synchronous systems)</li>
+        <li>Can <b>remember information over time</b></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="tag">Where you meet them daily</div>
+      <table class="t">
+        <tr><th>Device</th><th>What it must remember</th></tr>
+        <tr><td>ATM</td><td>Which screen you're on, PIN attempts left</td></tr>
+        <tr><td>Microwave</td><td>Seconds remaining, power level</td></tr>
+        <tr><td>Washing machine</td><td>Current cycle (wash → rinse → spin)</td></tr>
+        <tr><td>Game console</td><td>Score, level, player position</td></tr>
+        <tr><td>Elevator</td><td>Current floor, pending requests</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="note win"><b>Test yourself:</b> could any of those devices work if they forgot everything between moments? No — that's why pure combinational logic isn't enough to build a computer.</div>
+</section>
+
+<!-- 4 · CLOCKS (LIVE) -->
+<section class="slide">
+  <div class="eyebrow">Timing</div>
+  <h2>Clocks in <span class="hl">Digital Logic</span> — live signal</h2>
+  <p class="lead">A <b>clock</b> is a timing signal that coordinates operations. It alternates between HIGH (1) and LOW (0) at a regular interval — one full alternation is a <b>clock cycle</b>.</p>
+  <div class="panel gold">
+    <svg id="clockScope" viewBox="0 0 900 170" width="100%" role="img" aria-label="Live clock waveform">
+      <line x1="0" y1="40" x2="900" y2="40" stroke="#1d3a5c" stroke-dasharray="4 5"/>
+      <line x1="0" y1="120" x2="900" y2="120" stroke="#1d3a5c" stroke-dasharray="4 5"/>
+      <text x="8" y="34" fill="#9fb3c8" font-size="12">HIGH (1) ≈ 1V</text>
+      <text x="8" y="140" fill="#9fb3c8" font-size="12">LOW (0) = 0V</text>
+      <path id="scopePath" fill="none" stroke="#f5c518" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="controls">
+      <span class="mono">Frequency</span>
+      <input type="range" id="freqSlider" min="1" max="10" value="2" step="1" aria-label="Clock frequency">
+      <span class="readout" style="margin:0"><b id="freqOut">2 Hz</b> · period T = 1/f = <b id="periodOut">0.500 s</b></span>
+      <button class="btn small ghost" id="btnScopePause">⏸ PAUSE</button>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="panel"><div class="tag">Why it matters</div><p>Controls <b>when</b> data is read, written, or changed.</p></div>
+    <div class="panel"><div class="tag">Why it matters</div><p>Keeps every part of the system <b>in sync</b> — one drumbeat for the whole orchestra.</p></div>
+    <div class="panel"><div class="tag">Why it matters</div><p>Drives <b>synchronous systems</b>: CPUs, memory, registers.</p></div>
+  </div>
+  <div class="note"><b>Real life:</b> "3.5 GHz processor" on a laptop spec sheet means this square wave repeats <b>3.5 billion times per second</b>. Slide the frequency up and imagine multiplying by a billion.</div>
+</section>
+
+<!-- 5 · CLOCK ANATOMY -->
+<section class="slide">
+  <div class="eyebrow">Timing</div>
+  <h2>Anatomy of a <span class="hl">Clock Cycle</span></h2>
+  <div class="grid2">
+    <div class="panel">
+      <svg viewBox="0 0 460 200" width="100%" role="img" aria-label="Clock edges diagram">
+        <path d="M20 150 H80 V50 H180 V150 H280 V50 H380 V150 H440" fill="none" stroke="#f5c518" stroke-width="3"/>
+        <circle cx="80" cy="100" r="7" fill="#41d97e"/><text x="60" y="185" fill="#41d97e" font-size="13">rising ↑</text>
+        <circle cx="180" cy="100" r="7" fill="#ff5d5d"/><text x="158" y="30" fill="#ff5d5d" font-size="13">falling ↓</text>
+        <circle cx="280" cy="100" r="7" fill="#41d97e"/>
+        <circle cx="380" cy="100" r="7" fill="#ff5d5d"/>
+        <text x="195" y="185" fill="#9fb3c8" font-size="12">|— one full cycle —|</text>
+      </svg>
+    </div>
+    <div class="panel">
+      <ul class="clean">
+        <li><b>Flat high</b> ‾ : voltage HIGH (~1V in modern CPUs)</li>
+        <li><b>Flat low</b> _ : voltage LOW (0V)</li>
+        <li><b>Rising edge ↑</b> (0→1): most flip-flops <b>capture data here</b> — like a camera shutter</li>
+        <li><b>Falling edge ↓</b> (1→0): some designs trigger here instead</li>
+        <li>At <b>1 GHz</b>, the cycle <code class="k">_|‾|_</code> repeats 1,000,000,000×/second</li>
+      </ul>
+    </div>
+  </div>
+  <div class="ascii">Clock Signal:  _|‾|_|‾|_|‾|_|‾|_|‾|_    (each |‾| is one clock cycle)
+               F  D  E  F  D  E  ...    (F=Fetch, D=Decode, E=Execute)</div>
+  <div class="note"><b>The camera-shutter rule:</b> the rising edge is the precise instant when new instructions are captured, results are saved, and data moves to the next pipeline stage. Between edges, nothing "official" changes.</div>
+</section>
+
+<!-- 6 · FLIP-FLOPS INTRO -->
+<section class="slide">
+  <div class="eyebrow">Memory Elements</div>
+  <h2><span class="hl">Flip-Flops</span> — the basic memory element</h2>
+  <p class="lead">A flip-flop stores <b>one bit</b> (0 or 1) and holds its output until the clock tells it to change.</p>
+  <div class="grid2">
+    <div class="panel">
+      <div class="tag">Key characteristics</div>
+      <ul class="clean">
+        <li><b>One or more inputs</b>, one or two outputs (Q and Q̅), and a <b>clock input</b></li>
+        <li>Changes state <b>only on a clock edge</b> (rising or falling)</li>
+        <li>Used to <b>store data</b>, <b>build registers</b>, and <b>implement finite state machines</b></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="tag">Real-life analogies</div>
+      <ul class="clean">
+        <li><b>Sticky note</b> on your monitor: it keeps the value until you deliberately rewrite it</li>
+        <li><b>Whiteboard in MB44</b>: the tutoring schedule stays up until someone erases and rewrites it at a scheduled time</li>
+        <li><b>Camera shutter</b>: the photo (Q) shows the scene <i>at the instant of the click</i>, no matter what happens after</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note win"><b>Scale check:</b> a 64-bit register is literally <b>64 D flip-flops side by side</b>. Your CPU's register file, program counter, and instruction register are all just arrays of flip-flops.</div>
+</section>
+
+<!-- 7 · FF TYPES -->
+<section class="slide">
+  <div class="eyebrow">Memory Elements</div>
+  <h2>Common Types of <span class="hl">Flip-Flops</span> <span style="font-size:15px;color:var(--ink-dim)">(click a card)</span></h2>
+  <div class="grid3" id="ffCards">
+    <div class="panel ffcard" data-ff="D" tabindex="0"><div class="sym">D</div><h3>Data / Delay</h3><p>Stores the value on input D at the clock edge. <b>The workhorse of CPUs.</b></p></div>
+    <div class="panel ffcard" data-ff="T" tabindex="0"><div class="sym">T</div><h3>Toggle</h3><p>Flips its output on each clock pulse (when T=1). Great for <b>counters</b>.</p></div>
+    <div class="panel ffcard" data-ff="JK" tabindex="0"><div class="sym">JK</div><h3>Jack-Kilby*</h3><p>Combines SR + T behaviors. J=K=1 means toggle — no forbidden state.</p></div>
+    <div class="panel ffcard" data-ff="SR" tabindex="0"><div class="sym">SR</div><h3>Set / Reset</h3><p>Latch that stores based on S and R inputs. The <b>simplest</b> memory cell.</p></div>
+  </div>
+  <div class="panel gold" id="ffDetail" style="margin-top:18px">
+    <div class="tag">Details</div>
+    <p id="ffDetailText">Click any flip-flop card above to see its behavior table and a real-life example.</p>
+    <div id="ffDetailTable"></div>
+  </div>
+</section>
+
+<!-- 8 · D FF SIMULATOR -->
+<section class="slide">
+  <div class="eyebrow">Hands-On Lab</div>
+  <h2>Live <span class="hl">D Flip-Flop</span> Simulator</h2>
+  <p class="lead">Set the D input, then hit the clock. Notice: <b>changing D does nothing until the rising edge.</b> That is the entire point of a flip-flop.</p>
+  <div class="grid2">
+    <div class="panel gold">
+      <div class="controls" style="margin-top:0">
+        <label class="switch" id="swD"><span>D input</span><span class="track"></span></label>
+        <button class="btn" id="btnClk">⏱ CLOCK PULSE ↑</button>
+      </div>
+      <div class="controls" style="gap:22px;margin-top:22px">
+        <div style="text-align:center"><div class="bit" id="bitD">0</div><div class="mono" style="font-size:12px;margin-top:6px;color:var(--ink-dim)">D (waiting)</div></div>
+        <div style="font-size:28px;color:var(--gold)">→</div>
+        <div style="text-align:center"><div class="bit" id="bitQ">0</div><div class="mono" style="font-size:12px;margin-top:6px;color:var(--ink-dim)">Q (stored)</div></div>
+        <div style="text-align:center"><div class="bit" id="bitQb">1</div><div class="mono" style="font-size:12px;margin-top:6px;color:var(--ink-dim)">Q̅ (inverted)</div></div>
+      </div>
+      <div class="readout" id="dffLog">Ready. Try: set D = 1, then pulse the clock.</div>
+    </div>
+    <div class="panel">
+      <div class="tag">What the circuit is doing</div>
+      <ul class="clean">
+        <li><b>CLK = 0:</b> gates N1/N2 ignore D → flip-flop <b>holds state</b> (memory effect)</li>
+        <li><b>Rising edge 0→1:</b> N1/N2 <b>capture D</b>. D=1 forces Q=1, Q̅=0; D=0 forces Q=0, Q̅=1</li>
+        <li><b>CLK = 1:</b> captured value stays <b>locked</b> until the next rising edge</li>
+      </ul>
+      <div class="note" style="margin-top:14px"><b>Challenge:</b> set D=1, pulse, then set D=0 <i>without</i> pulsing. Q stays 1 — the flip-flop is ignoring you until the next edge. That's memory.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 · CPU SCENARIO INTRO -->
+<section class="slide">
+  <div class="eyebrow">Scenario</div>
+  <h2>CPU Instruction Execution — <span class="hl">the fast, organized chef</span></h2>
+  <p class="lead">Imagine your CPU as a chef cooking many dishes (instructions) at once. To keep everything smooth, it follows a strict <b>clock rhythm</b> and uses <b>flip-flops (memory boxes)</b> to remember what it's doing.</p>
+  <div class="grid2">
+    <div class="panel">
+      <div class="tag">Inside the CPU</div>
+      <ul class="clean">
+        <li>A <b>clock</b> generates high-speed timing pulses (millions–billions per second)</li>
+        <li>Pulses control <b>when</b> instructions start and finish</li>
+        <li><b>Flip-flops store temporary data</b>: register contents, instruction bits, intermediate results</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="tag">The two sticky notes</div>
+      <ul class="clean">
+        <li><b>Instruction Register (IR)</b> — holds the current instruction</li>
+        <li><b>Result Register</b> — keeps the answer until it's saved to memory</li>
+      </ul>
+      <div class="note warn" style="margin-top:14px"><b>Without the clock?</b> Chaos — steps finish too fast or too slow. <b>Without flip-flops?</b> The CPU forgets what it was doing between steps.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · FDE ANIMATION -->
+<section class="slide">
+  <div class="eyebrow">Scenario</div>
+  <h2><span class="hl">Fetch → Decode → Execute</span>, one tick at a time</h2>
+  <p class="lead">Instruction: <code class="k">ADD A, B</code>. Press the clock and watch the CPU move through the cycle.</p>
+  <div class="fde">
+    <div class="stage" id="stF"><div class="big">📥</div><h4>FETCH</h4><p>Read next instruction from memory; latch it into the <b>Instruction Register</b> (flip-flops).</p></div>
+    <div class="stage" id="stD"><div class="big">🧠</div><h4>DECODE</h4><p>Figure out what to do: "add the numbers in A and B."</p></div>
+    <div class="stage" id="stE"><div class="big">⚙️</div><h4>EXECUTE</h4><p>ALU does the math; <b>Result Register</b> holds the output until it's stored.</p></div>
+  </div>
+  <div class="controls">
+    <button class="btn" id="btnFdeStep">⏱ CLOCK PULSE</button>
+    <button class="btn ghost" id="btnFdeAuto">▶ AUTO-RUN</button>
+    <button class="btn ghost small" id="btnFdeReset">RESET</button>
+  </div>
+  <div class="readout" id="fdeLog"><b>Cycle 0</b> — idle. Pulse the clock to fetch.</div>
+</section>
+
+<!-- 11 · PIPELINING -->
+<section class="slide">
+  <div class="eyebrow">Scenario</div>
+  <h2><span class="hl">Pipelining</span> — like an assembly line</h2>
+  <p class="lead">Modern CPUs don't wait for one instruction to finish — they <b>overlap</b> them. Step the clock and watch three instructions flow through.</p>
+  <div class="panel gold">
+    <div class="pipe" id="pipeGrid" style="grid-template-columns:110px repeat(6,1fr)"></div>
+    <div class="controls">
+      <button class="btn" id="btnPipeStep">⏱ NEXT CYCLE</button>
+      <button class="btn ghost small" id="btnPipeReset">RESET</button>
+      <span class="readout" style="margin:0" id="pipeLog">Cycle 0 — pipeline empty.</span>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="tag">Key moment</div><p><b>At cycle 3:</b> Instr 1 is executing (E), Instr 2 is decoding (D), Instr 3 is fetching (F). Three jobs, one clock tick — <b>more instructions finish faster</b>.</p></div>
+    <div class="panel"><div class="tag">Real life</div><p>Laundry! Washer (F), dryer (D), folding (E). You don't wait for load 1 to be folded before starting load 2's wash. Pipeline stages pass data through <b>flip-flops between phases</b>.</p></div>
+  </div>
+</section>
+
+<!-- 12 · SUPERSCALAR -->
+<section class="slide">
+  <div class="eyebrow">Scenario</div>
+  <h2><span class="hl">Superscalar</span> — multiple chefs in the kitchen</h2>
+  <p class="lead">A superscalar CPU (like in your phone or laptop) can start <b>4–6 instructions per cycle</b> by having <b>multiple execution units</b> (ALUs, load/store units).</p>
+  <div class="ascii">Clock Cycle:  1     2     3     4
+Instr. A:     F  →  D  →  E
+Instr. B:     F  →  D  →  E          ← two started in cycle 1!
+Instr. C:           F  →  D  →  E
+Instr. D:           F  →  D  →  E    ← at cycle 3: FOUR in progress at once</div>
+  <div class="grid3">
+    <div class="panel"><div class="tag">Pipelining</div><p>One assembly line, overlapping stages.</p></div>
+    <div class="panel"><div class="tag">Superscalar</div><p><b>Several</b> assembly lines running in parallel.</p></div>
+    <div class="panel"><div class="tag">Real life</div><p>One cashier scanning while bagging = pipeline. <b>Six checkout lanes open</b> = superscalar.</p></div>
+  </div>
+  <div class="note win"><b>Summary so far:</b> Clock = keeps everything in sync · Flip-flops = remember data between steps · Pipelining = overlap for speed · Superscalar = multiple at once. Without these, your CPU would be slow, chaotic, and unreliable.</div>
+</section>
+
+<!-- 13 · PHYSICAL CLOCK -->
+<section class="slide">
+  <div class="eyebrow">Physical Reality</div>
+  <h2>Physically, what <span class="hl">is</span> the clock?</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="tag">What it is</div>
+      <ul class="clean">
+        <li>A tiny <b>quartz crystal</b> (same idea as a wristwatch) that vibrates at a fixed frequency when electricity is applied</li>
+        <li>The vibration generates a <b>square-wave signal</b> alternating between 0V and ~1V — the CPU's drumbeat</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="tag">Where it lives</div>
+      <ul class="clean">
+        <li>Distributed across the chip through <b>copper wires</b> — the <b>clock tree</b>, a fractal-looking network covering the whole die</li>
+        <li>Modern CPUs run <b>multiple clock domains</b>: cores at 3 GHz, cache at 2 GHz</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>If you could shrink yourself and walk on a CPU:</b> the clock would look like <b>blinking lights pulsing down wires</b>, and flip-flops would be tiny black boxes (transistor clusters) updating on each pulse.</div>
+</section>
+
+<!-- 14 · PHYSICAL FF -->
+<section class="slide">
+  <div class="eyebrow">Physical Reality</div>
+  <h2>Physically, what is a <span class="hl">flip-flop</span>?</h2>
+  <div class="grid2">
+    <div class="panel">
+      <ul class="clean">
+        <li>A <b>microscopic circuit of 6–12 MOSFET transistors</b> (CMOS technology)</li>
+        <li>Built from <b>logic gates</b> (NAND/NOR), which are themselves made of transistors</li>
+        <li>MOSFETs switch <b>billions of times/second</b>, use almost no power when idle, and shrink to nanometer scale — modern CPUs pack <b>50+ billion transistors</b></li>
+      </ul>
+    </div>
+    <div class="panel gold">
+      <div class="tag">Size — hard to believe</div>
+      <table class="t">
+        <tr><th>Thing</th><th>Approx. size</th></tr>
+        <tr><td>1 flip-flop (modern CPU)</td><td>~0.01 µm² — <b>smaller than a virus</b></td></tr>
+        <tr><td>64-bit register (64 D-FFs)</td><td>~0.64 µm² in a 5nm chip — smaller than a red blood cell</td></tr>
+      </table>
+    </div>
+  </div>
+  <table class="t">
+    <tr><th>Component</th><th>What it is physically</th><th>Where it lives in the CPU</th></tr>
+    <tr><td><b>Clock</b></td><td>Quartz crystal + copper wires</td><td>Clock distribution network (tree)</td></tr>
+    <tr><td><b>Flip-flop</b></td><td>6–12 transistors (NAND/NOR gates)</td><td>Registers, pipeline stages</td></tr>
+    <tr><td><b>Register</b></td><td>Array of flip-flops (64 for a 64-bit CPU)</td><td>Register file, PC, IR</td></tr>
+  </table>
+</section>
+
+<!-- 15 · NAND CIRCUIT -->
+<section class="slide">
+  <div class="eyebrow">Inside the Box</div>
+  <h2><span class="hl">D Flip-Flop</span> circuit (simplified NAND version)</h2>
+  <div class="grid2">
+    <div class="panel">
+      <svg viewBox="0 0 430 320" width="100%" role="img" aria-label="D flip-flop NAND circuit">
+        <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4cc9f0"/></marker></defs>
+        <g font-size="13" fill="#e8eef6">
+          <rect x="120" y="20" width="100" height="60" rx="8" fill="#0f2740" stroke="#f5c518" stroke-width="2"/><text x="147" y="55">N1 NAND</text>
+          <rect x="60" y="130" width="100" height="60" rx="8" fill="#0f2740" stroke="#1d3a5c" stroke-width="2"/><text x="87" y="165">N2 NAND</text>
+          <rect x="230" y="130" width="100" height="60" rx="8" fill="#0f2740" stroke="#1d3a5c" stroke-width="2"/><text x="257" y="165">N3 NAND</text>
+          <rect x="120" y="240" width="100" height="60" rx="8" fill="#0f2740" stroke="#f5c518" stroke-width="2"/><text x="147" y="275">N4 NAND</text>
+          <text x="14" y="42" fill="#4cc9f0">D ──▶</text>
+          <text x="14" y="72" fill="#f5c518">CLK ─▶</text>
+          <line x1="220" y1="50" x2="280" y2="50" stroke="#4cc9f0" stroke-width="2"/>
+          <line x1="280" y1="50" x2="280" y2="130" stroke="#4cc9f0" stroke-width="2" marker-end="url(#arr)"/>
+          <line x1="110" y1="130" x2="110" y2="90" stroke="#4cc9f0" stroke-width="2"/>
+          <line x1="110" y1="90" x2="160" y2="82" stroke="#4cc9f0" stroke-width="2" marker-end="url(#arr)"/>
+          <line x1="160" y1="240" x2="160" y2="192" stroke="#4cc9f0" stroke-width="2" marker-end="url(#arr)"/>
+          <line x1="280" y1="192" x2="280" y2="230" stroke="#4cc9f0" stroke-width="2"/>
+          <line x1="280" y1="230" x2="222" y2="262" stroke="#4cc9f0" stroke-width="2" marker-end="url(#arr)"/>
+          <text x="14" y="262" fill="#41d97e">Q ◀──</text>
+          <text x="14" y="292" fill="#ff5d5d">Q̅ ◀──</text>
+        </g>
+      </svg>
+    </div>
+    <div class="panel">
+      <div class="tag">Key components</div>
+      <ul class="clean">
+        <li><b>D (data input):</b> the bit to store — 0 or 1</li>
+        <li><b>CLK (clock input):</b> controls <i>when</i> to capture D</li>
+        <li><b>N1–N4:</b> NAND gates (built from transistors)</li>
+        <li><b>Q (output):</b> the stored bit · <b>Q̅:</b> always the opposite of Q</li>
+      </ul>
+      <div class="note" style="margin-top:14px"><b>Cross-coupling is the trick:</b> N-gates feed each other's outputs back as inputs. That feedback loop is what physically "traps" the bit — the same idea, scaled up, gives you SRAM cache.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 · FSM DEF -->
+<section class="slide">
+  <div class="eyebrow">Hardware Design</div>
+  <h2><span class="hl">Finite State Machines</span> (FSMs)</h2>
+  <p class="lead">A <b>Finite State Machine</b> is a mathematical model for designing systems that:</p>
+  <div class="grid3">
+    <div class="panel"><div class="tag">1 · States</div><p>Have a <b>finite number of states</b> — distinct modes like ON, OFF, WAITING.</p></div>
+    <div class="panel"><div class="tag">2 · Transitions</div><p><b>Move between states</b> based on <b>inputs</b>: button presses, sensor data, timers.</p></div>
+    <div class="panel"><div class="tag">3 · Outputs</div><p>Produce <b>outputs</b> (actions/results) depending on the current state and/or input.</p></div>
+  </div>
+  <div class="note"><b>The hardware connection:</b> FSMs are sequential logic circuits — they use <b>flip-flops to track state</b>. With <i>n</i> flip-flops you can encode 2<sup>n</sup> states.</div>
+  <div class="grid2">
+    <div class="panel"><div class="tag">Moore machine</div><p>Output depends <b>only on the state</b>. More stable, predictable timing, easier to design.</p></div>
+    <div class="panel"><div class="tag">Mealy machine</div><p>Output depends on <b>state AND input</b>. Faster response, often fewer states, more compact.</p></div>
+  </div>
+</section>
+
+<!-- 17 · MOORE VS MEALY -->
+<section class="slide">
+  <div class="eyebrow">Hardware Design</div>
+  <h2><span class="hl">Moore vs. Mealy</span> — side by side</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="tag">Moore block diagram</div>
+      <div class="ascii" style="margin-top:8px">Inputs → [Combinational Logic] → Next State
+                    ↓
+         [State Register (Flip-Flops)]
+                    ↓
+         [Output Logic] → Outputs</div>
+      <p style="margin-top:10px;font-size:14.5px;color:var(--ink-dim)">Output changes <b>only on state transitions</b> (clocked).</p>
+    </div>
+    <div class="panel">
+      <div class="tag">Mealy block diagram</div>
+      <div class="ascii" style="margin-top:8px">Inputs → [Combinational Logic] → Next State
+                    ↓            + Outputs
+         [State Register (Flip-Flops)]</div>
+      <p style="margin-top:10px;font-size:14.5px;color:var(--ink-dim)">Outputs computed <b>asynchronously</b> — input changes can affect outputs immediately.</p>
+    </div>
+  </div>
+  <table class="t">
+    <tr><th>Feature</th><th>Moore</th><th>Mealy</th></tr>
+    <tr><td>Output depends on</td><td><b>Only current state</b></td><td><b>Current state + input</b></td></tr>
+    <tr><td>Output changes</td><td>On state transition only</td><td>Can change within a state</td></tr>
+    <tr><td>Stability</td><td>More stable, less reactive</td><td>More responsive to inputs</td></tr>
+  </table>
+  <div class="note"><b>Memory trick:</b> M<b>oo</b>re = <b>o</b>nly <b>o</b>utput from state. Mealy = "meal depends on what you order <i>and</i> where you are."</div>
+</section>
+
+<!-- 18 · FSM GALLERY -->
+<section class="slide">
+  <div class="eyebrow">Real Life</div>
+  <h2>FSMs are <span class="hl">everywhere</span> — pick one</h2>
+  <div class="chips" id="fsmChips">
+    <button class="chip sel" data-fsm="elev">🛗 Elevator</button>
+    <button class="chip" data-fsm="vend">🥤 Vending machine</button>
+    <button class="chip" data-fsm="login">🔐 Login system</button>
+    <button class="chip" data-fsm="tl">🚦 Traffic light</button>
+    <button class="chip" data-fsm="lex">⌨️ Compiler lexer</button>
+    <button class="chip" data-fsm="turn">🚇 Subway turnstile</button>
+    <button class="chip" data-fsm="micro">📟 Microwave</button>
+  </div>
+  <div class="panel gold" style="margin-top:18px" id="fsmDetail"></div>
+</section>
+
+<!-- 19 · TRAFFIC LIGHT SIM -->
+<section class="slide">
+  <div class="eyebrow">Hands-On Lab</div>
+  <h2>Build it: <span class="hl">Traffic-Light FSM</span> with two D flip-flops</h2>
+  <p class="lead">Two flip-flops (Q1, Q0) make a <b>2-bit counter</b> → 2² = 4 states. Each clock pulse triggers a transition; output logic maps the state to a light color. <b>This is a Moore machine</b> — the color depends on state only.</p>
+  <div class="grid2">
+    <div class="panel gold" style="text-align:center">
+      <div class="tl-house">
+        <div class="big-led" id="tlR"></div>
+        <div class="big-led" id="tlY"></div>
+        <div class="big-led" id="tlG"></div>
+      </div>
+      <div class="controls" style="justify-content:center">
+        <div style="text-align:center"><div class="bit" id="tlQ1">0</div><div class="mono" style="font-size:11px;color:var(--ink-dim);margin-top:4px">Q1</div></div>
+        <div style="text-align:center"><div class="bit" id="tlQ0">0</div><div class="mono" style="font-size:11px;color:var(--ink-dim);margin-top:4px">Q0</div></div>
+      </div>
+      <div class="controls" style="justify-content:center">
+        <button class="btn" id="btnTlStep">⏱ CLOCK PULSE</button>
+        <button class="btn ghost" id="btnTlAuto">▶ AUTO (1 Hz)</button>
+      </div>
+      <div class="readout" id="tlLog" style="text-align:left">t0 · Q1Q0 = 00 (decimal 0) → GREEN</div>
+    </div>
+    <div class="panel">
+      <div class="tag">State table (row highlights live)</div>
+      <table class="t" id="tlTable">
+        <tr><th>t</th><th>Q1</th><th>Q0</th><th>Q1Q0</th><th>Dec</th><th>Light</th></tr>
+        <tr data-s="0"><td>t0</td><td>0</td><td>0</td><td>00</td><td>0</td><td>Green</td></tr>
+        <tr data-s="1"><td>t1</td><td>0</td><td>1</td><td>01</td><td>1</td><td>Yellow</td></tr>
+        <tr data-s="2"><td>t2</td><td>1</td><td>0</td><td>10</td><td>2</td><td>Red</td></tr>
+        <tr data-s="3"><td>t3</td><td>1</td><td>1</td><td>11</td><td>3</td><td>Reset → Green</td></tr>
+      </table>
+      <div class="note" style="margin-top:14px"><b>Why not 1 flip-flop?</b> Only 2 states — not enough for 3+ light stages. <b>Why not 3?</b> 8 states = wasted hardware and unused states. Two is <b>efficient and minimal</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 · CHECKPOINT -->
+<section class="slide">
+  <div class="eyebrow">Checkpoint</div>
+  <h2>Quick <span class="hl">reasoning check</span> (answers hidden)</h2>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Q1 — Timing</h3>
+      <p>The traffic-light counter uses a 1-second clock cycle. <b>How long until the system returns to Green?</b></p>
+      <button class="btn ghost small rv" data-target="ans1" style="margin-top:12px">REVEAL ANSWER</button>
+      <div class="reveal-body" id="ans1"><div class="note win"><b>4 clock cycles → 4 seconds.</b> The counter walks 00 → 01 → 10 → 11 and wraps back to 00.</div></div>
+    </div>
+    <div class="panel">
+      <h3>Q2 — Classification</h3>
+      <p>Is the traffic-light controller a <b>Moore or Mealy</b> model? Why?</p>
+      <button class="btn ghost small rv" data-target="ans2" style="margin-top:12px">REVEAL ANSWER</button>
+      <div class="reveal-body" id="ans2"><div class="note win"><b>Moore</b> — the output (light color) depends on the <b>state only</b>, not on any external input.</div></div>
+    </div>
+    <div class="panel">
+      <h3>Q3 — Scaling</h3>
+      <p>Your FSM needs <b>6 states</b> (e.g., a washing machine: fill, wash, drain, rinse, spin, done). How many flip-flops?</p>
+      <button class="btn ghost small rv" data-target="ans3" style="margin-top:12px">REVEAL ANSWER</button>
+      <div class="reveal-body" id="ans3"><div class="note win"><b>3 flip-flops</b> (2³ = 8 ≥ 6). Two would only give 4 states; two of the eight encodings go unused.</div></div>
+    </div>
+    <div class="panel">
+      <h3>Q4 — Design choice</h3>
+      <p>An automatic door must react the <b>instant</b> the sensor sees a person, even mid-state. Moore or Mealy?</p>
+      <button class="btn ghost small rv" data-target="ans4" style="margin-top:12px">REVEAL ANSWER</button>
+      <div class="reveal-body" id="ans4"><div class="note win"><b>Mealy</b> — outputs can change within a state as soon as the input changes, giving faster response.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 · 555 THEORY -->
+<section class="slide">
+  <div class="eyebrow">Real Hardware</div>
+  <h2>Where does the traffic light's clock come from? <span class="hl">The 555 timer</span></h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="tag">Typical clock source</div>
+      <ul class="clean">
+        <li><b>555 Timer IC</b> (analog) or a programmable microcontroller (digital)</li>
+        <li>Frequency: <b>0.1 Hz – 1 Hz</b> (one pulse every 1–10 s)</li>
+        <li><b>0.2 Hz</b> = 1 pulse / 5 s — common for light transitions</li>
+        <li><b>1 Hz</b> = blinking yellow at pedestrian crossings</li>
+      </ul>
+      <div class="note" style="margin-top:14px"><b>Why so slow?</b> Traffic lights hold each state for seconds/minutes, not nanoseconds — human reaction time (~1–2 s) demands slow, predictable changes.</div>
+    </div>
+    <div class="panel gold">
+      <div class="tag">Astable mode · the period formula</div>
+      <p style="font-family:var(--mono);font-size:22px;text-align:center;margin:16px 0;color:var(--gold)">T ≈ 1.44 × (R₁ + 2·R₂) × C₁</p>
+      <ul class="clean">
+        <li><b>R₁</b> — resistor between Vcc and Discharge pin (Ω); controls charge time of C₁</li>
+        <li><b>R₂</b> — resistor between Discharge and Threshold (Ω); controls discharge time</li>
+        <li><b>C₁</b> — capacitor between Threshold and GND (F); larger C = slower cycle</li>
+      </ul>
+      <table class="t">
+        <tr><th>Pin</th><th>Job</th></tr>
+        <tr><td>Pin 2 · Trigger</td><td>Starts the ON phase when C₁ drops to ~⅓ Vcc</td></tr>
+        <tr><td>Pin 6 · Threshold</td><td>Stops it when C₁ reaches ~⅔ Vcc</td></tr>
+        <tr><td>Pin 7 · Discharge</td><td>Empties the capacitor</td></tr>
+        <tr><td>Pin 3 · Output</td><td>Square wave (0–5V) → <b>to flip-flop clock input</b></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 22 · 555 CALCULATOR -->
+<section class="slide">
+  <div class="eyebrow">Hands-On Lab</div>
+  <h2><span class="hl">555 Timer</span> period calculator</h2>
+  <p class="lead">Worked example from the lecture: R₁ = 10,000 Ω, R₂ = 12,360 Ω, C₁ = 100 µF → <b>T ≈ 5.00 s</b>. Verify it, then design your own.</p>
+  <div class="grid2">
+    <div class="panel gold">
+      <div class="controls" style="margin-top:0;flex-direction:column;align-items:flex-start;gap:14px">
+        <label class="mono">R₁ (Ω)&nbsp; <input type="number" id="r1" value="10000" min="1"></label>
+        <label class="mono">R₂ (Ω)&nbsp; <input type="number" id="r2" value="12360" min="1"></label>
+        <label class="mono">C₁ (µF) <input type="number" id="c1" value="100" min="0.001" step="any"></label>
+        <button class="btn" id="btn555">CALCULATE T</button>
+      </div>
+      <div class="readout" id="out555">T = ? · f = ?</div>
+    </div>
+    <div class="panel">
+      <div class="tag">Step-by-step (mirrors the exam format)</div>
+      <table class="t" id="steps555">
+        <tr><th>Step</th><th>Value</th></tr>
+        <tr><td>1 · Compute (R₁ + 2×R₂)</td><td id="s1">—</td></tr>
+        <tr><td>2 · Multiply by C₁ (in farads)</td><td id="s2">—</td></tr>
+        <tr><td>3 · Multiply by 1.44</td><td id="s3">—</td></tr>
+        <tr><td><b>Result T</b></td><td id="s4"><b>—</b></td></tr>
+      </table>
+      <div class="note" style="margin-top:14px"><b>Unit trap:</b> 100 µF = 0.0001 F. Forgetting the µ→F conversion is the #1 error on this problem. The calculator converts for you — the exam won't.</div>
+      <div class="note win"><b>Design challenge:</b> find values that give T ≈ 1.0 s (a blinking pedestrian light). Hint: try shrinking C₁ to 22 µF and adjust R₂.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 · HUFFMAN MODEL -->
+<section class="slide">
+  <div class="eyebrow">Firmware Design</div>
+  <h2>The <span class="hl">Huffman Model</span> — ROM + flip-flops</h2>
+  <p class="lead">A method for building FSMs in hardware: <b>flip-flops hold the current state</b>, a <b>ROM stores the entire control logic</b> (the FSM's "truth table"). Widely used in firmware controllers: microwaves, printers, IoT devices.</p>
+  <div class="grid2">
+    <div class="panel">
+      <div class="ascii" style="margin-top:0">                    +----------------+
+Inputs + Current →  |      ROM       | → Next State
+        State       |  (logic table) |   + Outputs
+                    +----------------+
+                            ↓
+                    [State Register]
+                    ( D Flip-Flops )
+                            ↓
+                    Next State (feedback loop)</div>
+      <ul class="clean" style="margin-top:14px">
+        <li><b>1.</b> Inputs + current state form a binary <b>address</b></li>
+        <li><b>2.</b> That address reads a ROM line: <b>next state + outputs</b></li>
+        <li><b>3.</b> On the clock edge, flip-flops load the next state</li>
+        <li><b>4.</b> New state feeds back to the ROM — a loop, forever</li>
+      </ul>
+    </div>
+    <div class="panel gold">
+      <div class="tag">Worked example · automatic door</div>
+      <table class="t">
+        <tr><th>Component</th><th>Role in Huffman model</th></tr>
+        <tr><td>Sensor (person) + Timer</td><td><b>Inputs</b></td></tr>
+        <tr><td>Closed / Opening / Open / Closing</td><td><b>4 states</b> → 2-bit encoding in D flip-flops (00, 01, 10, 11)</td></tr>
+        <tr><td>ROM</td><td>Stores every (state + input) → (next state, output) mapping</td></tr>
+        <tr><td>Motor direction + status lights</td><td><b>Outputs</b> read from ROM</td></tr>
+      </table>
+      <div class="note" style="margin-top:14px"><b>Why ROM?</b> Flexibility — reprogram the ROM to change behavior without rewiring, and complex state machines fit in tiny, cheap hardware.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 · QUIZ -->
+<section class="slide">
+  <div class="eyebrow">Assessment</div>
+  <h2>Exit-ticket <span class="hl">quiz</span> <span class="scorebox" id="quizScore" style="margin-left:14px">Score: 0 / 6</span></h2>
+  <div class="grid2" id="quizWrap"></div>
+  <div class="controls"><button class="btn ghost small" id="btnQuizReset">RESET QUIZ</button></div>
+</section>
+
+<!-- 25 · SUMMARY -->
+<section class="slide">
+  <div class="eyebrow">Wrap-Up</div>
+  <h2>What you can now <span class="hl">explain to anyone</span></h2>
+  <div class="grid2">
+    <div class="panel gold">
+      <ul class="clean">
+        <li><b>Sequential logic</b> = output depends on input + <b>history</b> (state)</li>
+        <li><b>Clock</b> = drumbeat; flip-flops capture on the <b>rising edge</b> (camera shutter)</li>
+        <li><b>Flip-flop</b> = 1 bit of memory, 6–12 transistors; <b>registers are arrays of them</b></li>
+        <li><b>Pipelining / superscalar</b> = overlap + parallel instructions for speed</li>
+      </ul>
+    </div>
+    <div class="panel gold">
+      <ul class="clean">
+        <li><b>FSM</b> = states + transitions + outputs; needs ⌈log₂(states)⌉ flip-flops</li>
+        <li><b>Moore</b> = output from state only · <b>Mealy</b> = state + input</li>
+        <li><b>555 timer</b>: T ≈ 1.44 × (R₁ + 2R₂) × C₁ — mind the µF→F conversion!</li>
+        <li><b>Huffman model</b> = ROM (logic) + flip-flops (state) in a feedback loop</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:22px"><b>Homework seed:</b> pick any device in your home. List its states, inputs, transitions, and outputs. Decide Moore or Mealy, and compute how many flip-flops it needs. Bring it to next class.</div>
+  <p class="mono" style="margin-top:26px;color:var(--ink-dim);font-size:13px">MAC283 · Computer Architecture & Assembler Language — Prof. K. Kassou · LaGuardia CC</p>
+</section>
+
+</main>
+<footer>
+  <button id="btnPrev" aria-label="Previous slide">◀ PREV</button>
+  <div class="dots" id="dots"></div>
+  <button id="btnNext" aria-label="Next slide">NEXT ▶</button>
+  <span class="hint">← → keys · Space = next</span>
+</footer>
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= DECK NAVIGATION ================= */
+const slides=$$('.slide'); let cur=0;
+$('#slideTotal').textContent=slides.length;
+const dotsBox=$('#dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('button');d.className='dot';d.setAttribute('aria-label','Go to slide '+(i+1));
+  d.onclick=()=>go(i);dotsBox.appendChild(d);
+});
+function go(n){
+  if(n<0||n>=slides.length)return;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.toggle('prev',n>cur);
+  cur=n;
+  slides[cur].classList.remove('prev');
+  slides[cur].classList.add('active');
+  slides[cur].scrollTop=0;
+  $('#slideNow').textContent=cur+1;
+  $('#progressBar').style.width=((cur+1)/slides.length*100)+'%';
+  $$('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+}
+$('#btnPrev').onclick=()=>go(cur-1);
+$('#btnNext').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  if(e.target.matches('input'))return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(cur+1);}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
+  if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1);
+});
+let tX=null;
+addEventListener('touchstart',e=>tX=e.touches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{
+  if(tX===null)return;const dx=e.changedTouches[0].clientX-tX;
+  if(Math.abs(dx)>60)go(cur+(dx<0?1:-1));tX=null;
+},{passive:true});
+go(0);
+
+/* ================= HEADER MINI CLOCK ================= */
+(function(){
+  const p=$('#hdrWave');let t=0;
+  function draw(){
+    t+=reduceMotion?0:2; let d='M0 22',x=0,hi=false,off=t%40;
+    for(x=-off;x<200;x+=20){hi=!hi;const y=hi?8:22;d+=` L${x} ${hi?22:8} L${x} ${y} L${x+20} ${y}`;}
+    p.setAttribute('d',d);requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ================= SLIDE 2 · COMB VS SEQ ================= */
+(function(){
+  const sw=$('#swComb'),led=$('#ledComb'),txt=$('#txtComb');
+  sw.onclick=()=>{
+    sw.classList.toggle('on');const on=sw.classList.contains('on');
+    led.className='led'+(on?' on-y':'');txt.textContent=on?'ON':'OFF';
+  };
+  sw.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sw.click();}};
+  sw.tabIndex=0;
+  let state=false,presses=0;
+  $('#btnSeqPulse').onclick=()=>{
+    state=!state;presses++;
+    $('#ledSeq').className='led'+(state?' on-g':'');
+    $('#txtSeq').textContent=(state?'ON':'OFF')+' · presses: '+presses;
+  };
+})();
+
+/* ================= SLIDE 4 · LIVE SCOPE ================= */
+(function(){
+  const path=$('#scopePath'),slider=$('#freqSlider');
+  let freq=2,run=true,t=0,last=performance.now();
+  slider.oninput=()=>{
+    freq=+slider.value;
+    $('#freqOut').textContent=freq+' Hz';
+    $('#periodOut').textContent=(1/freq).toFixed(3)+' s';
+  };
+  $('#btnScopePause').onclick=function(){run=!run;this.textContent=run?'⏸ PAUSE':'▶ RUN';};
+  function frame(now){
+    const dt=(now-last)/1000;last=now;
+    if(run&&!reduceMotion)t+=dt;
+    // draw 3 seconds of signal scrolling
+    const W=900,pxPerSec=200,hi=40,lo=120;
+    let d='',first=true;
+    for(let px=0;px<=W;px+=2){
+      const time=t+(px/pxPerSec);
+      const phase=(time*freq)%1;
+      const y=phase<.5?hi:lo;
+      d+= first?`M${px} ${y}`:`L${px} ${y}`;first=false;
+    }
+    path.setAttribute('d',d);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ================= SLIDE 7 · FF TYPE CARDS ================= */
+(function(){
+  const data={
+    D:{name:'D Flip-Flop (Data/Delay)',rows:[['D=0, clock ↑','Q → 0'],['D=1, clock ↑','Q → 1'],['No clock edge','Q holds (memory)']],
+       rl:'Real life: the Instruction Register in a CPU — it photographs whatever instruction is on the bus at the clock edge and holds it steady while the decoder works.'},
+    T:{name:'T Flip-Flop (Toggle)',rows:[['T=1, clock ↑','Q flips (0↔1)'],['T=0, clock ↑','Q holds']],
+       rl:'Real life: a ceiling-fan pull chain or a pen clicker — every activation flips the state. Chain T flip-flops together and you get a binary counter (each stage divides frequency by 2).'},
+    JK:{name:'JK Flip-Flop',rows:[['J=0, K=0','Q holds'],['J=1, K=0','Set: Q → 1'],['J=0, K=1','Reset: Q → 0'],['J=1, K=1','Toggle (no forbidden state!)']],
+       rl:'Real life: industrial control panels — one input arms (set), another disarms (reset), and both together means "flip whatever it is." It fixes the SR latch\\u2019s illegal S=R=1 case. (*"JK" is often linked to Jack Kilby, IC pioneer.)'},
+    SR:{name:'SR Flip-Flop (Set/Reset latch)',rows:[['S=1, R=0','Set: Q → 1'],['S=0, R=1','Reset: Q → 0'],['S=0, R=0','Q holds'],['S=1, R=1','⚠ FORBIDDEN / invalid']],
+       rl:'Real life: a fire-alarm latch — one button trips it (Set), and it stays latched wailing until someone with a key resets it (Reset). Also used to de-bounce mechanical switches.'}
+  };
+  $$('#ffCards .ffcard').forEach(c=>{
+    const pick=()=>{
+      $$('#ffCards .ffcard').forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel');
+      const d=data[c.dataset.ff];
+      $('#ffDetailText').innerHTML='<b style="color:var(--gold)">'+d.name+'</b><br><span style="color:var(--ink-dim)">'+d.rl+'</span>';
+      $('#ffDetailTable').innerHTML='<table class="t"><tr><th>Inputs</th><th>Result on clock edge</th></tr>'+
+        d.rows.map(r=>'<tr><td class="mono">'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</table>';
+    };
+    c.onclick=pick;
+    c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}};
+  });
+})();
+
+/* ================= SLIDE 8 · D FF SIMULATOR ================= */
+(function(){
+  const swD=$('#swD');let D=0,Q=0;
+  function paint(){
+    $('#bitD').textContent=D;$('#bitD').classList.toggle('one',D===1);
+    $('#bitQ').textContent=Q;$('#bitQ').classList.toggle('one',Q===1);
+    $('#bitQb').textContent=1-Q;$('#bitQb').classList.toggle('one',Q===0);
+  }
+  swD.tabIndex=0;
+  const flip=()=>{
+    swD.classList.toggle('on');D=swD.classList.contains('on')?1:0;paint();
+    if(D!==Q)$('#dffLog').innerHTML='D = <b>'+D+'</b> but Q is still <b>'+Q+'</b> — the flip-flop ignores D until the clock edge.';
+    else $('#dffLog').innerHTML='D = <b>'+D+'</b>. (Q already matches — pulse the clock anyway to see the capture.)';
+  };
+  swD.onclick=flip;
+  swD.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}};
+  $('#btnClk').onclick=()=>{
+    const old=Q;Q=D;paint();
+    $('#dffLog').innerHTML='⏱ Rising edge! Captured D = <b>'+D+'</b> → Q: '+old+' → <b>'+Q+'</b>, Q̅ = <b>'+(1-Q)+'</b>. Locked until the next edge.';
+  };
+  paint();
+})();
+
+/* ================= SLIDE 10 · FDE ================= */
+(function(){
+  const stages=[$('#stF'),$('#stD'),$('#stE')];
+  const msgs=[
+    '<b>FETCH</b> — clock pulse signals fetch: CPU reads <code>ADD A, B</code> from memory into the Instruction Register (flip-flops latch it).',
+    '<b>DECODE</b> — next pulse: control unit decodes the bits → "add register A to register B."',
+    '<b>EXECUTE</b> — clock walks the execute phase: load operands, ALU adds, Result Register (flip-flops) holds the sum until it\\u2019s stored.'
+  ];
+  let step=-1,timer=null,cycle=0;
+  function tick(){
+    step=(step+1)%3;cycle++;
+    stages.forEach((s,i)=>s.classList.toggle('live',i===step));
+    $('#fdeLog').innerHTML='<b>Cycle '+cycle+'</b> — '+msgs[step];
+  }
+  $('#btnFdeStep').onclick=()=>{stopAuto();tick();};
+  const autoBtn=$('#btnFdeAuto');
+  function stopAuto(){if(timer){clearInterval(timer);timer=null;autoBtn.textContent='▶ AUTO-RUN';}}
+  autoBtn.onclick=()=>{
+    if(timer){stopAuto();return;}
+    autoBtn.textContent='⏸ STOP';tick();timer=setInterval(tick,1100);
+  };
+  $('#btnFdeReset').onclick=()=>{stopAuto();step=-1;cycle=0;stages.forEach(s=>s.classList.remove('live'));$('#fdeLog').innerHTML='<b>Cycle 0</b> — idle. Pulse the clock to fetch.';};
+})();
+
+/* ================= SLIDE 11 · PIPELINE ================= */
+(function(){
+  const grid=$('#pipeGrid');const N=3,CYC=6;
+  // header row
+  let html='<div class="cell lbl">Instr \\\\ Cyc</div>';
+  for(let c=1;c<=CYC;c++)html+='<div class="cell lbl" style="justify-content:center">'+c+'</div>';
+  for(let i=0;i<N;i++){
+    html+='<div class="cell lbl">Instr. '+(i+1)+'</div>';
+    for(let c=1;c<=CYC;c++)html+='<div class="cell" data-i="'+i+'" data-c="'+c+'"></div>';
+  }
+  grid.innerHTML=html;
+  let cyc=0;
+  const stageAt=(i,c)=>{const k=c-(i+1);return k===0?'F':k===1?'D':k===2?'E':null;};
+  function paint(){
+    $$('#pipeGrid .cell[data-i]').forEach(cell=>{
+      const i=+cell.dataset.i,c=+cell.dataset.c,st=stageAt(i,c);
+      cell.className='cell';cell.textContent='';
+      if(st&&c<=cyc){cell.classList.add(st);cell.textContent=st;}
+      if(c===cyc&&st)cell.classList.add('now');
+    });
+    if(cyc===0)$('#pipeLog').innerHTML='Cycle 0 — pipeline empty.';
+    else{
+      const acts=[];for(let i=0;i<N;i++){const s=stageAt(i,cyc);if(s)acts.push('I'+(i+1)+':'+s);}
+      $('#pipeLog').innerHTML='<b>Cycle '+cyc+'</b> — '+(acts.length?acts.join(' · '):'all done!')+(cyc===3?' ← <b style="color:var(--gold)">3 instructions at once!</b>':'');
+    }
+  }
+  $('#btnPipeStep').onclick=()=>{cyc=Math.min(cyc+1,CYC);paint();};
+  $('#btnPipeReset').onclick=()=>{cyc=0;paint();};
+  paint();
+})();
+
+/* ================= SLIDE 18 · FSM GALLERY ================= */
+(function(){
+  const F={
+    elev:{t:'🛗 Elevator Controller',s:'Idle · Moving Up · Moving Down · Door Open',i:'Floor button pressed, floor reached, door sensor',tr:'Move to new floor, stop, open door',m:'<b>Moore</b> — states like "Door Open" decide the output',rl:'Watch the LaGuardia E-building elevator: it will not move while "Door Open" is the state, no matter how hard you press 4. Input only causes a <i>transition</i>; output comes from state.'},
+    vend:{t:'🥤 Vending Machine',s:'Waiting for Coin · Waiting for Selection · Dispensing',i:'Insert coin, select item',tr:'Change state once coin or input is detected',m:'<b>Mealy</b> — dispense depends on selection AND coin',rl:'Press B4 before paying: nothing. Same button after paying: snack drops. Identical input, different output — because output depends on state + input.'},
+    login:{t:'🔐 Login System',s:'Waiting for Username · Waiting for Password · Access Granted · Access Denied',i:'Username, password, attempt count',tr:'Move to success or failure state based on validation',m:'Either style; attempt counting needs extra state bits',rl:'CUNYfirst locking you out after 5 bad passwords = an FSM counting attempts in its state and transitioning to a "Locked" state.'},
+    tl:{t:'🚦 Traffic Light System',s:'Red · Green · Yellow',i:'Timer, vehicle sensor',tr:'Red → Green → Yellow → Red cycle',m:'<b>Moore</b> — color depends purely on state',rl:'The lecture\\u2019s star example — you built it two slides from now with two D flip-flops and a 0.2 Hz clock (Red 30 s = 6 pulses, Green 25 s = 5, Yellow 5 s = 1).'},
+    lex:{t:'⌨️ Compiler Lexical Analyzer',s:'Reading char · Matching identifier · Matching number · …',i:'Next character from source code',tr:'Decide the type of token being scanned',m:'Usually <b>Mealy</b> — depends on character input',rl:'When your C++ compiler reads <code>int x=42;</code>, an FSM walks character by character deciding "keyword… identifier… operator… number." Same machine model, in software.'},
+    turn:{t:'🚇 Subway Turnstile',s:'Locked · Unlocked',i:'Tap card, push arm',tr:'Locked —tap→ Unlocked —push→ Locked',m:'<b>Moore</b> — 2 states = exactly 1 flip-flop!',rl:'The classic textbook FSM, live at every MTA station. Tap without pushing? Stays Unlocked. Push without tapping? Stays Locked. Two states, one bit.'},
+    micro:{t:'📟 Microwave Oven',s:'Idle · Set Time · Cooking · Paused · Done',i:'Keypad, Start/Stop, door sensor',tr:'Start → Cooking; door open → Paused; timer=0 → Done',m:'<b>Moore</b> with a safety twist',rl:'Opening the door mid-cook <b>must</b> kill the magnetron instantly — a hardware interlock plus FSM transition to Paused. This is why FSM design is a safety discipline, not just theory (Huffman model, next slides).'}
+  };
+  function show(k){
+    const d=F[k];
+    $('#fsmDetail').innerHTML='<div class="tag">'+d.t+'</div>'+
+      '<table class="t"><tr><th>States</th><td>'+d.s+'</td></tr>'+
+      '<tr><th>Inputs</th><td>'+d.i+'</td></tr>'+
+      '<tr><th>Transitions</th><td>'+d.tr+'</td></tr>'+
+      '<tr><th>FSM type</th><td>'+d.m+'</td></tr></table>'+
+      '<div class="note" style="margin-top:14px"><b>Real life:</b> '+d.rl+'</div>';
+  }
+  $$('#fsmChips .chip').forEach(ch=>ch.onclick=()=>{
+    $$('#fsmChips .chip').forEach(x=>x.classList.remove('sel'));
+    ch.classList.add('sel');show(ch.dataset.fsm);
+  });
+  show('elev');
+})();
+
+/* ================= SLIDE 19 · TRAFFIC LIGHT SIM ================= */
+(function(){
+  let s=0,timer=null,t=0;
+  const colors=['GREEN','YELLOW','RED','RESET → GREEN'];
+  function paint(){
+    const q1=s>>1,q0=s&1;
+    $('#tlQ1').textContent=q1;$('#tlQ1').classList.toggle('one',q1===1);
+    $('#tlQ0').textContent=q0;$('#tlQ0').classList.toggle('one',q0===1);
+    $('#tlG').className='big-led'+((s===0||s===3)?' g':'');
+    $('#tlY').className='big-led'+(s===1?' y':'');
+    $('#tlR').className='big-led'+(s===2?' r':'');
+    $$('#tlTable tr[data-s]').forEach(r=>r.classList.toggle('hot',+r.dataset.s===s));
+    $('#tlLog').innerHTML='t'+t+' · Q1Q0 = <b>'+q1+q0+'</b> (decimal '+s+') → <b>'+colors[s]+'</b>'+(s===3?' — counter wraps to 00 on the next pulse':'');
+  }
+  function pulse(){s=(s+1)%4;t++;paint();}
+  $('#btnTlStep').onclick=()=>{stop();pulse();};
+  const ab=$('#btnTlAuto');
+  function stop(){if(timer){clearInterval(timer);timer=null;ab.textContent='▶ AUTO (1 Hz)';}}
+  ab.onclick=()=>{ if(timer){stop();return;} ab.textContent='⏸ STOP'; timer=setInterval(pulse,1000); };
+  paint();
+})();
+
+/* ================= SLIDE 20 · REVEALS ================= */
+$$('.rv').forEach(b=>b.onclick=()=>{
+  const body=$('#'+b.dataset.target);
+  const open=body.classList.toggle('open');
+  b.textContent=open?'HIDE ANSWER':'REVEAL ANSWER';
+});
+
+/* ================= SLIDE 22 · 555 CALC ================= */
+(function(){
+  function calc(){
+    const r1=+$('#r1').value,r2=+$('#r2').value,c=+$('#c1').value*1e-6;
+    if(!(r1>0&&r2>0&&c>0)){$('#out555').innerHTML='Enter positive values for R₁, R₂ and C₁.';return;}
+    const sum=r1+2*r2, rc=sum*c, T=1.44*rc, f=1/T;
+    $('#s1').textContent=r1.toLocaleString()+' + 2×'+r2.toLocaleString()+' = '+sum.toLocaleString()+' Ω';
+    $('#s2').textContent=sum.toLocaleString()+' × '+c.toExponential(2)+' F = '+rc.toFixed(4)+' s';
+    $('#s3').textContent='1.44 × '+rc.toFixed(4)+' = '+T.toFixed(3)+' s';
+    $('#s4').innerHTML='<b>T ≈ '+T.toFixed(2)+' s</b>';
+    let hint = Math.abs(T-5)<0.05 ? ' — matches the lecture example ✔' : (Math.abs(T-1)<0.05?' — pedestrian-blinker achieved! ✔':'');
+    $('#out555').innerHTML='<b>T ≈ '+T.toFixed(3)+' s</b> · f = 1/T ≈ <b>'+f.toFixed(3)+' Hz</b>'+hint;
+  }
+  $('#btn555').onclick=calc;
+  ['r1','r2','c1'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{if(e.key==='Enter')calc();}));
+})();
+
+/* ================= SLIDE 24 · QUIZ ================= */
+(function(){
+  const Q=[
+    {q:'A flip-flop changes its stored value…',o:['Whenever any input changes','Only on a clock edge','Only when power cycles','Randomly'],a:1,
+     ex:'Edge-triggered behavior is the defining property — the "camera shutter."'},
+    {q:'How many flip-flops are needed for an FSM with 4 states?',o:['1','2','4','8'],a:1,
+     ex:'2² = 4 unique binary states: 00, 01, 10, 11 — exactly the traffic-light counter.'},
+    {q:'A 1 GHz CPU completes how many clock cycles per second?',o:['1 million','1 billion','1 thousand','1 trillion'],a:1,
+     ex:'Giga = 10⁹. One "tick" per cycle → 1 billion ticks/second.'},
+    {q:'In a Moore machine, the output depends on…',o:['Input only','State + input','State only','The clock frequency'],a:2,
+     ex:'Moore = output from state only. State + input is a Mealy machine.'},
+    {q:'At cycle 3 of the 3-stage pipeline demo (F→D→E), what is happening?',o:['Only Instr 1 is running','All three instructions are in different stages','The pipeline stalls','Instr 3 is executing'],a:1,
+     ex:'I1 executes, I2 decodes, I3 fetches — the assembly-line payoff.'},
+    {q:'555 astable, R₁=10kΩ, R₂=12.36kΩ, C₁=100µF. T ≈ ?',o:['0.5 s','5 s','50 s','1.44 s'],a:1,
+     ex:'1.44 × (10000+24720) × 0.0001 F ≈ 5.00 s — the lecture\\u2019s worked example.'}
+  ];
+  const wrap=$('#quizWrap');let score=0,answered=0;
+  function build(){
+    score=0;answered=0;$('#quizScore').textContent='Score: 0 / '+Q.length;
+    wrap.innerHTML='';
+    Q.forEach((item,qi)=>{
+      const p=document.createElement('div');p.className='panel';
+      p.innerHTML='<div class="tag">Q'+(qi+1)+'</div><p style="font-weight:600">'+item.q+'</p>'+
+        item.o.map((o,oi)=>'<button class="qopt" data-q="'+qi+'" data-o="'+oi+'">'+String.fromCharCode(65+oi)+') '+o+'</button>').join('')+
+        '<div class="qfeed" id="qf'+qi+'"></div>';
+      wrap.appendChild(p);
+    });
+    $$('.qopt').forEach(b=>b.onclick=()=>{
+      const qi=+b.dataset.q,oi=+b.dataset.o,item=Q[qi];
+      const sibs=$$('.qopt[data-q="'+qi+'"]');
+      if(sibs[0].disabled)return;
+      sibs.forEach(x=>{x.disabled=true;if(+x.dataset.o===item.a)x.classList.add('right');});
+      answered++;
+      const f=$('#qf'+qi);
+      if(oi===item.a){score++;f.className='qfeed ok';f.innerHTML='✔ Correct — '+item.ex;}
+      else{b.classList.add('wrong');f.className='qfeed no';f.innerHTML='✘ Not quite. '+item.ex;}
+      $('#quizScore').textContent='Score: '+score+' / '+Q.length+(answered===Q.length?(score===Q.length?' — perfect! 🏆':' — review the missed ones above.'):'');
+    });
+  }
+  $('#btnQuizReset').onclick=build;
+  build();
+})();
+</script>
+</body>
+</html>
