@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 — Take-Home Lab 3: OPERATION BLACK BOX</title>
+<style>
+:root{
+  --navy-deep:#081120;--navy:#0d1b2e;--panel:#122641;--panel-2:#0f2036;--trace:#1d3a5f;
+  --cyan:#4dc9ff;--cyan-dim:#2a7fb8;--green:#3ddc97;--amber:#ffc857;--red:#ff6b6b;--violet:#b78cff;
+  --ink:#e8f1fb;--ink-dim:#9db4cc;
+  --mono:'Courier New',Consolas,monospace;--sans:'Segoe UI',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:18px}
+body{
+  font-family:var(--sans);background:var(--navy-deep);color:var(--ink);min-height:100vh;
+  background-image:linear-gradient(var(--trace) 1px,transparent 1px),linear-gradient(90deg,var(--trace) 1px,transparent 1px);
+  background-size:48px 48px;padding-bottom:120px;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:34px 24px}
+header.lab{border:1px solid var(--trace);border-radius:14px;background:linear-gradient(160deg,var(--panel) 0%,var(--panel-2) 100%);padding:34px 36px;position:relative;overflow:hidden}
+header.lab::before{content:'CLASSIFIED';position:absolute;right:-38px;top:26px;transform:rotate(35deg);font-family:var(--mono);letter-spacing:.35em;font-size:.8rem;color:var(--red);border:2px solid var(--red);padding:4px 46px;opacity:.55}
+.eyebrow{font-family:var(--mono);font-size:.9rem;letter-spacing:.22em;color:var(--cyan);text-transform:uppercase;margin-bottom:10px}
+.eyebrow::before{content:'▸ ';color:var(--green)}
+h1{font-size:2.5rem;line-height:1.1;font-weight:800}
+h1 .g{color:var(--green)} h1 .c{color:var(--cyan)}
+h2{font-size:1.55rem;font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--trace);position:relative}
+h2::after{content:'';position:absolute;left:0;bottom:-2px;width:110px;height:2px;background:linear-gradient(90deg,var(--cyan),transparent)}
+h3{font-size:1.15rem;color:var(--cyan);margin:16px 0 8px}
+p,li{line-height:1.65}
+.dim{color:var(--ink-dim)}
+a{color:var(--cyan)}
+code{font-family:var(--mono);background:var(--panel-2);padding:2px 8px;border-radius:5px;color:var(--amber);border:1px solid var(--trace)}
+.hl-g{color:var(--green);font-weight:700}.hl-c{color:var(--cyan);font-weight:700}
+.hl-a{color:var(--amber);font-weight:700}.hl-r{color:var(--red);font-weight:700}
+.ov{text-decoration:overline;text-decoration-color:var(--amber);text-decoration-thickness:2px;padding:0 1px}
+.badge{display:inline-block;font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;background:var(--panel-2);border:1px solid var(--cyan-dim);color:var(--cyan);border-radius:20px;padding:3px 13px;margin:0 6px 8px 0;text-transform:uppercase}
+.badge.rd{border-color:var(--red);color:var(--red)}
+.badge.gr{border-color:var(--green);color:var(--green)}
+.badge.am{border-color:var(--amber);color:var(--amber)}
+.lect{display:inline-block;font-family:var(--mono);font-size:.82rem;color:var(--violet);border:1px dashed var(--violet);border-radius:8px;padding:5px 12px;margin-bottom:12px}
+section.block{margin-top:26px;border:1px solid var(--trace);border-radius:14px;background:var(--panel);padding:28px 30px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.card{background:var(--panel-2);border:1px solid var(--trace);border-radius:11px;padding:18px 20px}
+.card h4{font-family:var(--mono);color:var(--cyan);font-size:1.05rem;margin-bottom:8px}
+ul.tick{list-style:none}
+ul.tick li{padding:6px 0 6px 30px;position:relative;color:var(--ink-dim)}
+ul.tick li::before{content:'✓';position:absolute;left:4px;color:var(--green);font-weight:800}
+ul.warn li::before{content:'⚠';color:var(--amber)}
+ul.no li::before{content:'✗';color:var(--red)}
+table{border-collapse:collapse;width:100%;font-size:1.02rem}
+th{background:var(--panel-2);color:var(--cyan);font-family:var(--mono);padding:9px 12px;border:1px solid var(--trace);text-align:center}
+td{padding:8px 12px;border:1px solid var(--trace);text-align:center;font-family:var(--mono)}
+td.on{color:var(--green);font-weight:800} td.off{color:var(--ink-dim)}
+.mission{margin-top:26px;border:1px solid var(--trace);border-radius:14px;overflow:hidden;background:var(--panel)}
+.mission.locked{opacity:.45;pointer-events:none;filter:grayscale(.4)}
+.mhead{display:flex;align-items:center;gap:16px;padding:18px 26px;background:var(--panel-2);border-bottom:1px solid var(--trace)}
+.mnum{font-family:var(--mono);font-weight:800;color:var(--navy-deep);background:var(--cyan);border-radius:9px;min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.15rem}
+.mission.done .mnum{background:var(--green)}
+.mhead h2{border:none;margin:0;padding:0;font-size:1.25rem}.mhead h2::after{display:none}
+.mstatus{margin-left:auto;font-family:var(--mono);font-size:.85rem;color:var(--ink-dim);white-space:nowrap}
+.mission.done .mstatus{color:var(--green)}
+.mbody{padding:24px 26px}
+.switch-row{display:flex;align-items:center;gap:14px;margin:10px 0}
+.sw{width:74px;height:38px;border-radius:22px;background:var(--panel);border:2px solid var(--trace);cursor:pointer;position:relative;transition:.22s;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:3px;left:4px;width:28px;height:28px;border-radius:50%;background:var(--ink-dim);transition:.22s}
+.sw.on{background:rgba(61,220,151,.16);border-color:var(--green)}
+.sw.on::after{left:38px;background:var(--green);box-shadow:0 0 13px var(--green)}
+.sw-label{font-family:var(--mono);font-size:1.1rem;min-width:150px}
+.sw-val{font-family:var(--mono);font-weight:800;font-size:1.15rem;width:24px;text-align:center}
+.v1{color:var(--green)}.v0{color:var(--ink-dim)}
+.ledbox{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-top:14px;background:var(--navy-deep);border:1px solid var(--trace);border-radius:12px;font-family:var(--mono);font-size:1.15rem}
+.led{width:26px;height:26px;border-radius:50%;background:#25405f;border:2px solid var(--trace);transition:.2s;flex-shrink:0}
+.ledbox.lit{border-color:var(--green)}
+.ledbox.lit .led{background:var(--green);box-shadow:0 0 20px var(--green);border-color:var(--green)}
+.tcell{cursor:pointer;user-select:none;min-width:52px;transition:.15s}
+.tcell:hover{background:rgba(77,201,255,.12)}
+.tcell.q{color:var(--amber)} .tcell.z{color:var(--ink-dim)} .tcell.o{color:var(--green);font-weight:800}
+.kmap{display:inline-grid;gap:5px;margin:10px 0}
+.kh{font-family:var(--mono);color:var(--cyan);font-size:.95rem;display:flex;align-items:center;justify-content:center;padding:4px}
+.kcell{width:84px;height:64px;border:2px solid var(--trace);border-radius:9px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:1.45rem;font-weight:800;color:var(--ink-dim);cursor:pointer;user-select:none;transition:.15s;position:relative}
+.kcell:hover{border-color:var(--cyan-dim)}
+.kcell.one{color:var(--green);border-color:var(--green);background:rgba(61,220,151,.09)}
+.kcell .mt{position:absolute;top:3px;right:6px;font-size:.62rem;color:var(--cyan-dim);font-weight:400}
+.kcell.selg{outline:3px dashed var(--violet);outline-offset:-5px}
+.g0{box-shadow:inset 0 0 0 4px rgba(77,201,255,.6)}
+.g1{box-shadow:inset 0 0 0 4px rgba(255,200,87,.6)}
+.g2{box-shadow:inset 0 0 0 4px rgba(183,140,255,.6)}
+.g3{box-shadow:inset 0 0 0 4px rgba(255,107,107,.55)}
+.g0.g1{box-shadow:inset 0 0 0 4px rgba(77,201,255,.6),inset 0 0 0 8px rgba(255,200,87,.6)}
+.g0.g2{box-shadow:inset 0 0 0 4px rgba(77,201,255,.6),inset 0 0 0 8px rgba(183,140,255,.6)}
+.g1.g2{box-shadow:inset 0 0 0 4px rgba(255,200,87,.6),inset 0 0 0 8px rgba(183,140,255,.6)}
+.grp-chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.9rem;border:1px solid var(--trace);border-radius:8px;padding:6px 12px;margin:4px 6px 4px 0;background:var(--panel-2)}
+.grp-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem}
+.dotc{width:12px;height:12px;border-radius:3px;display:inline-block}
+.btn{font-family:var(--mono);font-size:1rem;letter-spacing:.05em;background:var(--panel-2);color:var(--cyan);border:1px solid var(--cyan-dim);padding:11px 22px;border-radius:8px;cursor:pointer;transition:.2s;margin:6px 8px 4px 0}
+.btn:hover{background:var(--cyan);color:var(--navy-deep)}
+.btn.gr{color:var(--green);border-color:var(--green)}.btn.gr:hover{background:var(--green);color:var(--navy-deep)}
+.btn.am{color:var(--amber);border-color:var(--amber)}.btn.am:hover{background:var(--amber);color:var(--navy-deep)}
+.btn.rd{color:var(--red);border-color:var(--red)}.btn.rd:hover{background:var(--red);color:var(--navy-deep)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+input[type=text],input[type=password],input[type=number]{font-family:var(--mono);font-size:1.1rem;background:var(--navy-deep);color:var(--ink);border:1px solid var(--trace);border-radius:8px;padding:12px 16px;width:100%;margin:6px 0}
+input:focus{outline:2px solid var(--cyan);border-color:var(--cyan)}
+.feedback{font-family:var(--mono);margin-top:12px;padding:13px 17px;border-radius:8px;display:none;line-height:1.55;font-size:1rem}
+.feedback.ok{display:block;border:1px solid var(--green);color:var(--green);background:rgba(61,220,151,.07)}
+.feedback.bad{display:block;border:1px solid var(--red);color:var(--red);background:rgba(255,107,107,.07)}
+.feedback.info{display:block;border:1px solid var(--amber);color:var(--amber);background:rgba(255,200,87,.06)}
+.formula-box{font-family:var(--mono);font-size:1.4rem;color:var(--green);text-align:center;border:1px dashed var(--green);border-radius:10px;padding:16px;margin:14px 0;background:rgba(61,220,151,.05)}
+.serial{font-family:var(--mono);font-size:1.4rem;letter-spacing:.15em;color:var(--amber);text-align:center;border:2px solid var(--amber);border-radius:10px;padding:14px;margin:14px 0;background:rgba(255,200,87,.05)}
+.counterchip{font-family:var(--mono);font-size:.9rem;color:var(--violet);border:1px solid var(--violet);border-radius:20px;padding:4px 14px;display:inline-block;margin-top:10px}
+.receipt-box{font-family:var(--mono);font-size:1rem;word-break:break-all;background:var(--navy-deep);border:2px solid var(--green);border-radius:10px;padding:18px;color:var(--green);line-height:1.7}
+.pledge{display:flex;gap:12px;align-items:flex-start;background:rgba(255,200,87,.05);border:1px solid var(--amber);border-radius:10px;padding:16px 18px;margin-top:16px}
+.pledge input{width:22px;height:22px;margin-top:3px;flex-shrink:0}
+.radio-row{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0}
+.radio-row label{font-family:var(--mono);display:flex;gap:8px;align-items:center;border:1px solid var(--trace);border-radius:8px;padding:9px 14px;cursor:pointer}
+footer.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(8,17,32,.94);border-top:1px solid var(--trace);backdrop-filter:blur(6px);padding:12px 26px;display:flex;align-items:center;justify-content:space-between;z-index:40}
+footer .brand{font-family:var(--mono);font-size:.85rem;color:var(--ink-dim);letter-spacing:.1em}
+footer .brand b{color:var(--cyan)}
+.gear{background:none;border:1px solid var(--trace);color:var(--ink-dim);border-radius:8px;width:40px;height:36px;cursor:pointer}
+.modal{position:fixed;inset:0;background:rgba(4,9,18,.85);display:none;align-items:flex-start;justify-content:center;z-index:100;overflow-y:auto;padding:40px 16px}
+.modal.open{display:flex}
+.modal .inner{max-width:860px;width:100%;background:var(--panel);border:1px solid var(--cyan-dim);border-radius:14px;padding:30px}
+.hiddenblock{display:none}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+@media(max-width:820px){
+  .grid2{grid-template-columns:1fr}
+  .kcell{width:62px;height:52px;font-size:1.1rem}
+  h1{font-size:1.8rem}
+  .wrap{padding:22px 12px}
+  .mbody,.mhead,section.block{padding-left:16px;padding-right:16px}
+}
+
+/* ============ PRINT REPORT (PDF for email submission) ============ */
+#printReport{display:none}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff!important;color:#111!important;padding:0}
+  .app,footer.bar,.modal{display:none!important}
+  #printReport{display:block!important;font-family:Georgia,'Times New Roman',serif;color:#111}
+  #printReport *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+#printReport h1{font-size:22pt;color:#0d1b2e;border-bottom:3px solid #0d1b2e;padding-bottom:6px}
+#printReport h2{font-size:14pt;color:#0d1b2e;border:none;margin:18px 0 8px;padding:0}
+#printReport h2::after{display:none}
+#printReport .meta{font-family:var(--mono);font-size:10.5pt;margin:8px 0 4px;line-height:1.7}
+#printReport table{width:auto;min-width:55%;font-size:10.5pt;margin:6px 0}
+#printReport th{background:#0d1b2e;color:#fff;border:1px solid #444;padding:5px 12px}
+#printReport td{border:1px solid #777;color:#111;padding:4px 12px}
+#printReport .pk{display:inline-grid;gap:3px;margin:6px 0}
+#printReport .pk div{width:64px;height:46px;border:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:12pt;position:relative;border-radius:4px}
+#printReport .pk .h{border:none;font-weight:400;color:#0d1b2e;font-size:9.5pt}
+#printReport .pk .o1{background:#dff5ea}
+#printReport .pk small{position:absolute;top:1px;right:3px;font-size:7pt;color:#666;font-weight:400}
+#printReport .codebig{font-family:var(--mono);font-size:11pt;word-break:break-all;border:2.5px solid #111;padding:12px;margin:8px 0;background:#f5f5f5}
+#printReport .exprline{font-family:var(--mono);font-size:12pt;border:1px dashed #555;padding:8px 12px;margin:6px 0;display:inline-block}
+#printReport .foot{margin-top:22px;font-size:9pt;color:#555;border-top:1px solid #999;padding-top:8px}
+#printReport .grpline{font-family:var(--mono);font-size:10.5pt;margin:2px 0}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="wrap">
+<!-- ================= HEADER ================= -->
+<header class="lab">
+  <div class="eyebrow">MAC283 · Computer Architecture &amp; Assembler Language · Take-Home Lab 3</div>
+  <h1>OPERATION: <span class="c">BLACK</span> <span class="g">BOX</span></h1>
+  <p class="dim" style="margin-top:12px;max-width:840px;font-size:1.08rem">
+    In <a href="https://kassou-mec.github.io/MAC283/BooleanAlgebra.html" target="_blank">Lecture 3</a> we designed the
+    <b>home alarm</b> (XOR) and the <b>laptop cooling fan</b> — going from a spec, to a truth table, to minterms,
+    to a K-Map, to a minimal circuit. In this lab you run that <b class="hl-c">entire pipeline yourself</b> —
+    on a mystery chip whose markings have been sanded off. Probe it, decode it, map it, rebuild it.
+  </p>
+  <div style="margin-top:16px">
+    <span class="badge gr">7 Missions · Follows Lecture 3 Step-by-Step</span>
+    <span class="badge am">Progress Auto-Saved</span>
+    <span class="badge rd">Every Student Gets a Different Chip</span>
+  </div>
+</header>
+
+<!-- ================= BRIEFING ================= -->
+<section class="block">
+  <h2>📋 Mission Briefing — Read Before Starting</h2>
+  <div class="grid2">
+    <div>
+      <h3>How this lab works</h3>
+      <ul class="tick">
+        <li>Check in with your <b>full name</b> below. This issues <b class="hl-a">your personal chip</b> — its behavior, variable letters, and scenarios are unique to you.</li>
+        <li>Missions unlock <b>in order</b> and follow the exact sequence from Lecture 3: truth table → minterms → K-Map → SOP → POS → DeMorgan → design brief.</li>
+        <li>Progress saves automatically in this browser. Return with the <b>exact same name spelling</b> to resume.</li>
+        <li>Keep the <a href="https://kassou-mec.github.io/MAC283/BooleanAlgebra.html" target="_blank">Lecture 3 slides</a> open in another tab — each mission tells you which part to review.</li>
+      </ul>
+      <h3>Grading &amp; submission</h3>
+      <ul class="tick warn">
+        <li>The lab grades itself <b>silently</b> — every check and every wrong attempt is recorded, but <b class="hl-r">your grade is never shown to you</b>. Only the professor can see it.</li>
+        <li>When all missions are complete you'll receive a <b class="hl-g">Submission Code</b>. Email me: <b>(1) the code</b> pasted in the email body, and <b>(2) the PDF report</b> the page generates. The PDF is my backup for manual grading if a code ever fails to verify.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card" style="border-color:var(--red)">
+        <h4 style="color:var(--red)">🤖 A note about AI tools</h4>
+        <p class="dim">You're welcome to ask AI to <i>explain concepts</i> — that's studying. But it cannot do this lab for you, by design:</p>
+        <ul class="tick no" style="margin-top:8px">
+          <li>Your chip's behavior exists <b>only inside this page</b>, generated from your name. No AI has ever seen it and cannot guess it.</li>
+          <li>Your variable letters, DeMorgan puzzle, and deployment scenario are <b>different from every classmate's</b>. Copied answers fail your checker.</li>
+          <li>Several answers require <b>probing, clicking, and grouping</b> — not text an AI can produce for you.</li>
+          <li>Expressions on screen use <b>overbar notation that does not survive copy-paste</b> — paste it into a chatbot and the NOTs silently vanish, so the "help" you get back will be wrong.</li>
+        </ul>
+        <p class="dim" style="margin-top:8px">The fastest path through this lab is the honest one: probe carefully, think, and use the lecture.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pledge">
+    <input type="checkbox" id="pledge">
+    <label for="pledge" class="dim"><b class="hl-a">Academic Integrity Pledge:</b> I will complete this lab myself. I understand my submission code encodes my identity and my exact chip, that identical work across students is detectable, and that I may be asked to reproduce any step of my solution live in office hours.</label>
+  </div>
+</section>
+
+<!-- ================= REGISTRATION ================= -->
+<section class="block" id="regBlock">
+  <h2>🪪 Step 0 — Check In &amp; Receive Your Chip</h2>
+  <div class="grid2">
+    <div>
+      <label class="dim" for="stuName">Full name — exactly as registered on CUNYfirst</label>
+      <input type="text" id="stuName" placeholder="e.g. Amina Kassou" autocomplete="off">
+      <button class="btn gr" id="regBtn">🔓 Check in &amp; unlock Mission 1</button>
+      <div class="feedback" id="regFb"></div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>Your chip serial</h4>
+        <div class="serial" id="serialBox">— awaiting check-in —</div>
+        <p class="dim" style="font-size:.95rem">Derived from your name. Type it <b>exactly the same way</b> every visit (same spelling, same spacing) or you'll be issued a different chip and lose progress. The serial appears in your submission code and PDF.</p>
+        <p class="dim" id="varsLine" style="margin-top:10px"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MISSION 1 ================= -->
+<section class="mission locked" id="m1">
+  <div class="mhead"><div class="mnum">1</div><h2>Probe the Black Box → Truth Table</h2><span class="mstatus" id="m1st">locked</span></div>
+  <div class="mbody">
+    <span class="lect">📖 Review: Lecture 3 — "Truth Tables for Basic Operators" &amp; "Step 1: Truth Table"</span>
+    <p class="dim">In lecture, the truth tables for the alarm and the cooling fan were <i>given</i> to you. A real engineer has to <b>discover</b> them. Your chip has three input pins and one output LED — <b class="hl-c">and no datasheet</b>. Flip the pins through every combination, watch the LED, and record what you observe. Click a table cell to cycle <span class="hl-a">?</span> → 0 → <span class="hl-g">1</span>.</p>
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <h4>🔌 Probe station</h4>
+        <div id="probeSwitches"></div>
+        <div class="ledbox" id="probeLed"><div class="led"></div><span>OUTPUT F = <b id="probeOut">0</b></span></div>
+        <span class="counterchip">Probes used: <b id="probeCount">0</b></span>
+        <p class="dim" style="font-size:.9rem;margin-top:10px">Tip from lecture: with 3 inputs there are exactly <b>2³ = 8</b> rows. Count in binary 000 → 111 so you miss nothing.</p>
+      </div>
+      <div>
+        <table id="m1table"></table>
+        <button class="btn gr" id="m1check">✓ Check my truth table</button>
+        <div class="feedback" id="m1fb"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MISSION 2 ================= -->
+<section class="mission locked" id="m2">
+  <div class="mhead"><div class="mnum">2</div><h2>Extract the Minterms — Σ Notation</h2><span class="mstatus" id="m2st">locked</span></div>
+  <div class="mbody">
+    <span class="lect">📖 Review: Lecture 3 — "How Minterm Numbers Are Assigned" &amp; "Step 2: List the minterms"</span>
+    <p class="dim">In lecture the cooling fan came out as <code>F = Σ(5, 6, 7)</code>. Do the same for <b>your</b> chip: select every minterm number where <code>F = 1</code>. Remember — the minterm number is the <b class="hl-c">decimal value of the input bits read in order</b>, and your pins are not named T, L, B, so think it through rather than copying the lecture's answer.</p>
+    <div class="card" style="margin-top:14px">
+      <h4>Select the minterms of F</h4>
+      <div id="mtChecks" style="display:flex;flex-wrap:wrap;gap:10px;margin:8px 0"></div>
+      <div class="formula-box" style="font-size:1.15rem" id="sigmaPreview">F = Σ( … )</div>
+      <button class="btn gr" id="m2check">✓ Check Σ notation</button>
+      <div class="feedback" id="m2fb"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MISSION 3 ================= -->
+<section class="mission locked" id="m3">
+  <div class="mhead"><div class="mnum">3</div><h2>K-Map — Fill &amp; Group</h2><span class="mstatus" id="m3st">locked</span></div>
+  <div class="mbody">
+    <span class="lect">📖 Review: Lecture 3 — "3-Variable K-Map", "Why Not TL\B?" &amp; "K-Map Fill Order Cheat Sheet"</span>
+    <p class="dim"><b>Phase A:</b> place your 1s on the K-Map. Watch the column headers — they run <b class="hl-a">00, 01, 11, 10 (Gray code)</b>, exactly as the "Why Not TL\B?" slide explained, so m3 and m2 are NOT where naive counting puts them. <b>Phase B:</b> build your groups — switch to group-select mode, click cells (dashed outline), then <b>Add group</b>. Finish with the <b>minimum possible number of groups</b>, just like the lecture grouped m5+m7 and m7+m6 for the fan.</p>
+    <div class="grid2" style="margin-top:14px">
+      <div>
+        <div id="kmapWrap"></div>
+        <div id="grpChips"></div>
+        <div>
+          <button class="btn am" id="k3addgrp">⊕ Add group from selection</button>
+          <button class="btn" id="k3clearsel">Clear selection</button>
+        </div>
+        <div>
+          <button class="btn gr" id="m3check">✓ Check map &amp; grouping</button>
+          <button class="btn rd" id="m3reset">↺ Reset mission</button>
+        </div>
+        <div class="feedback" id="m3fb"></div>
+      </div>
+      <div class="card">
+        <h4>Rules of grouping (from lecture)</h4>
+        <ul class="tick" style="font-size:.98rem">
+          <li>Only 1-cells may be inside a group</li>
+          <li>Group sizes: powers of two (1, 2, 4, 8)</li>
+          <li>Rectangles only — diagonals never count</li>
+          <li>The map wraps: left edge ↔ right edge are neighbors</li>
+          <li>Overlapping groups are allowed — the fan's m7 sat in <b>both</b> groups</li>
+          <li>Bigger groups → more variables cancel → simpler terms</li>
+        </ul>
+        <p class="dim" style="margin-top:10px;font-size:.95rem">⚠️ The checker verifies <i>your</i> groups against <i>your</i> chip. A classmate's screenshot will not help you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MISSION 4 ================= -->
+<section class="mission locked" id="m4">
+  <div class="mhead"><div class="mnum">4</div><h2>Minimal SOP — Rebuild the Circuit</h2><span class="mstatus" id="m4st">locked</span></div>
+  <div class="mbody">
+    <span class="lect">📖 Review: Lecture 3 — "SOP (Sum of Products)" &amp; "Reading the Groups — The Payoff"</span>
+    <p class="dim">In lecture, the fan's three minterms collapsed to <code>T·(L+B)</code> — one AND, one OR, zero NOTs. Now read <b>your</b> groups off the map and type the <b>simplified SOP expression</b> for F. The checker evaluates your expression on <b>all 8 input rows</b> against the real chip — and counts your literals. The canonical (unsimplified) SOP will be rejected as too long: <b class="hl-a">grouping cannot be skipped</b>.</p>
+    <div class="card" style="margin-top:14px">
+      <h4>Enter your expression <span class="dim" id="m4vars"></span></h4>
+      <p class="dim" style="font-size:.95rem">Syntax: apostrophe for NOT (<code>X'</code>), <code>+</code> for OR, AND by adjacency (<code>XY</code>) or <code>·</code>/<code>*</code>. Parentheses allowed — factored answers like the fan's <code>T(L+B)</code> are welcome.</p>
+      <input type="text" id="m4input" placeholder="type your simplified expression here" autocomplete="off" spellcheck="false">
+      <button class="btn gr" id="m4check">✓ Verify against the chip</button>
+      <div class="feedback" id="m4fb"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MISSION 5 ================= -->
+<section class="mission locked" id="m5">
+  <div class="mhead"><div class="mnum">5</div><h2>The Other Dialect — POS</h2><span class="mstatus" id="m5st">locked</span></div>
+  <div class="mbody">
+    <span class="lect">📖 Review: Lecture 3 — "POS (Product of Sums)" &amp; "SOP vs. POS Summary"</span>
+    <p class="dim">Lecture's rule: SOP is built from the rows where <code>F = 1</code>; POS from the rows where <code class="hl-r">F = 0</code> (the <b>maxterms</b>). The fan had 5 maxterms — safety-system style: <i>"fan is OFF unless all conditions pass."</i> Answer all three questions about <b>your</b> chip's POS form.</p>
+    <div class="card" style="margin-top:14px">
+      <h4>a) Select your chip's MAXTERM numbers (rows where F = 0)</h4>
+      <div id="mxChecks" style="display:flex;flex-wrap:wrap;gap:10px;margin:8px 0"></div>
+      <h4>b) How many sum terms does your canonical POS expression contain?</h4>
+      <input type="number" id="posCount" min="0" max="8" placeholder="a number 0–8" style="max-width:220px">
+      <h4>c) For YOUR chip, which canonical form is shorter (fewer terms)?</h4>
+      <div class="radio-row">
+        <label><input type="radio" name="posrad" value="SOP"> SOP</label>
+        <label><input type="radio" name="posrad" value="POS"> POS</label>
+        <label><input type="radio" name="posrad" value="EQ"> They tie</label>
+      </div>
+      <button class="btn gr" id="m5check">✓ Check POS analysis</button>
+      <div class="feedback" id="m5fb"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MISSION 6 ================= -->
+<section class="mission locked" id="m6">
+  <div class="mhead"><div class="mnum">6</div><h2>DeMorgan Decryption</h2><span class="mstatus" id="m6st">locked</span></div>
+  <div class="mbody">
+    <span class="lect">📖 Review: Lecture 3 — "DeMorgan's Law in the Wild — The Elevator" &amp; the common-mistake alert</span>
+    <p class="dim">Remember the elevator: <code>(Door + Overload)'</code> became <code>Door' · Overload'</code> — break the bar, <b>flip the operator</b>. Below is an inverted enable signal from your chip's control logic, in <b>overbar notation</b> (a bar means NOT of everything under it). Rewrite it as an equivalent expression with <b class="hl-r">no parentheses at all</b> and NOTs on <b>single variables only</b>. You'll need DeMorgan — possibly twice — plus distribution.</p>
+    <div class="formula-box" id="m6expr" style="font-size:1.7rem"></div>
+    <p class="dim" style="text-align:center;font-size:.92rem">⚠️ Copy-pasting the line above silently loses the bars and changes its meaning. Work it on paper — like the lecture's (A·B)' ≠ A'·B' warning showed, one lost bar flips the whole answer.</p>
+    <div class="card" style="margin-top:14px">
+      <input type="text" id="m6input" placeholder="equivalent expression — no parentheses, primes on single letters only" autocomplete="off" spellcheck="false">
+      <button class="btn gr" id="m6check">✓ Check equivalence</button>
+      <button class="btn am" id="m6hint">💡 Hint (free)</button>
+      <div class="feedback" id="m6fb"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MISSION 7 ================= -->
+<section class="mission locked" id="m7">
+  <div class="mhead"><div class="mnum">7</div><h2>Field Deployment — Spec → Truth Table</h2><span class="mstatus" id="m7st">locked</span></div>
+  <div class="mbody">
+    <span class="lect">📖 Review: Lecture 3 — the design briefs: "Home Alarm" &amp; "Computer Cooling Fan Activation"</span>
+    <p class="dim">Both lecture examples began the same way: a client describes behavior in <b>plain English</b>, and the engineer translates it into a truth table. Your recovered chip now gets a real job — read the spec below <b>word by word</b> (one word like "except" or "exactly" changes everything, just like the alarm's "but not both") and fill the output column.</p>
+    <div class="card" style="margin-top:14px">
+      <h4 id="scnTitle"></h4>
+      <p id="scnBody" style="line-height:1.8"></p>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div><table id="m7table"></table></div>
+      <div>
+        <button class="btn gr" id="m7check">✓ Check deployment table</button>
+        <div class="feedback" id="m7fb"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SUBMISSION ================= -->
+<section class="mission locked" id="m8">
+  <div class="mhead"><div class="mnum">★</div><h2>Debrief — Submit Your Lab</h2><span class="mstatus" id="m8st">locked</span></div>
+  <div class="mbody">
+    <p class="dim">All seven missions complete. Your work has been <b>auto-corrected and your grade computed</b> — it is sealed inside your submission code and will be visible only to Prof. Kassou. Follow the two steps:</p>
+    <h3>Step 1 — Generate your Submission Code</h3>
+    <button class="btn gr" id="receiptBtn">🧾 Generate Submission Code</button>
+    <div class="receipt-box" id="receiptBox" style="display:none"></div>
+    <button class="btn am" id="copyReceipt" style="display:none">📋 Copy code</button>
+    <h3>Step 2 — Save the PDF report</h3>
+    <p class="dim">Click below, then in the print dialog choose <b>"Save as PDF"</b>. The report contains your name, chip serial, all your answers, and your code — <b>but no grade</b>. It is the professor's backup for manual grading if the code cannot be verified.</p>
+    <button class="btn am" id="pdfBtn" disabled>🖨️ Save report as PDF</button>
+    <h3>Step 3 — Email both to Prof. Kassou</h3>
+    <p class="dim">One email: paste the <b>code in the email body</b> and attach the <b>PDF</b>. Subject line: <code>MAC283 Lab 3 — Your Name</code>.</p>
+    <div class="feedback" id="subFb"></div>
+  </div>
+</section>
+
+</div><!-- /wrap -->
+
+<footer class="bar">
+  <span class="brand"><b>MAC283</b> · LAB 3 — OPERATION BLACK BOX · Prof. K. Kassou</span>
+  <button class="gear" id="gearBtn" title="Instructor">⚙</button>
+</footer>
+
+<!-- ================= INSTRUCTOR MODAL ================= -->
+<div class="modal" id="dashModal">
+  <div class="inner">
+    <h2>🔐 Instructor Dashboard</h2>
+    <div id="dashLogin">
+      <input type="password" id="dashPw" placeholder="Instructor password">
+      <button class="btn gr" id="dashGo">Enter</button>
+      <div class="feedback" id="dashFb"></div>
+    </div>
+    <div id="dashBody" class="hiddenblock">
+      <h3>Verify a submission code → reveal grade</h3>
+      <input type="text" id="dashCode" placeholder="paste the student's submission code">
+      <button class="btn gr" id="dashVerify">Verify &amp; reveal grade</button>
+      <div class="feedback" id="dashOut" style="white-space:pre-wrap"></div>
+      <div id="dashKey"></div>
+    </div>
+    <button class="btn rd" id="dashClose" style="margin-top:16px">Close</button>
+  </div>
+</div>
+</div><!-- /app -->
+
+<!-- ================= PRINT-ONLY REPORT ================= -->
+<div id="printReport"></div>
+<script>
+/* =============== CORE (name → unique assignment) =============== */
+function djb2(s){let h=5381;for(let i=0;i<s.length;i++){h=(((h<<5)+h)+s.charCodeAt(i))>>>0}return h}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const VARSETS=[['A','B','C'],['P','Q','R'],['X','Y','Z'],['K','M','N'],['R','S','T'],['D','E','G'],['U','V','W'],['F','H','J']];
+function buildSubcubes(){const subs=[];for(let a=0;a<3;a++)for(let b=0;b<3;b++)for(let c=0;c<3;c++){const cells=[];
+  for(let m=0;m<8;m++){const bits=[(m>>2)&1,(m>>1)&1,m&1];
+    if((a<2&&bits[0]!==a)||(b<2&&bits[1]!==b)||(c<2&&bits[2]!==c))continue;cells.push(m)}
+  subs.push({fix:[a,b,c],cells,lit:(a<2)+(b<2)+(c<2)})}return subs}
+const SUBCUBES=buildSubcubes();
+function subTerm(sub,V){if(sub.lit===0)return'1';let t='';sub.fix.forEach((f,i)=>{if(f<2)t+=V[i]+(f===0?"'":'')});return t}
+function minCover(ones){
+  const subs=SUBCUBES.filter(s=>s.cells.length&&s.cells.every(c=>ones.has(c)));
+  const oneList=[...ones];let best=null;
+  (function dfs(covered,chosen,lits){
+    const un=oneList.find(m=>!covered.has(m));
+    if(un===undefined){if(!best||chosen.length<best.groups||(chosen.length===best.groups&&lits<best.literals))
+      best={groups:chosen.length,literals:lits,sel:chosen.slice()};return}
+    if(best&&chosen.length+1>best.groups)return;
+    for(const s of subs)if(s.cells.includes(un)){
+      const nc=new Set(covered);s.cells.forEach(c=>nc.add(c));
+      chosen.push(s);dfs(nc,chosen,lits+s.lit);chosen.pop()}
+  })(new Set(),[],0);
+  return best}
+function isSubcube(cells){const key=cells.slice().sort((a,b)=>a-b).join(',');
+  return SUBCUBES.some(s=>s.cells.slice().sort((a,b)=>a-b).join(',')===key)}
+function genMystery(seed){
+  const rng=mulberry32(seed);
+  for(let t=0;t<400;t++){
+    const n=4+Math.floor(rng()*2),cells=[0,1,2,3,4,5,6,7];
+    for(let i=7;i>0;i--){const j=Math.floor(rng()*(i+1));[cells[i],cells[j]]=[cells[j],cells[i]]}
+    const ones=new Set(cells.slice(0,n));
+    if([...ones].sort().join(',')==='5,6,7')continue;
+    const best=minCover(ones);
+    if(!best||best.groups<2||best.groups>3||best.literals<4||best.literals>7||best.literals>=3*n)continue;
+    return{ones,best}}
+  const ones=new Set([1,3,4,5]);return{ones,best:minCover(ones)}}
+function parseExpr(src,V){
+  const s=src.replace(/\s+/g,'').toUpperCase().replace(/[·*.]/g,'&');
+  let i=0,literals=0;const vmap={};V.forEach((v,k)=>vmap[v.toUpperCase()]=k);
+  function peek(){return s[i]}
+  function expr(){let f=[term()];while(peek()==='+'){i++;f.push(term())}return b=>f.some(x=>x(b))?1:0}
+  function term(){let f=[factor()];for(;;){const c=peek();
+    if(c==='&'){i++;f.push(factor())}
+    else if(c==='('||(c&&vmap[c]!==undefined)){f.push(factor())}
+    else break}return b=>f.every(x=>x(b))?1:0}
+  function factor(){let f;const c=peek();
+    if(c==='('){i++;f=expr();if(peek()!==')')throw'missing closing parenthesis';i++}
+    else if(c&&vmap[c]!==undefined){const k=vmap[c];literals++;i++;f=b=>b[k]}
+    else throw'unexpected character "'+(c===undefined?'end of input':c)+'" — allowed: '+V.join(', ')+", ' + · ( )";
+    while(peek()==="'"){i++;const g=f;f=b=>g(b)?0:1}return f}
+  const fn=expr();if(i<s.length)throw'unexpected character "'+s[i]+'"';
+  return{fn,literals}}
+function truthOf(fn){const tt=[];for(let m=0;m<8;m++)tt.push(fn([(m>>2)&1,(m>>1)&1,m&1])?1:0);return tt}
+
+const DM_TEMPLATES=[
+ {html:V=>`<span class="ov">(${V[0]} + <span class="ov">${V[1]}</span>) · ${V[2]}</span>`,
+  fn:b=>((b[0]|(b[1]?0:1))&b[2])?0:1,
+  hint:"Two bars, two DeMorgans. Break the LONG bar first: NOT over an AND becomes OR of NOTs (the elevator move, in reverse). One of those NOTs lands on a parenthesized sum — DeMorgan again. A double bar cancels (Involution)."},
+ {html:V=>`<span class="ov">${V[0]} · (${V[1]} + ${V[2]})</span>`,
+  fn:b=>(b[0]&(b[1]|b[2]))?0:1,
+  hint:"NOT over an AND → OR of NOTs. Then the NOT sitting on (…+…) needs DeMorgan a second time: it becomes an AND of single-letter NOTs — exactly the elevator slide."},
+ {html:V=>`<span class="ov"><span class="ov">${V[0]}</span> + ${V[1]}·${V[2]}</span>`,
+  fn:b=>(((b[0]?0:1))|(b[1]&b[2]))?0:1,
+  hint:"NOT over an OR → AND of NOTs (elevator slide). The double bar on the first letter cancels (Involution). The NOT on the product needs one more DeMorgan — then distribute to remove parentheses."},
+ {html:V=>`<span class="ov">(${V[0]} + ${V[1]}) · (<span class="ov">${V[0]}</span> + ${V[2]})</span>`,
+  fn:b=>((b[0]|b[1])&((b[0]?0:1)|b[2]))?0:1,
+  hint:"NOT over a big AND → OR of two NOTs. Each NOT now sits on a sum — DeMorgan each one. Watch the double bar cancel in the second piece."}
+];
+const SCN_SYSTEMS=[
+ {name:'Greenhouse vent fan',out:'VENT',sensors:[['H','heat sensor (1 = too hot)'],['W','humidity sensor (1 = too humid)'],['R','rain sensor (1 = raining)']]},
+ {name:'Server-room siren',out:'SIREN',sensors:[['S','smoke detector (1 = smoke present)'],['T','thermal alarm (1 = overheating)'],['M','maintenance switch (1 = technician on site)']]},
+ {name:'Aquarium heater',out:'HEAT',sensors:[['C','cold sensor (1 = water too cold)'],['D','daylight timer (1 = daytime)'],['L','low-water float (1 = level LOW)']]},
+ {name:'E-bike motor controller',out:'MOTOR',sensors:[['P','pedal sensor (1 = pedaling)'],['T','throttle (1 = pressed)'],['B','brake sensor (1 = braking)']]}
+];
+const SCN_RULES=[
+ {text:L=>`<b>${L[3]} = 1</b> when <b>${L[0]} = 1</b> AND at least one of <b>${L[1]}</b>, <b>${L[2]}</b> equals 1. Whenever ${L[0]} = 0, ${L[3]} must be 0 — no exceptions. (Compare: the lecture's cooling fan, where heat was the gatekeeper.)`,fn:b=>b[0]&(b[1]|b[2])},
+ {text:L=>`<b>${L[3]} = 1</b> when <b>exactly one</b> of ${L[0]}, ${L[1]} equals 1. The value of ${L[2]} is irrelevant to this system. (Compare: the lecture's alarm — "but not both at the same time".)`,fn:b=>b[0]^b[1]},
+ {text:L=>`<b>${L[3]} = 1</b> whenever <b>${L[2]} = 1</b> — EXCEPT it is forced to 0 in the special case where ${L[0]} and ${L[1]} are both 1 simultaneously.`,fn:b=>b[2]&((b[0]&b[1])?0:1)},
+ {text:L=>`<b>${L[3]} = 1</b> only while <b>${L[0]} = 0</b>, and additionally at least one of ${L[1]}, ${L[2]} must equal 1. If ${L[0]} = 1, the output is always 0.`,fn:b=>((b[0]?0:1))&(b[1]|b[2])},
+ {text:L=>`<b>${L[3]} = 1</b> when a <b>majority</b> of the three inputs read 1 — that is, at least two of ${L[0]}, ${L[1]}, ${L[2]}.`,fn:b=>((b[0]&b[1])|(b[0]&b[2])|(b[1]&b[2]))?1:0}
+];
+function buildAssignment(name){
+  const seed=djb2(name.trim().toUpperCase().replace(/\s+/g,' ')+'§MAC283-L3');
+  const rng=mulberry32(seed^0xBEEF);
+  const V=VARSETS[Math.floor(rng()*VARSETS.length)];
+  const mys=genMystery(seed);
+  const dmIdx=Math.floor(rng()*DM_TEMPLATES.length);
+  const dmV=VARSETS[(Math.floor(rng()*VARSETS.length)+3)%VARSETS.length];
+  const sys=SCN_SYSTEMS[Math.floor(rng()*SCN_SYSTEMS.length)];
+  const rule=SCN_RULES[Math.floor(rng()*SCN_RULES.length)];
+  const perm=[0,1,2];for(let i=2;i>0;i--){const j=Math.floor(rng()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}
+  return{seed,V,mys,dmIdx,dmV,sys,rule,sensors:perm.map(p=>sys.sensors[p])}}
+const SALT='MAC283·BLACKBOX·FA26·kkq2-salt';
+function b64e(s){return btoa(unescape(encodeURIComponent(s))).replace(/=+$/,'')}
+function b64d(s){try{return decodeURIComponent(escape(atob(s)))}catch(e){return null}}
+function makeReceipt(f){const p=f.join('|');return b64e(p)+'-'+djb2(p+SALT).toString(36).toUpperCase()}
+function readReceipt(c){const k=c.lastIndexOf('-');if(k<0)return null;
+  const p=b64d(c.slice(0,k).trim());if(p===null)return null;
+  if(djb2(p+SALT).toString(36).toUpperCase()!==c.slice(k+1).trim())return null;return p.split('|')}
+
+/* =============== STATE (grades computed silently, never shown) =============== */
+const MAXPTS={m1:14,m2:12,m3:22,m4:18,m5:12,m6:12,m7:10};
+const ORDER=['m1','m2','m3','m4','m5','m6','m7','m8'];
+let A=null,S=null;
+const $=id=>document.getElementById(id);
+function fb(id,cls,html){const e=$(id);e.className='feedback '+cls;e.innerHTML=html}
+function save(){try{localStorage.setItem('mac283bb::'+S.name.toUpperCase(),JSON.stringify(S))}catch(e){}}
+function missionScore(m){return Math.max(Math.ceil(MAXPTS[m]*0.4),MAXPTS[m]-2*(S.wrong[m]||0))}
+function recordWrong(m){S.wrong[m]=(S.wrong[m]||0)+1;save()} /* silent — no points shown */
+function markDone(m){
+  S.done[m]=true;save();
+  $(m).classList.add('done');$(m+'st').textContent='✓ complete';
+  const nxt=ORDER[ORDER.indexOf(m)+1];if(nxt)unlock(nxt);
+}
+function unlock(m){$(m).classList.remove('locked');
+  const st=$(m+'st');if(st&&!S.done[m])st.textContent=(m==='m8'?'ready to submit':'in progress')}
+
+/* =============== REGISTRATION (name only) =============== */
+$('regBtn').onclick=()=>{
+  const name=$('stuName').value.trim().replace(/\s+/g,' ');
+  if(!$('pledge').checked)return fb('regFb','bad','You must accept the Academic Integrity Pledge above before checking in.');
+  if(name.length<5||!name.includes(' '))return fb('regFb','bad','Enter your full name (first and last, as on CUNYfirst).');
+  A=buildAssignment(name);
+  const prev=localStorage.getItem('mac283bb::'+name.toUpperCase());
+  if(prev){S=JSON.parse(prev);fb('regFb','ok','Welcome back, '+name.split(' ')[0]+' — progress restored.');}
+  else{S={name,scores:{},wrong:{},done:{},probes:0,ts0:Date.now(),
+    m1:Array(8).fill(-1),m2:[],m3ones:[],m3g:[],m5mx:[],m7:Array(8).fill(-1),m4txt:'',m6txt:''};
+    fb('regFb','ok','Checked in. Chip issued — Mission 1 unlocked. Good luck, agent.');}
+  $('serialBox').textContent='BB283-'+A.seed.toString(16).toUpperCase().padStart(8,'0');
+  $('varsLine').innerHTML='Your chip\'s input pins are labeled <b class="hl-c">'+A.V[0]+', '+A.V[1]+', '+A.V[2]+'</b> (bit weights 4, 2, 1). All missions use these letters.';
+  $('stuName').disabled=$('pledge').disabled=true;$('regBtn').disabled=true;
+  initMissions();save();
+};
+
+/* =============== MISSION BUILDERS =============== */
+const chip=m=>A.mys.ones.has(m)?1:0;
+let probeBits=[0,0,0];
+function clickCycle(td,arr,m){const paint=()=>{const v=arr[m];td.textContent=v<0?'?':v;td.className='tcell '+(v<0?'q':v?'o':'z')};
+  const cyc=()=>{arr[m]=arr[m]>=1?-1:arr[m]+1;paint();save()};
+  td.onclick=cyc;td.tabIndex=0;td.onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();cyc()}};paint()}
+function initMissions(){
+  /* M1 probe station */
+  const ps=$('probeSwitches');ps.innerHTML='';
+  A.V.forEach((v,i)=>{
+    const row=document.createElement('div');row.className='switch-row';
+    row.innerHTML='<span class="sw-label">'+v+' — pin '+(i+1)+' (weight '+(4>>i)+')</span><div class="sw" role="switch" tabindex="0" aria-checked="false"></div><span class="sw-val v0">0</span>';
+    const sw=row.querySelector('.sw'),val=row.querySelector('.sw-val');
+    const flip=()=>{probeBits[i]^=1;sw.classList.toggle('on');sw.setAttribute('aria-checked',!!probeBits[i]);
+      val.textContent=probeBits[i];val.className='sw-val '+(probeBits[i]?'v1':'v0');
+      S.probes++;$('probeCount').textContent=S.probes;
+      const out=chip(probeBits[0]*4+probeBits[1]*2+probeBits[2]);
+      $('probeOut').textContent=out;$('probeLed').classList.toggle('lit',!!out);save()};
+    sw.onclick=flip;sw.onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();flip()}};
+    ps.appendChild(row);
+  });
+  $('probeCount').textContent=S.probes;
+  const t=$('m1table');
+  t.innerHTML='<tr><th>m#</th><th>'+A.V[0]+'</th><th>'+A.V[1]+'</th><th>'+A.V[2]+'</th><th>F (click)</th></tr>';
+  for(let m=0;m<8;m++){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>m'+m+'</td><td>'+((m>>2)&1)+'</td><td>'+((m>>1)&1)+'</td><td>'+(m&1)+'</td>';
+    const td=document.createElement('td');clickCycle(td,S.m1,m);tr.appendChild(td);t.appendChild(tr);
+  }
+  /* M2 minterms */
+  const mc=$('mtChecks');mc.innerHTML='';
+  for(let m=0;m<8;m++){
+    const l=document.createElement('label');l.style.cssText='font-family:var(--mono);display:flex;gap:6px;align-items:center;border:1px solid var(--trace);border-radius:8px;padding:8px 12px;cursor:pointer';
+    l.innerHTML='<input type="checkbox" value="'+m+'" '+(S.m2.includes(m)?'checked':'')+'> m'+m;
+    l.querySelector('input').onchange=()=>{S.m2=[...mc.querySelectorAll('input:checked')].map(x=>+x.value);sigPrev();save()};
+    mc.appendChild(l);
+  }
+  function sigPrev(){$('sigmaPreview').textContent='F('+A.V.join(', ')+') = Σ( '+(S.m2.length?S.m2.slice().sort((a,b)=>a-b).join(', '):'…')+' )'}
+  sigPrev();
+  /* M3 K-map */
+  buildKmap();
+  /* M4 */
+  $('m4vars').textContent='— variables: '+A.V.join(', ');
+  if(S.m4txt)$('m4input').value=S.m4txt;
+  /* M5 maxterms */
+  const mx=$('mxChecks');mx.innerHTML='';
+  for(let m=0;m<8;m++){
+    const l=document.createElement('label');l.style.cssText='font-family:var(--mono);display:flex;gap:6px;align-items:center;border:1px solid var(--trace);border-radius:8px;padding:8px 12px;cursor:pointer';
+    l.innerHTML='<input type="checkbox" value="'+m+'" '+(S.m5mx.includes(m)?'checked':'')+'> M'+m;
+    l.querySelector('input').onchange=()=>{S.m5mx=[...mx.querySelectorAll('input:checked')].map(x=>+x.value);save()};
+    mx.appendChild(l);
+  }
+  /* M6 DeMorgan */
+  $('m6expr').innerHTML=DM_TEMPLATES[A.dmIdx].html(A.dmV);
+  if(S.m6txt)$('m6input').value=S.m6txt;
+  /* M7 scenario */
+  $('scnTitle').textContent='📄 Client spec — '+A.sys.name;
+  const L=[A.sensors[0][0],A.sensors[1][0],A.sensors[2][0],A.sys.out];
+  $('scnBody').innerHTML='Inputs (in bit order '+L[0]+L[1]+L[2]+', weights 4-2-1):<br>'+
+    A.sensors.map(s=>'• <b class="hl-c">'+s[0]+'</b> — '+s[1]).join('<br>')+
+    '<br><br><b class="hl-a">Rule:</b> '+A.rule.text(L);
+  const t7=$('m7table');
+  t7.innerHTML='<tr><th>'+L[0]+'</th><th>'+L[1]+'</th><th>'+L[2]+'</th><th>'+L[3]+' (click)</th></tr>';
+  for(let m=0;m<8;m++){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+((m>>2)&1)+'</td><td>'+((m>>1)&1)+'</td><td>'+(m&1)+'</td>';
+    const td=document.createElement('td');clickCycle(td,S.m7,m);tr.appendChild(td);t7.appendChild(tr);
+  }
+  /* restore chain */
+  unlock('m1');
+  ORDER.slice(0,7).forEach(m=>{if(S.done[m]){$(m).classList.remove('locked');markDone(m)}});
+}
+
+/* ---- M3 K-map machinery ---- */
+const GRAYCOL=[0,1,3,2];let k3mode='place',k3sel=new Set();
+function buildKmap(){
+  const w=$('kmapWrap');
+  w.innerHTML='<div style="margin-bottom:8px"><button class="btn" id="modePlace">✏️ Place 1s mode</button><button class="btn" id="modeGroup">🎯 Group-select mode</button></div>';
+  const km=document.createElement('div');km.className='kmap';
+  km.style.gridTemplateColumns='72px repeat(4,89px)';
+  km.innerHTML='<div class="kh">'+A.V[0]+' \\ '+A.V[1]+A.V[2]+'</div><div class="kh">00</div><div class="kh">01</div><div class="kh">11</div><div class="kh">10</div>';
+  for(let r=0;r<2;r++){
+    const rh=document.createElement('div');rh.className='kh';rh.textContent=r;km.appendChild(rh);
+    GRAYCOL.forEach(cc=>{
+      const m=r*4+cc;
+      const c=document.createElement('div');c.className='kcell';c.dataset.m=m;c.tabIndex=0;
+      c.innerHTML='0<span class="mt">m'+m+'</span>';
+      const act=()=>{
+        if(k3mode==='place'){
+          const on=!S.m3ones.includes(m);
+          S.m3ones=on?[...S.m3ones,m]:S.m3ones.filter(x=>x!==m);
+          c.classList.toggle('one',on);c.childNodes[0].textContent=on?'1':'0';
+          S.m3g=S.m3g.filter(g=>!g.includes(m)||on);paintGroups();save();
+        }else{
+          if(!c.classList.contains('one'))return;
+          k3sel.has(m)?k3sel.delete(m):k3sel.add(m);
+          c.classList.toggle('selg',k3sel.has(m));
+        }};
+      c.onclick=act;c.onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();act()}};
+      if(S.m3ones.includes(m)){c.classList.add('one');c.childNodes[0].textContent='1'}
+      km.appendChild(c);
+    });
+  }
+  w.appendChild(km);
+  $('modePlace').onclick=()=>{k3mode='place';modeUI()};
+  $('modeGroup').onclick=()=>{k3mode='group';modeUI()};
+  function modeUI(){
+    $('modePlace').classList.toggle('gr',k3mode==='place');
+    $('modeGroup').classList.toggle('gr',k3mode==='group');
+    if(k3mode==='place'){k3sel.clear();document.querySelectorAll('.kcell.selg').forEach(c=>c.classList.remove('selg'))}
+  }
+  modeUI();paintGroups();
+}
+function paintGroups(){
+  document.querySelectorAll('.kcell').forEach(c=>c.classList.remove('g0','g1','g2','g3'));
+  S.m3g.forEach((g,i)=>g.forEach(m=>{
+    const c=document.querySelector('.kcell[data-m="'+m+'"]');if(c)c.classList.add('g'+(i%4))}));
+  const chips=$('grpChips');chips.innerHTML='';
+  const cols=['rgba(77,201,255,.9)','rgba(255,200,87,.9)','rgba(183,140,255,.9)','rgba(255,107,107,.9)'];
+  S.m3g.forEach((g,i)=>{
+    const ch=document.createElement('span');ch.className='grp-chip';
+    ch.innerHTML='<span class="dotc" style="background:'+cols[i%4]+'"></span>Group '+(i+1)+': {'+g.slice().sort((a,b)=>a-b).map(m=>'m'+m).join(', ')+'} <button title="remove">✕</button>';
+    ch.querySelector('button').onclick=()=>{S.m3g.splice(i,1);paintGroups();save()};
+    chips.appendChild(ch);
+  });
+}
+$('k3addgrp').onclick=()=>{
+  if(k3mode!=='group')return fb('m3fb','info','Switch to 🎯 Group-select mode first, then click the 1-cells you want in this group.');
+  const cells=[...k3sel];
+  if(!cells.length)return fb('m3fb','info','Nothing selected. Click 1-cells (dashed outline appears), then Add group.');
+  if(!cells.every(m=>S.m3ones.includes(m)))return fb('m3fb','info','Groups may only contain 1-cells.');
+  if(!isSubcube(cells))return fb('m3fb','info','That selection is not a legal K-Map group — it must be a rectangle of size 1, 2, 4 or 8 (wrap-around counts, diagonals do not).');
+  if(S.m3g.length>=4)return fb('m3fb','info','Four groups maximum — remove one first.');
+  S.m3g.push(cells.sort((a,b)=>a-b));k3sel.clear();
+  document.querySelectorAll('.kcell.selg').forEach(c=>c.classList.remove('selg'));
+  paintGroups();fb('m3fb','ok','Group added ('+cells.length+' cell'+(cells.length>1?'s':'')+'). Cover every 1 with as FEW groups as possible, then Check.');save();
+};
+$('k3clearsel').onclick=()=>{k3sel.clear();document.querySelectorAll('.kcell.selg').forEach(c=>c.classList.remove('selg'))};
+$('m3reset').onclick=()=>{S.m3ones=[];S.m3g=[];k3sel.clear();buildKmap();fb('m3fb','info','Mission reset. Your attempt history is kept.');save()};
+
+/* =============== CHECKERS (silent grading — no points ever shown) =============== */
+$('m1check').onclick=()=>{
+  if(S.done.m1)return;
+  if(S.m1.some(v=>v<0))return fb('m1fb','info','Fill all 8 output cells first (no "?" left). Use the probe station!');
+  const k=S.m1.reduce((s,v,m)=>s+(v===chip(m)?1:0),0);
+  if(k===8){fb('m1fb','ok','✓ Truth table verified against the chip — 8/8 rows. Datasheet recovered. Mission 2 unlocked.');markDone('m1')}
+  else{recordWrong('m1');fb('m1fb','bad','✗ Only '+k+'/8 rows match the chip. I won\'t tell you which — re-probe systematically, 000 through 111. (This attempt was recorded.)')}
+};
+$('m2check').onclick=()=>{
+  if(S.done.m2)return;
+  const sel=S.m2.slice().sort((a,b)=>a-b).join(','),ans=[...A.mys.ones].sort((a,b)=>a-b).join(',');
+  if(sel===ans){fb('m2fb','ok','✓ Σ notation correct — this is your chip\'s fingerprint, just like the fan\'s Σ(5,6,7). On to the map.');markDone('m2')}
+  else{recordWrong('m2');fb('m2fb','bad','✗ Not the chip\'s minterm set. A minterm belongs in Σ exactly when its row shows F = 1 in your VERIFIED Mission 1 table. Re-read the "How Minterm Numbers Are Assigned" slide. (Attempt recorded.)')}
+};
+$('m3check').onclick=()=>{
+  if(S.done.m3)return;
+  const placed=S.m3ones.slice().sort((a,b)=>a-b).join(','),ans=[...A.mys.ones].sort((a,b)=>a-b).join(',');
+  if(placed!==ans){recordWrong('m3');return fb('m3fb','bad','✗ The 1s on the map don\'t match your verified truth table. Careful — the columns run 00, 01, 11, 10 (Gray code, the "Why Not TL\\B?" slide), so m3 and m2 are NOT where naive counting puts them. (Attempt recorded.)')}
+  if(!S.m3g.length)return fb('m3fb','info','Map placement is correct ✓ — now switch to 🎯 Group-select mode and build your groups.');
+  const cover=new Set();S.m3g.forEach(g=>g.forEach(m=>cover.add(m)));
+  const missing=[...A.mys.ones].filter(m=>!cover.has(m));
+  if(missing.length){recordWrong('m3');return fb('m3fb','bad','✗ Valid groups, but '+missing.length+' one-cell(s) are not covered by any group. Every 1 must belong to at least one group. (Attempt recorded.)')}
+  if(S.m3g.length>A.mys.best.groups){recordWrong('m3');return fb('m3fb','bad','✗ Complete cover, but not minimal — this map can be covered with fewer groups. Look for BIGGER rectangles: check the wrap-around edges, and remember overlaps are legal (the fan shared m7 between two groups). (Attempt recorded.)')}
+  fb('m3fb','ok','✓ Grouping accepted — fully covered and minimal. Each group is one product term; read them off for Mission 4.');
+  markDone('m3');
+};
+$('m4check').onclick=()=>{
+  if(S.done.m4)return;
+  const raw=$('m4input').value;
+  if(!raw.trim())return fb('m4fb','info','Type an expression first.');
+  let p;try{p=parseExpr(raw,A.V)}catch(e){return fb('m4fb','info','Syntax error (free — fix and retry): '+e)}
+  const tt=truthOf(p.fn),ref=[];for(let m=0;m<8;m++)ref.push(chip(m));
+  const diff=tt.reduce((s,v,i)=>s+(v!==ref[i]?1:0),0);
+  if(diff){recordWrong('m4');return fb('m4fb','bad','✗ Your expression disagrees with the chip on '+diff+' of 8 input rows — it is NOT the same function. Re-derive each term from your groups: a variable constant across the group is kept (primed if 0); a variable that changes is dropped. (Attempt recorded.)')}
+  if(p.literals>A.mys.best.literals){recordWrong('m4');return fb('m4fb','bad','✗ Functionally correct — but not minimal. You are likely writing full minterms instead of the simplified group terms (or missed a bigger group back in Mission 3). Remember how TL\'B + TLB\' + TLB collapsed to T(L+B). (Attempt recorded.)')}
+  S.m4txt=raw.trim();save();
+  fb('m4fb','ok','✓ VERIFIED on all 8 rows and minimal. You have rebuilt the black box. 🏆');
+  markDone('m4');
+};
+$('m5check').onclick=()=>{
+  if(S.done.m5)return;
+  const zeros=[...Array(8).keys()].filter(m=>!A.mys.ones.has(m));
+  const okA=S.m5mx.slice().sort((a,b)=>a-b).join(',')===zeros.join(',');
+  const okB=+$('posCount').value===zeros.length;
+  const rad=document.querySelector('input[name="posrad"]:checked');
+  const shorter=A.mys.ones.size<zeros.length?'SOP':(zeros.length<A.mys.ones.size?'POS':'EQ');
+  const okC=rad&&rad.value===shorter;
+  if(!rad||$('posCount').value==='')return fb('m5fb','info','Answer all three parts (a, b and c) before checking.');
+  if(okA&&okB&&okC){S.m5count=+$('posCount').value;S.m5rad=rad.value;save();
+    fb('m5fb','ok','✓ POS analysis correct — maxterms, term count, and the SOP-vs-POS comparison all check out. Two dialects, one function.');markDone('m5')}
+  else{recordWrong('m5');
+    fb('m5fb','bad','✗ At least one part is wrong ('+(okA?'':'a ')+(okB?'':'b ')+(okC?'':'c ')+'). Lecture rule: SOP comes from the F = 1 rows, POS from the F = 0 rows — and every row belongs to exactly one camp. (Attempt recorded.)')}
+};
+$('m6hint').onclick=()=>fb('m6fb','info','💡 '+DM_TEMPLATES[A.dmIdx].hint);
+$('m6check').onclick=()=>{
+  if(S.done.m6)return;
+  const raw=$('m6input').value;
+  if(!raw.trim())return fb('m6fb','info','Type an expression first.');
+  if(/[()]/.test(raw)){recordWrong('m6');return fb('m6fb','bad','✗ No parentheses allowed in the final form — that\'s the point. Keep applying DeMorgan and the distributive law until every NOT sits on a single letter and no (…) remains. (Attempt recorded.)')}
+  let p;try{p=parseExpr(raw,A.dmV)}catch(e){return fb('m6fb','info','Syntax error (free — fix and retry): '+e)}
+  const ref=truthOf(DM_TEMPLATES[A.dmIdx].fn),tt=truthOf(p.fn);
+  const diff=tt.reduce((s,v,i)=>s+(v!==ref[i]?1:0),0);
+  if(diff){recordWrong('m6');return fb('m6fb','bad','✗ Not equivalent — differs on '+diff+' of 8 rows. Classic traps from the lecture\'s mistake alert: pushing a NOT inside WITHOUT flipping the operator, or forgetting a double bar cancels. Redo it on paper, one bar at a time. (Attempt recorded.)')}
+  S.m6txt=raw.trim();save();
+  fb('m6fb','ok','✓ Equivalent on all 8 rows, zero parentheses, primes on single letters only. DeMorgan mastered — the elevator would be proud.');
+  markDone('m6');
+};
+$('m7check').onclick=()=>{
+  if(S.done.m7)return;
+  if(S.m7.some(v=>v<0))return fb('m7fb','info','Fill all 8 output cells first.');
+  const k=S.m7.reduce((s,v,m)=>s+(v===(A.rule.fn([(m>>2)&1,(m>>1)&1,m&1])?1:0)?1:0),0);
+  if(k===8){fb('m7fb','ok','✓ Deployment table correct — 8/8. The spec is now silicon. Head to the debrief and submit.');markDone('m7')}
+  else{recordWrong('m7');fb('m7fb','bad','✗ '+k+'/8 rows match the spec. Re-read the rule word by word — "exactly", "except", "only while" — and check which sensor sits on which bit. (Attempt recorded.)')}
+};
+
+/* =============== SUBMISSION: CODE + PDF (grade sealed, never shown) =============== */
+$('receiptBtn').onclick=()=>{
+  if(!ORDER.slice(0,7).every(m=>S.done[m]))return fb('subFb','info','Complete all seven missions first.');
+  ORDER.slice(0,7).forEach(m=>S.scores[m]=missionScore(m));
+  const total=ORDER.slice(0,7).reduce((s,m)=>s+S.scores[m],0);
+  const wrongTot=Object.values(S.wrong).reduce((a,b)=>a+b,0);
+  const code=makeReceipt(['v1',S.name.toUpperCase(),A.seed.toString(16),
+    S.scores.m1,S.scores.m2,S.scores.m3,S.scores.m4,S.scores.m5,S.scores.m6,S.scores.m7,
+    wrongTot,S.probes,total,Date.now()]);
+  S.code=code;save();
+  $('receiptBox').style.display='block';$('receiptBox').textContent=code;
+  $('copyReceipt').style.display='inline-block';
+  $('pdfBtn').disabled=false;
+  buildPrintReport(code);
+  fb('subFb','ok','Submission code generated and your PDF report is ready. Your grade has been computed and sealed inside the code — it will be revealed only when Prof. Kassou verifies it. Now do Steps 2 and 3.');
+};
+$('copyReceipt').onclick=()=>{navigator.clipboard.writeText($('receiptBox').textContent).then(()=>{$('copyReceipt').textContent='✓ Copied'})};
+$('pdfBtn').onclick=()=>window.print();
+
+function buildPrintReport(code){
+  const L=[A.sensors[0][0],A.sensors[1][0],A.sensors[2][0],A.sys.out];
+  const ttRows=r=>{let h='';for(let m=0;m<8;m++)h+='<tr><td>'+((m>>2)&1)+'</td><td>'+((m>>1)&1)+'</td><td>'+(m&1)+'</td><td><b>'+(r[m]<0?'?':r[m])+'</b></td></tr>';return h};
+  /* static print K-map with student 1s + groups listed */
+  let pk='<div class="pk" style="grid-template-columns:64px repeat(4,67px)">'
+    +'<div class="h">'+A.V[0]+'\\'+A.V[1]+A.V[2]+'</div><div class="h">00</div><div class="h">01</div><div class="h">11</div><div class="h">10</div>';
+  for(let r=0;r<2;r++){pk+='<div class="h">'+r+'</div>';
+    GRAYCOL.forEach(cc=>{const m=r*4+cc,on=S.m3ones.includes(m);
+      pk+='<div class="'+(on?'o1':'')+'"><small>m'+m+'</small>'+(on?1:0)+'</div>'});}
+  pk+='</div>';
+  const groups=S.m3g.map((g,i)=>'<div class="grpline">Group '+(i+1)+': { '+g.map(m=>'m'+m).join(', ')+' }</div>').join('');
+  const dmShown=DM_TEMPLATES[A.dmIdx].html(A.dmV);
+  const wrongs=ORDER.slice(0,7).map(m=>S.wrong[m]||0).join(',');
+  $('printReport').innerHTML=
+   '<h1>MAC283 — Take-Home Lab 3: Operation Black Box</h1>'
+  +'<p class="meta"><b>Student:</b> '+S.name+' &nbsp;·&nbsp; <b>Chip serial:</b> BB283-'+A.seed.toString(16).toUpperCase().padStart(8,'0')
+  +' &nbsp;·&nbsp; <b>Generated:</b> '+new Date().toLocaleString()
+  +'<br><b>Based on:</b> Lecture 3 Part 1 — Boolean Algebra &amp; K-Maps (kassou-mec.github.io/MAC283/BooleanAlgebra.html)</p>'
+  +'<h2>Submission Code (paste this in your email body)</h2><div class="codebig">'+code+'</div>'
+  +'<h2>Mission 1 — Recovered Truth Table (pins '+A.V.join(', ')+')</h2>'
+  +'<table><tr><th>'+A.V[0]+'</th><th>'+A.V[1]+'</th><th>'+A.V[2]+'</th><th>F</th></tr>'+ttRows(S.m1)+'</table>'
+  +'<h2>Mission 2 — Minterms</h2><div class="exprline">F('+A.V.join(', ')+') = Σ( '+S.m2.slice().sort((a,b)=>a-b).join(', ')+' )</div>'
+  +'<h2>Mission 3 — K-Map &amp; Grouping</h2>'+pk+groups
+  +'<h2>Mission 4 — Minimal SOP Expression</h2><div class="exprline">F = '+(S.m4txt||'—')+'</div>'
+  +'<h2>Mission 5 — POS Analysis</h2>'
+  +'<p class="meta">Maxterms: Π( '+S.m5mx.slice().sort((a,b)=>a-b).join(', ')+' ) &nbsp;·&nbsp; Canonical POS term count: '+ (S.m5count??'—')
+  +' &nbsp;·&nbsp; Shorter canonical form: '+(S.m5rad==='EQ'?'They tie':S.m5rad||'—')+'</p>'
+  +'<h2>Mission 6 — DeMorgan Rewrite (letters '+A.dmV.join(', ')+')</h2>'
+  +'<p class="meta">Given: <span style="font-size:12pt">'+dmShown+'</span></p>'
+  +'<div class="exprline">Answer: '+(S.m6txt||'—')+'</div>'
+  +'<h2>Mission 7 — Field Deployment: '+A.sys.name+'</h2>'
+  +'<p class="meta">'+A.rule.text(L)+'</p>'
+  +'<table><tr><th>'+L[0]+'</th><th>'+L[1]+'</th><th>'+L[2]+'</th><th>'+L[3]+'</th></tr>'+ttRows(S.m7)+'</table>'
+  +'<div class="foot">Integrity pledge accepted at check-in. Audit: W['+wrongs+'] P'+S.probes+' T'+new Date().toISOString()
+  +'<br>This report shows the student\'s submitted work only — no grade is included. Grading is sealed in the submission code and revealed on the instructor dashboard. If the code fails verification, grade manually from this report.</div>';
+}
+
+/* =============== INSTRUCTOR DASHBOARD (kkq2) =============== */
+$('gearBtn').onclick=()=>$('dashModal').classList.add('open');
+$('dashClose').onclick=()=>$('dashModal').classList.remove('open');
+$('dashGo').onclick=()=>{
+  if($('dashPw').value==='kkq2'){$('dashLogin').classList.add('hiddenblock');$('dashBody').classList.remove('hiddenblock')}
+  else fb('dashFb','bad','Incorrect password.')
+};
+$('dashVerify').onclick=()=>{
+  const f=readReceipt($('dashCode').value.trim());
+  if(!f)return fb('dashOut','bad','✗ INVALID — signature check failed. This code was edited, truncated, or fabricated. Grade manually from the student\'s PDF report.');
+  const [v,name,seedHex,s1,s2,s3,s4,s5,s6,s7,wrong,probes,total,ts]=f;
+  const acc=buildAssignment(name);
+  const seedOK=acc.seed.toString(16)===seedHex;
+  const sum=[s1,s2,s3,s4,s5,s6,s7].reduce((a,b)=>a+ +b,0);
+  fb('dashOut','ok',
+    '✓ SIGNATURE VALID — GRADE REVEALED\n'+
+    'Student: '+name+'\n'+
+    'Chip serial: BB283-'+seedHex.toUpperCase().padStart(8,'0')+'  '+(seedOK?'✓ matches name':'⚠ DOES NOT match name — investigate')+'\n\n'+
+    'M1 Truth table   : '+s1+' / 14\n'+
+    'M2 Minterms Σ    : '+s2+' / 12\n'+
+    'M3 K-Map groups  : '+s3+' / 22\n'+
+    'M4 Minimal SOP   : '+s4+' / 18\n'+
+    'M5 POS analysis  : '+s5+' / 12\n'+
+    'M6 DeMorgan      : '+s6+' / 12\n'+
+    'M7 Deployment    : '+s7+' / 10\n'+
+    '─────────────────────────\n'+
+    'TOTAL            : '+total+' / 100   '+(sum===+total?'✓ sum verified':'⚠ SUM MISMATCH')+'\n\n'+
+    'Wrong attempts: '+wrong+'   ·   Probes used: '+probes+'\n'+
+    'Submitted: '+new Date(+ts).toLocaleString());
+  const ones=[...acc.mys.ones].sort((a,b)=>a-b);
+  const zeros=[...Array(8).keys()].filter(m=>!acc.mys.ones.has(m));
+  const minExpr=acc.mys.best.sel.map(s=>subTerm(s,acc.V)).join(' + ');
+  $('dashKey').innerHTML='<div class="card" style="margin-top:14px"><h4>Answer key for this student (manual grading / oral spot-check)</h4>'+
+    '<p class="dim" style="font-family:var(--mono);line-height:1.9">Variables: '+acc.V.join(', ')+'<br>'+
+    'F = Σ('+ones.join(', ')+')  ·  Maxterms Π('+zeros.join(', ')+') → canonical POS has '+zeros.length+' terms<br>'+
+    'Shorter canonical form: '+(ones.length<zeros.length?'SOP':(zeros.length<ones.length?'POS':'tie'))+'<br>'+
+    'Minimal cover: '+acc.mys.best.groups+' group(s), '+acc.mys.best.literals+' literals — one minimal SOP: F = '+minExpr+'<br>'+
+    'DeMorgan puzzle: template #'+(acc.dmIdx+1)+' with letters '+acc.dmV.join(', ')+' — given: '+DM_TEMPLATES[acc.dmIdx].html(acc.dmV)+'<br>'+
+    'Deployment: '+acc.sys.name+' — bit order '+acc.sensors.map(s=>s[0]).join('')+'</p></div>';
+};
+</script>
+</body>
+</html>
