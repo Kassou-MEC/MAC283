@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 — Lecture 3 Part 1: Boolean Algebra & K-Maps</title>
+<style>
+:root{
+  --navy-deep:#081120;
+  --navy:#0d1b2e;
+  --panel:#122641;
+  --panel-2:#0f2036;
+  --trace:#1d3a5f;
+  --cyan:#4dc9ff;
+  --cyan-dim:#2a7fb8;
+  --green:#3ddc97;
+  --amber:#ffc857;
+  --red:#ff6b6b;
+  --ink:#e8f1fb;
+  --ink-dim:#9db4cc;
+  --mono:'Courier New',Consolas,monospace;
+  --sans:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:19px} /* global text scale — all rem sizes grow with this */
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--navy-deep);
+  color:var(--ink);
+  overflow:hidden;
+  background-image:
+    linear-gradient(var(--trace) 1px, transparent 1px),
+    linear-gradient(90deg, var(--trace) 1px, transparent 1px);
+  background-size:48px 48px;
+  background-position:center;
+}
+body::after{ /* vignette so grid fades at edges */
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 30%, rgba(8,17,32,.9) 100%);
+}
+.deck{position:relative;height:100%;z-index:1}
+.slide{
+  position:absolute;inset:0;
+  display:none;
+  flex-direction:column;
+  padding:56px 72px 84px;
+  overflow-y:auto;
+}
+.slide.active{display:flex;animation:slideIn .45s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  .slide.active{animation:none}
+  *{transition:none!important}
+}
+
+/* ---------- headings ---------- */
+.eyebrow{
+  font-family:var(--mono);font-size:.9rem;letter-spacing:.22em;
+  color:var(--cyan);text-transform:uppercase;margin-bottom:10px;
+}
+.eyebrow::before{content:'▸ ';color:var(--green)}
+h1{font-size:3.2rem;line-height:1.08;font-weight:800}
+h2{
+  font-size:2.1rem;font-weight:800;margin-bottom:22px;
+  padding-bottom:12px;border-bottom:2px solid var(--trace);
+  position:relative;
+}
+h2::after{
+  content:'';position:absolute;left:0;bottom:-2px;width:120px;height:2px;
+  background:linear-gradient(90deg,var(--cyan),transparent);
+}
+h3{font-size:1.3rem;color:var(--cyan);margin:18px 0 10px;font-weight:700}
+p.lead{font-size:1.28rem;color:var(--ink-dim);max-width:900px;line-height:1.65}
+code,.code{font-family:var(--mono);background:var(--panel-2);padding:2px 8px;border-radius:5px;color:var(--amber);border:1px solid var(--trace)}
+.hl-g{color:var(--green);font-weight:700}
+.hl-c{color:var(--cyan);font-weight:700}
+.hl-a{color:var(--amber);font-weight:700}
+.hl-r{color:var(--red);font-weight:700}
+
+/* ---------- cards / grids ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{
+  background:var(--panel);border:1px solid var(--trace);border-radius:12px;
+  padding:20px 22px;position:relative;
+}
+.card.accent{border-top:3px solid var(--cyan)}
+.card h4{font-size:1.18rem;color:var(--cyan);margin-bottom:8px;font-family:var(--mono)}
+.card p{color:var(--ink-dim);line-height:1.6;font-size:1.08rem}
+.badge{
+  display:inline-block;font-family:var(--mono);font-size:.82rem;letter-spacing:.12em;
+  background:var(--panel-2);border:1px solid var(--cyan-dim);color:var(--cyan);
+  border-radius:20px;padding:3px 12px;margin-bottom:10px;text-transform:uppercase;
+}
+.badge.rl{border-color:var(--amber);color:var(--amber)}
+.badge.iv{border-color:var(--green);color:var(--green)}
+
+/* ---------- tables ---------- */
+table{border-collapse:collapse;width:100%;font-size:1.1rem}
+th{
+  background:var(--panel-2);color:var(--cyan);font-family:var(--mono);
+  padding:10px 14px;border:1px solid var(--trace);text-align:center;
+}
+td{padding:9px 14px;border:1px solid var(--trace);text-align:center;font-family:var(--mono)}
+tr:nth-child(even) td{background:rgba(18,38,65,.5)}
+td.on{color:var(--green);font-weight:800}
+td.off{color:var(--ink-dim)}
+.tbl-wrap{overflow-x:auto}
+
+/* ---------- interactive switches ---------- */
+.switch-row{display:flex;align-items:center;gap:14px;margin:10px 0}
+.sw{
+  width:78px;height:40px;border-radius:22px;background:var(--panel-2);
+  border:2px solid var(--trace);cursor:pointer;position:relative;transition:.25s;
+  flex-shrink:0;
+}
+.sw::after{
+  content:'';position:absolute;top:3px;left:4px;width:30px;height:30px;border-radius:50%;
+  background:var(--ink-dim);transition:.25s;
+}
+.sw.on{background:rgba(61,220,151,.18);border-color:var(--green)}
+.sw.on::after{left:40px;background:var(--green);box-shadow:0 0 14px var(--green)}
+.sw-label{font-family:var(--mono);font-size:1.15rem;min-width:190px}
+.sw-val{font-family:var(--mono);font-weight:800;font-size:1.2rem;width:26px;text-align:center}
+.sw-val.v1{color:var(--green)} .sw-val.v0{color:var(--ink-dim)}
+
+.gate-out{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;margin:8px 0;
+  background:var(--panel-2);border:1px solid var(--trace);border-radius:10px;
+  font-family:var(--mono);font-size:1.05rem;transition:.25s;
+}
+.led{
+  width:20px;height:20px;border-radius:50%;background:#25405f;border:2px solid var(--trace);
+  transition:.25s;flex-shrink:0;
+}
+.gate-out.lit{border-color:var(--green);background:rgba(61,220,151,.08)}
+.gate-out.lit .led{background:var(--green);box-shadow:0 0 16px var(--green);border-color:var(--green)}
+.gate-expr{flex:1}
+.gate-res{font-weight:800;width:24px;text-align:center}
+
+/* ---------- K-map ---------- */
+.kmap{display:inline-grid;gap:5px;margin:10px 0}
+.kmap .kh{
+  font-family:var(--mono);color:var(--cyan);font-size:.92rem;
+  display:flex;align-items:center;justify-content:center;padding:4px;
+}
+.kcell{
+  width:86px;height:66px;border:2px solid var(--trace);border-radius:9px;
+  background:var(--panel);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:1.5rem;font-weight:800;color:var(--ink-dim);
+  cursor:pointer;user-select:none;transition:.18s;position:relative;
+}
+.kcell:hover{border-color:var(--cyan-dim)}
+.kcell.one{color:var(--green);border-color:var(--green);background:rgba(61,220,151,.1)}
+.kcell.grpA{box-shadow:inset 0 0 0 4px rgba(77,201,255,.55)}
+.kcell.grpB{box-shadow:inset 0 0 0 4px rgba(255,200,87,.55)}
+.kcell.grpA.grpB{box-shadow:inset 0 0 0 4px rgba(77,201,255,.55), inset 0 0 0 8px rgba(255,200,87,.55)}
+.kcell .mt{
+  position:absolute;top:3px;right:6px;font-size:.62rem;color:var(--cyan-dim);font-weight:400;
+}
+.kcell.locked{cursor:default}
+
+/* ---------- buttons ---------- */
+.btn{
+  font-family:var(--mono);font-size:1rem;letter-spacing:.06em;
+  background:var(--panel-2);color:var(--cyan);border:1px solid var(--cyan-dim);
+  padding:10px 20px;border-radius:8px;cursor:pointer;transition:.2s;margin:4px 6px 4px 0;
+}
+.btn:hover{background:var(--cyan);color:var(--navy-deep);box-shadow:0 0 18px rgba(77,201,255,.4)}
+.btn.gr{color:var(--green);border-color:var(--green)}
+.btn.gr:hover{background:var(--green);color:var(--navy-deep)}
+.btn.am{color:var(--amber);border-color:var(--amber)}
+.btn.am:hover{background:var(--amber);color:var(--navy-deep)}
+.btn:focus-visible,.sw:focus-visible,.kcell:focus-visible,.quiz-opt:focus-visible{
+  outline:3px solid var(--amber);outline-offset:2px;
+}
+
+/* ---------- quiz ---------- */
+.quiz-opt{ 
+  display:block;width:100%;text-align:left;margin:8px 0;padding:13px 18px;
+  background:var(--panel);border:1px solid var(--trace);border-radius:9px;color:var(--ink);
+  font-family:var(--mono);font-size:1.08rem;cursor:pointer;transition:.2s;
+}
+.quiz-opt:hover{border-color:var(--cyan-dim)}
+.quiz-opt.correct{border-color:var(--green);background:rgba(61,220,151,.12);color:var(--green)}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(255,107,107,.1);color:var(--red)}
+.feedback{
+  font-family:var(--mono);margin-top:12px;padding:12px 16px;border-radius:8px;display:none;
+  line-height:1.55;font-size:1.05rem;
+}
+.feedback.ok{display:block;border:1px solid var(--green);color:var(--green);background:rgba(61,220,151,.07)}
+.feedback.bad{display:block;border:1px solid var(--red);color:var(--red);background:rgba(255,107,107,.07)}
+.feedback.info{display:block;border:1px solid var(--amber);color:var(--amber);background:rgba(255,200,87,.06)}
+
+/* ---------- law explorer ---------- */
+.law-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.law-tab{
+  font-family:var(--mono);font-size:.95rem;padding:9px 16px;border-radius:20px;
+  background:var(--panel-2);border:1px solid var(--trace);color:var(--ink-dim);cursor:pointer;transition:.2s;
+}
+.law-tab.sel{border-color:var(--cyan);color:var(--cyan);background:rgba(77,201,255,.08)}
+.law-view{background:var(--panel);border:1px solid var(--trace);border-radius:12px;padding:22px}
+.law-expr{font-family:var(--mono);font-size:1.5rem;color:var(--amber);margin-bottom:10px}
+
+/* ---------- chrome (nav bar) ---------- */
+.chrome{
+  position:fixed;left:0;right:0;bottom:0;height:58px;z-index:50;
+  background:rgba(8,17,32,.92);border-top:1px solid var(--trace);
+  display:flex;align-items:center;justify-content:space-between;padding:0 26px;
+  backdrop-filter:blur(6px);
+}
+.chrome .brand{font-family:var(--mono);font-size:.85rem;color:var(--ink-dim);letter-spacing:.12em}
+.chrome .brand b{color:var(--cyan)}
+.navbtns{display:flex;gap:10px;align-items:center}
+.navbtn{
+  background:var(--panel);border:1px solid var(--trace);color:var(--cyan);
+  width:42px;height:36px;border-radius:8px;cursor:pointer;font-size:1.05rem;transition:.2s;
+}
+.navbtn:hover{border-color:var(--cyan)}
+.counter{font-family:var(--mono);color:var(--ink-dim);font-size:.95rem;min-width:70px;text-align:center}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--green));z-index:60;transition:width .3s}
+.kbd-hint{font-family:var(--mono);font-size:.85rem;color:var(--ink-dim)}
+.kbd-hint kbd{border:1px solid var(--trace);border-radius:4px;padding:1px 6px;background:var(--panel)}
+
+/* ---------- misc ---------- */
+.pill-step{
+  display:flex;gap:12px;align-items:flex-start;margin:12px 0;padding:15px 17px;font-size:1.08rem;line-height:1.55;
+  background:var(--panel);border-left:3px solid var(--cyan);border-radius:0 10px 10px 0;
+}
+.pill-step .n{
+  font-family:var(--mono);font-weight:800;color:var(--navy-deep);background:var(--cyan);
+  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:.9rem;
+}
+.formula-box{
+  font-family:var(--mono);font-size:1.5rem;color:var(--green);text-align:center;
+  border:1px dashed var(--green);border-radius:10px;padding:16px;margin:16px 0;
+  background:rgba(61,220,151,.05);
+}
+.two-col{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:start}
+ul.tick{list-style:none;margin:8px 0}
+ul.tick li{padding:7px 0 7px 30px;position:relative;color:var(--ink-dim);line-height:1.55;font-size:1.08rem}
+ul.tick li::before{content:'✓';position:absolute;left:4px;color:var(--green);font-weight:800}
+ul.arrow li::before{content:'→';color:var(--cyan)}
+.center{text-align:center}
+.mt20{margin-top:20px}.mt10{margin-top:10px}
+.score-ring{font-family:var(--mono);font-size:2.6rem;font-weight:800;color:var(--green)}
+
+@media (max-width:900px){
+  .slide{padding:34px 22px 90px}
+  h1{font-size:2.2rem} h2{font-size:1.65rem}
+  .grid2,.grid3,.two-col{grid-template-columns:1fr}
+  .kcell{width:64px;height:54px;font-size:1.15rem}
+  .sw-label{min-width:120px;font-size:.9rem}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+<!-- ============ SLIDE 1: TITLE ============ -->
+<section class="slide active">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:1000px">
+    <div class="eyebrow">MAC283 · Computer Architecture &amp; Assembler Language</div>
+    <h1>Lecture 3 — Part 1<br><span class="hl-c">Boolean Algebra</span> &amp; <span class="hl-g">Karnaugh Maps</span></h1>
+    <p class="lead mt20">The mathematics behind every circuit in your computer — from the fan controller in your laptop to the alarm system in this building. Today you'll flip switches, light LEDs, and simplify real logic by hand.</p>
+    <div class="mt20">
+      <span class="badge iv">Interactive Playgrounds</span>
+      <span class="badge rl">Real-Life Examples</span>
+      <span class="badge">Practice Quiz Inside</span>
+    </div>
+    <p class="kbd-hint mt20">Navigate with <kbd>←</kbd> <kbd>→</kbd> arrow keys or the buttons below.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 2: AGENDA ============ -->
+<section class="slide">
+  <div class="eyebrow">Roadmap</div>
+  <h2>What We'll Cover Today</h2>
+  <div class="grid3">
+    <div class="card accent"><h4>01 · Boolean Basics</h4><p>Binary variables, the three core operations (AND, OR, NOT), and truth tables — with a live gate playground.</p></div>
+    <div class="card accent"><h4>02 · Boolean Laws</h4><p>Identity, Null, Absorption, DeMorgan's and friends — proved interactively, then used to simplify real expressions.</p></div>
+    <div class="card accent"><h4>03 · Karnaugh Maps</h4><p>A visual shortcut that replaces pages of algebra: 2-variable and 3-variable K-Maps, SOP vs POS, and a final quiz.</p></div>
+  </div>
+  <h3 class="mt20">Real-life systems we'll design</h3>
+  <div class="grid3">
+    <div class="card"><h4>☕ Coffee Machine</h4><p>Brews only when power AND water are both present — pure AND logic.</p></div>
+    <div class="card"><h4>🚨 Home Alarm</h4><p>Motion sensor XOR door sensor — the 2-variable K-Map classic.</p></div>
+    <div class="card"><h4>🌀 Laptop Cooling Fan</h4><p>Temperature, CPU load, and battery charging — a full 3-variable design, from truth table to simplified circuit.</p></div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3: WHAT IS BOOLEAN ALGEBRA ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 1 · Foundations</div>
+  <h2>What is Boolean Algebra?</h2>
+  <div class="two-col">
+    <div>
+      <p class="lead"><b class="hl-c">Boolean Algebra</b> is a branch of mathematics that deals with <b>binary variables</b> and <b>logical operations</b>. It forms the basis for digital circuit design and computer logic.</p>
+      <h3>Key features</h3>
+      <ul class="tick">
+        <li>Variables take only two values: <code>0</code> (false / OFF / LOW) and <code>1</code> (true / ON / HIGH)</li>
+        <li>Three basic operations: <b class="hl-g">AND</b> ( <code>·</code> ), <b class="hl-g">OR</b> ( <code>+</code> ), <b class="hl-g">NOT</b> ( <code>'</code> or <code>¬</code> )</li>
+        <li>Named after <b>George Boole</b> (1854) — a century before computers existed!</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="badge rl">Real Life</div>
+      <h4>You already think in Boolean</h4>
+      <p style="line-height:1.7">
+        "I'll go outside <b class="hl-g">IF</b> it's sunny <b class="hl-c">AND</b> I'm free."<br><br>
+        "The light is on <b class="hl-g">IF</b> switch 1 <b class="hl-c">OR</b> switch 2 is flipped."<br><br>
+        "The door unlocks <b class="hl-g">IF</b> the badge is <b class="hl-c">NOT</b> expired."<br><br>
+        Every one of these sentences is a Boolean expression. Circuits just make them electric.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4: THE THREE OPERATIONS ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 1 · Foundations</div>
+  <h2>The Three Basic Operations</h2>
+  <div class="grid3">
+    <div class="card accent">
+      <h4>AND &nbsp;( · )</h4>
+      <p>Output is <code>1</code> <b>only if ALL inputs are 1</b>.</p>
+      <p class="mt10"><code>A · B = 1</code> if <code>A = 1</code> AND <code>B = 1</code></p>
+      <p class="mt10">🔒 <b class="hl-a">Think:</b> a bank vault that needs <i>two keys turned at the same time</i>.</p>
+    </div>
+    <div class="card accent">
+      <h4>OR &nbsp;( + )</h4>
+      <p>Output is <code>1</code> <b>if at least one input is 1</b>.</p>
+      <p class="mt10"><code>A + B = 1</code> if <code>A = 1</code> OR <code>B = 1</code> (or both)</p>
+      <p class="mt10">🚪 <b class="hl-a">Think:</b> a hallway light with switches at <i>both ends</i> — either one works.</p>
+    </div>
+    <div class="card accent">
+      <h4>NOT &nbsp;( ' or ¬ )</h4>
+      <p>Output is the <b>inverse</b> of the input.</p>
+      <p class="mt10"><code>A' = 1</code> if <code>A = 0</code></p>
+      <p class="mt10">🌗 <b class="hl-a">Think:</b> a streetlight sensor — light turns ON when it is <i>NOT</i> daytime.</p>
+    </div>
+  </div>
+  <p class="lead mt20">⚠️ Careful: <code>·</code> looks like multiplication and <code>+</code> looks like addition — and for 0s and 1s they mostly behave that way, <b>except</b> <code>1 + 1 = 1</code> in Boolean (not 2). There is no "2" in this universe.</p>
+</section>
+
+<!-- ============ SLIDE 5: INTERACTIVE GATE PLAYGROUND ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 1 · Interactive</div>
+  <h2>🎛️ Live Gate Playground</h2>
+  <p class="lead">Flip the input switches and watch every gate react instantly. Can you find the input combination where <b class="hl-g">exactly one</b> LED stays dark?</p>
+  <div class="two-col mt20">
+    <div class="card">
+      <div class="badge iv">Inputs — click to toggle</div>
+      <div class="switch-row">
+        <span class="sw-label">A — Switch A</span>
+        <div class="sw" id="pgA" role="switch" aria-checked="false" tabindex="0"></div>
+        <span class="sw-val v0" id="pgAv">0</span>
+      </div>
+      <div class="switch-row">
+        <span class="sw-label">B — Switch B</span>
+        <div class="sw" id="pgB" role="switch" aria-checked="false" tabindex="0"></div>
+        <span class="sw-val v0" id="pgBv">0</span>
+      </div>
+      <p class="mt20" style="color:var(--ink-dim);font-size:1.02rem;line-height:1.6">💡 <b class="hl-a">Try this:</b> set A=1, B=1. Notice XOR goes <b>dark</b> while AND lights up — XOR means "one or the other, but <i>not both</i>." We'll meet XOR again in the alarm system.</p>
+    </div>
+    <div>
+      <div class="gate-out" id="gAND"><div class="led"></div><span class="gate-expr">AND&nbsp;&nbsp;A · B</span><span class="gate-res">0</span></div>
+      <div class="gate-out" id="gOR"><div class="led"></div><span class="gate-expr">OR&nbsp;&nbsp;&nbsp;A + B</span><span class="gate-res">0</span></div>
+      <div class="gate-out" id="gNOTA"><div class="led"></div><span class="gate-expr">NOT&nbsp;&nbsp;A'</span><span class="gate-res">1</span></div>
+      <div class="gate-out" id="gXOR"><div class="led"></div><span class="gate-expr">XOR&nbsp;&nbsp;A ⊕ B = A'B + AB'</span><span class="gate-res">0</span></div>
+      <div class="gate-out" id="gNAND"><div class="led"></div><span class="gate-expr">NAND&nbsp;(A · B)'</span><span class="gate-res">1</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6: TRUTH TABLES ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 1 · Foundations</div>
+  <h2>Truth Tables for Basic Operators</h2>
+  <p class="lead">A truth table lists <b>every possible input combination</b> and the resulting output. With <code>n</code> inputs there are always <code>2ⁿ</code> rows.</p>
+  <div class="grid3 mt20">
+    <div class="card">
+      <h4 class="center">AND ( · )</h4>
+      <table><tr><th>A</th><th>B</th><th>A · B</th></tr>
+      <tr><td>0</td><td>0</td><td class="off">0</td></tr>
+      <tr><td>0</td><td>1</td><td class="off">0</td></tr>
+      <tr><td>1</td><td>0</td><td class="off">0</td></tr>
+      <tr><td>1</td><td>1</td><td class="on">1</td></tr></table>
+      <p class="mt10 center" style="font-size:.98rem">Only one way to win</p>
+    </div>
+    <div class="card">
+      <h4 class="center">OR ( + )</h4>
+      <table><tr><th>A</th><th>B</th><th>A + B</th></tr>
+      <tr><td>0</td><td>0</td><td class="off">0</td></tr>
+      <tr><td>0</td><td>1</td><td class="on">1</td></tr>
+      <tr><td>1</td><td>0</td><td class="on">1</td></tr>
+      <tr><td>1</td><td>1</td><td class="on">1</td></tr></table>
+      <p class="mt10 center" style="font-size:.98rem">Only one way to lose</p>
+    </div>
+    <div class="card">
+      <h4 class="center">NOT ( ' )</h4>
+      <table><tr><th>A</th><th>A'</th></tr>
+      <tr><td>0</td><td class="on">1</td></tr>
+      <tr><td>1</td><td class="off">0</td></tr></table>
+      <p class="mt10 center" style="font-size:.98rem">Always the opposite</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7: REAL LIFE — COFFEE MACHINE ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #1</div>
+  <h2>☕ The Coffee Machine (AND logic)</h2>
+  <div class="two-col">
+    <div>
+      <p class="lead">A coffee machine brews (<code>C = 1</code>) only when it has <b class="hl-c">Power (P)</b> AND a full <b class="hl-c">Water tank (W)</b>:</p>
+      <div class="formula-box">C = P · W</div>
+      <div class="card mt10">
+        <div class="badge iv">Try it — toggle the conditions</div>
+        <div class="switch-row"><span class="sw-label">P — Power plugged in</span><div class="sw" id="cfP" role="switch" aria-checked="false" tabindex="0"></div><span class="sw-val v0" id="cfPv">0</span></div>
+        <div class="switch-row"><span class="sw-label">W — Water tank full</span><div class="sw" id="cfW" role="switch" aria-checked="false" tabindex="0"></div><span class="sw-val v0" id="cfWv">0</span></div>
+        <div class="gate-out mt10" id="cfOut"><div class="led"></div><span class="gate-expr" id="cfMsg">No power, no water → machine idle ☹️</span><span class="gate-res">0</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>Now extend it with OR + NOT</h3>
+      <p style="color:var(--ink-dim);line-height:1.65">Real machines add a <b class="hl-a">Descale warning (D)</b> — brewing is blocked while it needs cleaning:</p>
+      <div class="formula-box" style="color:var(--amber);border-color:var(--amber)">C = P · W · D'</div>
+      <ul class="tick arrow">
+        <li><code>D'</code> reads "NOT descaling" — the machine must <b>not</b> be in cleaning mode</li>
+        <li>Three conditions chained by AND: <b>all</b> must be satisfied</li>
+        <li>This is exactly how embedded firmware in appliances is written — Boolean expressions compiled into circuits</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 8: BOOLEAN LAWS TABLE ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 2 · Simplification</div>
+  <h2>Common Boolean Algebra Laws</h2>
+  <p class="lead">These laws let us <b>shrink</b> expressions — fewer terms means fewer gates, cheaper chips, and less heat.</p>
+  <div class="tbl-wrap mt10">
+  <table>
+    <tr><th style="text-align:left">Law</th><th>Expression</th><th style="text-align:left">In plain English</th></tr>
+    <tr><td style="text-align:left" class="hl-g">Identity</td><td>A + 0 = A &nbsp;·&nbsp; A · 1 = A</td><td style="text-align:left;font-family:var(--sans)">Adding "never" or requiring "always" changes nothing</td></tr>
+    <tr><td style="text-align:left" class="hl-g">Null</td><td>A + 1 = 1 &nbsp;·&nbsp; A · 0 = 0</td><td style="text-align:left;font-family:var(--sans)">OR with "always true" is always true; AND with "impossible" is impossible</td></tr>
+    <tr><td style="text-align:left" class="hl-g">Idempotent</td><td>A + A = A &nbsp;·&nbsp; A · A = A</td><td style="text-align:left;font-family:var(--sans)">Repeating a condition adds no information</td></tr>
+    <tr><td style="text-align:left" class="hl-g">Involution</td><td>(A')' = A</td><td style="text-align:left;font-family:var(--sans)">A double negative cancels out</td></tr>
+    <tr><td style="text-align:left" class="hl-g">Complement</td><td>A + A' = 1 &nbsp;·&nbsp; A · A' = 0</td><td style="text-align:left;font-family:var(--sans)">Something is either true or false — never both, never neither</td></tr>
+    <tr><td style="text-align:left" class="hl-g">Absorption</td><td>A + AB = A &nbsp;·&nbsp; A(A + B) = A</td><td style="text-align:left;font-family:var(--sans)">The bigger term "swallows" the smaller one</td></tr>
+    <tr><td style="text-align:left" class="hl-g">Distributive</td><td>A(B + C) = AB + AC</td><td style="text-align:left;font-family:var(--sans)">Works just like algebra — factor and expand</td></tr>
+    <tr><td style="text-align:left" class="hl-g">DeMorgan's</td><td>(AB)' = A' + B' &nbsp;·&nbsp; (A + B)' = A' · B'</td><td style="text-align:left;font-family:var(--sans)">Break the NOT, flip the operator</td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9: INTERACTIVE LAW VERIFIER ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 2 · Interactive</div>
+  <h2>🔬 Prove It Yourself — Law Verifier</h2>
+  <p class="lead">Don't take my word for it. Pick a law, and check the two sides against <b>every possible input</b>. If the columns match on all rows, the law is proven.</p>
+  <div class="law-tabs mt10" id="lawTabs"></div>
+  <div class="law-view">
+    <div class="law-expr" id="lawExpr"></div>
+    <p id="lawStory" style="color:var(--ink-dim);margin-bottom:14px;line-height:1.6"></p>
+    <div class="tbl-wrap"><table id="lawTable"></table></div>
+    <div class="feedback ok" id="lawVerdict" style="display:block"></div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10: DEMORGAN SPOTLIGHT ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #2</div>
+  <h2>🛗 DeMorgan's Law in the Wild — The Elevator</h2>
+  <div class="two-col">
+    <div>
+      <p class="lead">An elevator moves (<code>M = 1</code>) only when it is <b>NOT true</b> that the door is open <b>or</b> it's overloaded:</p>
+      <div class="formula-box">M = (Door + Overload)'</div>
+      <p style="color:var(--ink-dim);line-height:1.6">Apply DeMorgan's: <code>(A + B)' = A' · B'</code></p>
+      <div class="formula-box" style="color:var(--cyan);border-color:var(--cyan)">M = Door' · Overload'</div>
+      <p class="lead">Same behavior — but the second form says it more naturally: <b class="hl-g">"door closed AND weight OK."</b> Engineers pick whichever form uses fewer / cheaper gates.</p>
+    </div>
+    <div class="card">
+      <div class="badge">Common Mistake Alert</div>
+      <h4>(A · B)' &nbsp;≠&nbsp; A' · B'</h4>
+      <p style="line-height:1.7">Students often just "push the NOT inside" without flipping the operator. Check with A=1, B=0:</p>
+      <table class="mt10">
+        <tr><th>Expression</th><th>Value</th></tr>
+        <tr><td>(1 · 0)' = 0'</td><td class="on">1</td></tr>
+        <tr><td>1' · 0' = 0 · 1</td><td class="off">0</td></tr>
+      </table>
+      <p class="mt10" style="line-height:1.6">Different answers → not equal! The NOT must <b class="hl-a">flip · into +</b> as it distributes: <code>(A · B)' = A' + B'</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 11: SIMPLIFICATION PRACTICE ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 2 · Interactive Practice</div>
+  <h2>✂️ Simplification Workout</h2>
+  <p class="lead">Simplify each expression mentally, then reveal the steps. Each step names the law used — the exam will ask you to do the same.</p>
+  <div id="simplifyArea" class="mt10"></div>
+</section>
+<!-- ============ SLIDE 12: WHAT IS A K-MAP ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 3 · Karnaugh Maps</div>
+  <h2>What is a Karnaugh Map (K-Map)?</h2>
+  <div class="two-col">
+    <div>
+      <ul class="tick" style="font-size:1.08rem">
+        <li>A <b class="hl-c">visual method</b> for simplifying Boolean expressions</li>
+        <li>Introduced by <b>Maurice Karnaugh</b> at Bell Labs in <b>1953</b></li>
+        <li>Converts truth tables into simplified logic expressions</li>
+        <li>Commonly used in <b class="hl-c">digital circuit design</b> to reduce the number of logic gates</li>
+        <li>It's a grid where <b>adjacent cells differ by exactly one variable</b> — that's the magic ingredient</li>
+      </ul>
+      <h3>Why not just use Boolean algebra?</h3>
+      <ul class="tick arrow">
+        <li>Algebra gets <b class="hl-r">tedious and error-prone</b> for 3+ variables</li>
+        <li>K-Maps give <b class="hl-g">systematic grouping</b> — no creativity required</li>
+        <li>Minimization <b>without formulas</b> or long derivations</li>
+        <li>Sweet spot: <b>2 to 4 variables</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="badge rl">Analogy</div>
+      <h4>K-Map = seating chart for logic</h4>
+      <p style="line-height:1.75">Imagine arranging students so that any two neighbors differ by only <b>one</b> answer on a quiz. Once seated, whole <i>rows of agreement</i> jump out visually.<br><br>A K-Map does exactly this with truth table rows: it seats them in <b class="hl-c">Gray code order</b> so patterns you'd need algebra to find become <b class="hl-g">rectangles you can circle</b>.<br><br>Circle the rectangle → read off the simplified term. That's the whole method.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 13: ALARM STORY ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #3 · 2 Variables</div>
+  <h2>🚨 Design Brief: The Home Alarm</h2>
+  <div class="two-col">
+    <div>
+      <p class="lead">A security company hires you. The alarm (<code>A</code>) must turn ON when:</p>
+      <div class="pill-step"><div class="n">1</div><div>Motion is detected (<code>M = 1</code>), <b>or</b></div></div>
+      <div class="pill-step"><div class="n">2</div><div>The door is open (<code>D = 1</code>)</div></div>
+      <div class="pill-step" style="border-left-color:var(--amber)"><div class="n" style="background:var(--amber)">!</div><div><b>But NOT both at the same time</b> — both sensors firing together probably means the owner just walked in the door. → This is <b class="hl-a">XOR logic</b>.</div></div>
+    </div>
+    <div class="card">
+      <div class="badge iv">Simulate the house</div>
+      <div class="switch-row"><span class="sw-label">M — Motion sensor</span><div class="sw" id="alM" role="switch" aria-checked="false" tabindex="0"></div><span class="sw-val v0" id="alMv">0</span></div>
+      <div class="switch-row"><span class="sw-label">D — Door sensor</span><div class="sw" id="alD" role="switch" aria-checked="false" tabindex="0"></div><span class="sw-val v0" id="alDv">0</span></div>
+      <div class="gate-out mt10" id="alOut"><div class="led"></div><span class="gate-expr" id="alMsg">Quiet house — alarm OFF</span><span class="gate-res">0</span></div>
+      <p class="mt10" style="color:var(--ink-dim);font-size:1.02rem">Flip both ON — the alarm stays silent. That asymmetry is what makes this XOR, not OR.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 14: ALARM TRUTH TABLE ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #3 · Step 1</div>
+  <h2>Step 1 — Truth Table for the Alarm</h2>
+  <div class="two-col">
+    <div>
+      <table>
+        <tr><th>Motion (M)</th><th>Door (D)</th><th>Alarm (A)</th><th style="text-align:left">Story</th></tr>
+        <tr><td>0</td><td>0</td><td class="off">0</td><td style="text-align:left;font-family:var(--sans)">Quiet house → alarm OFF</td></tr>
+        <tr><td>0</td><td>1</td><td class="on">1</td><td style="text-align:left;font-family:var(--sans)">Door open, no motion → intruder? Alarm ON</td></tr>
+        <tr><td>1</td><td>0</td><td class="on">1</td><td style="text-align:left;font-family:var(--sans)">Motion, door closed → intruder inside! Alarm ON</td></tr>
+        <tr><td>1</td><td>1</td><td class="off">0</td><td style="text-align:left;font-family:var(--sans)">Both → owner returning → alarm OFF</td></tr>
+      </table>
+      <div class="formula-box mt20">A = M ⊕ D &nbsp;&nbsp;(XOR)</div>
+    </div>
+    <div class="card">
+      <h4>Reading the raw expression</h4>
+      <p style="line-height:1.7">From the two rows where <code>A = 1</code>:</p>
+      <ul class="tick arrow">
+        <li>Row (M=0, D=1) → term <code>M'D</code></li>
+        <li>Row (M=1, D=0) → term <code>MD'</code></li>
+      </ul>
+      <div class="formula-box" style="font-size:1.15rem">A = M'D + MD'</div>
+      <p style="line-height:1.65;color:var(--ink-dim)">The apostrophe means <b class="hl-c">NOT</b>: <code>M'</code> = "motion sensor OFF", <code>D'</code> = "door closed". Each product term includes every variable, matching its exact row condition.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 15: BUILD THE 2-VAR KMAP (INTERACTIVE) ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #3 · Step 2 · Interactive</div>
+  <h2>🧩 Your Turn — Fill the 2-Variable K-Map</h2>
+  <p class="lead">Click each cell to toggle 0 → 1. Copy the Alarm outputs from the truth table into the right positions, then press <b>Check</b>.</p>
+  <div class="two-col mt10">
+    <div>
+      <div class="kmap" style="grid-template-columns:70px 91px 91px">
+        <div class="kh">M \ D</div><div class="kh">0</div><div class="kh">1</div>
+        <div class="kh">0</div>
+        <div class="kcell" data-k2="0" tabindex="0" role="button" aria-label="cell M0 D0">0<span class="mt">m0</span></div>
+        <div class="kcell" data-k2="1" tabindex="0" role="button" aria-label="cell M0 D1">0<span class="mt">m1</span></div>
+        <div class="kh">1</div>
+        <div class="kcell" data-k2="2" tabindex="0" role="button" aria-label="cell M1 D0">0<span class="mt">m2</span></div>
+        <div class="kcell" data-k2="3" tabindex="0" role="button" aria-label="cell M1 D1">0<span class="mt">m3</span></div>
+      </div>
+      <div>
+        <button class="btn gr" id="k2check">✓ Check my map</button>
+        <button class="btn am" id="k2hint">💡 Hint</button>
+        <button class="btn" id="k2reset">↺ Reset</button>
+      </div>
+      <div class="feedback" id="k2fb"></div>
+    </div>
+    <div class="card">
+      <h4>Reference: the truth table</h4>
+      <table>
+        <tr><th>M</th><th>D</th><th>A</th></tr>
+        <tr><td>0</td><td>0</td><td>?</td></tr>
+        <tr><td>0</td><td>1</td><td>?</td></tr>
+        <tr><td>1</td><td>0</td><td>?</td></tr>
+        <tr><td>1</td><td>1</td><td>?</td></tr>
+      </table>
+      <p class="mt10" style="color:var(--ink-dim);line-height:1.6">Rows = values of <b>M</b>, columns = values of <b>D</b>. Each cell holds the Alarm output for that (M, D) pair. The tiny label (m0…m3) is the <b class="hl-c">minterm number</b> — the decimal value of the binary pair MD.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 16: GROUPING 2-VAR ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #3 · Steps 3–4</div>
+  <h2>Grouping &amp; Reading the Result</h2>
+  <div class="two-col">
+    <div>
+      <div class="kmap" style="grid-template-columns:70px 91px 91px">
+        <div class="kh">M \ D</div><div class="kh">0</div><div class="kh">1</div>
+        <div class="kh">0</div>
+        <div class="kcell locked">0<span class="mt">m0</span></div>
+        <div class="kcell locked one grpA">1<span class="mt">m1</span></div>
+        <div class="kh">1</div>
+        <div class="kcell locked one grpB">1<span class="mt">m2</span></div>
+        <div class="kcell locked">0<span class="mt">m3</span></div>
+      </div>
+      <div class="pill-step"><div class="n">3</div><div><b>Group adjacent 1s.</b> Here the two 1s are <i>diagonal</i> — diagonals can never be grouped, so each 1 stays as its own group of size 1.</div></div>
+      <div class="pill-step"><div class="n">4</div><div><b>Read each group:</b> <span class="hl-c">blue cell</span> is at M=0, D=1 → <code>M'D</code>. <span class="hl-a">Amber cell</span> is at M=1, D=0 → <code>MD'</code>.</div></div>
+    </div>
+    <div>
+      <div class="formula-box">A = M'D + MD'</div>
+      <p class="lead">No Boolean theorem needed — the map layout did the work. And when M and D alternate like this, you've discovered <b class="hl-g">XOR</b> visually.</p>
+      <div class="card mt20">
+        <div class="badge">Symbol recap</div>
+        <table>
+          <tr><th>Symbol</th><th style="text-align:left">Meaning</th><th>Value</th></tr>
+          <tr><td>M</td><td style="text-align:left;font-family:var(--sans)">Motion sensor ON</td><td>1</td></tr>
+          <tr><td>M'</td><td style="text-align:left;font-family:var(--sans)">Motion sensor OFF</td><td>0</td></tr>
+          <tr><td>D</td><td style="text-align:left;font-family:var(--sans)">Door OPEN</td><td>1</td></tr>
+          <tr><td>D'</td><td style="text-align:left;font-family:var(--sans)">Door CLOSED</td><td>0</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 17: FAN SCENARIO ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #4 · 3 Variables</div>
+  <h2>🌀 Design Brief: Laptop Cooling Fan</h2>
+  <div class="two-col">
+    <div>
+      <p class="lead">You're designing a <b>fan controller</b>. Three sensors feed it:</p>
+      <ul class="tick">
+        <li><code>T</code> — Temperature high? (1 = hot, 0 = normal)</li>
+        <li><code>L</code> — Laptop under heavy load? (1 = high CPU, 0 = idle)</li>
+        <li><code>B</code> — Battery charging? (1 = charging, 0 = not)</li>
+      </ul>
+      <h3>Turn the fan ON if:</h3>
+      <ul class="tick arrow">
+        <li>Temperature is high <b>AND</b> laptop is under load, <b>OR</b></li>
+        <li>Battery is charging <b>while</b> temperature is high</li>
+        <li>But <b class="hl-r">don't</b> run the fan if CPU is idle <b>and</b> battery is charging with normal temperature</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="badge iv">Simulate the laptop</div>
+      <div class="switch-row"><span class="sw-label">T — Hot</span><div class="sw" id="fnT" role="switch" aria-checked="false" tabindex="0"></div><span class="sw-val v0" id="fnTv">0</span></div>
+      <div class="switch-row"><span class="sw-label">L — Heavy load</span><div class="sw" id="fnL" role="switch" aria-checked="false" tabindex="0"></div><span class="sw-val v0" id="fnLv">0</span></div>
+      <div class="switch-row"><span class="sw-label">B — Charging</span><div class="sw" id="fnB" role="switch" aria-checked="false" tabindex="0"></div><span class="sw-val v0" id="fnBv">0</span></div>
+      <div class="gate-out mt10" id="fnOut"><div class="led"></div><span class="gate-expr" id="fnMsg">All normal — fan OFF, silent laptop</span><span class="gate-res">0</span></div>
+      <p class="mt10" style="color:var(--ink-dim);font-size:1.02rem">Notice: no combination with <b>T = 0</b> ever turns the fan on. The heat is the gatekeeper.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 18: FAN TRUTH TABLE + MINTERMS ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #4 · Steps 1–2</div>
+  <h2>Truth Table → Minterm Numbers</h2>
+  <div class="two-col">
+    <div>
+      <p class="lead" style="font-size:1rem">3 variables → <code>2³ = 8</code> rows. Each row's binary pattern <code>TLB</code>, read as a decimal, is its <b class="hl-c">minterm number</b>. Click any row to decode it.</p>
+      <table id="mtTable" class="mt10">
+        <tr><th>Row</th><th>T</th><th>L</th><th>B</th><th>Binary</th><th>Minterm</th><th>Fan</th></tr>
+      </table>
+    </div>
+    <div>
+      <div class="card" id="mtDecoder">
+        <div class="badge iv">Minterm decoder</div>
+        <h4 id="mtdTitle">Click a row on the left…</h4>
+        <p id="mtdBody" style="line-height:1.7;color:var(--ink-dim)">Each minterm <code>mₙ</code> is the unique AND-term that equals 1 for exactly that row: write the variable plain if it's 1, complemented (') if it's 0.</p>
+      </div>
+      <div class="formula-box mt20">F(T, L, B) = Σ(5, 6, 7)</div>
+      <p style="color:var(--ink-dim);line-height:1.6">"Sigma notation" = shorthand for <i>the OR of minterms 5, 6, 7</i>:</p>
+      <div class="formula-box" style="font-size:1.05rem;color:var(--cyan);border-color:var(--cyan)">F = T·L'·B + T·L·B' + T·L·B</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 19: 3-VAR KMAP INTERACTIVE ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #4 · Step 3 · Interactive</div>
+  <h2>🗺️ The 3-Variable K-Map</h2>
+  <p class="lead" style="font-size:1.02rem"><b>T</b> on rows, <b>LB</b> on columns in <b class="hl-a">Gray code order (00, 01, 11, 10)</b> — so neighbors differ by one bit. Click the cells for minterms <b>5, 6, 7</b> to place the 1s, then check and watch the groups appear.</p>
+  <div class="two-col mt10">
+    <div>
+      <div class="kmap" style="grid-template-columns:70px repeat(4, 91px)">
+        <div class="kh">T \ LB</div><div class="kh">00</div><div class="kh">01</div><div class="kh">11</div><div class="kh">10</div>
+        <div class="kh">0</div>
+        <div class="kcell" data-k3="0" tabindex="0" role="button">0<span class="mt">m0</span></div>
+        <div class="kcell" data-k3="1" tabindex="0" role="button">0<span class="mt">m1</span></div>
+        <div class="kcell" data-k3="3" tabindex="0" role="button">0<span class="mt">m3</span></div>
+        <div class="kcell" data-k3="2" tabindex="0" role="button">0<span class="mt">m2</span></div>
+        <div class="kh">1</div>
+        <div class="kcell" data-k3="4" tabindex="0" role="button">0<span class="mt">m4</span></div>
+        <div class="kcell" data-k3="5" tabindex="0" role="button">0<span class="mt">m5</span></div>
+        <div class="kcell" data-k3="7" tabindex="0" role="button">0<span class="mt">m7</span></div>
+        <div class="kcell" data-k3="6" tabindex="0" role="button">0<span class="mt">m6</span></div>
+      </div>
+      <div>
+        <button class="btn gr" id="k3check">✓ Check &amp; group</button>
+        <button class="btn" id="k3reset">↺ Reset</button>
+      </div>
+      <div class="feedback" id="k3fb"></div>
+    </div>
+    <div class="card">
+      <h4>⚠️ Why the weird column order?</h4>
+      <p style="line-height:1.7">Watch the headers: <code>00 → 01 → 11 → 10</code>. Between any two neighbors, <b>only one bit changes</b>. That's Gray code.<br><br>If we used normal counting (00, 01, <b class="hl-r">10, 11</b>), the jump 01→10 changes <b>two</b> bits — and adjacency would lie to you. Groups you circle would not correspond to a single variable canceling.<br><br>Bonus: the map <b class="hl-c">wraps around</b> — the leftmost and rightmost columns are also neighbors, like a cylinder.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 20: 3-VAR RESULT ============ -->
+<section class="slide">
+  <div class="eyebrow">Real-Life Example #4 · Step 4</div>
+  <h2>Reading the Groups — The Payoff</h2>
+  <div class="two-col">
+    <div>
+      <div class="pill-step"><div class="n">A</div><div><span class="hl-c">Blue group</span> = m5 + m7 (column pair where B=1, row T=1). L changes inside the group → L cancels. Remaining: <code>T·B</code></div></div>
+      <div class="pill-step" style="border-left-color:var(--amber)"><div class="n" style="background:var(--amber)">B</div><div><span class="hl-a">Amber group</span> = m7 + m6 (columns 11 &amp; 10, row T=1). B changes → B cancels. Remaining: <code>T·L</code></div></div>
+      <p class="lead mt10">Overlapping groups are <b>allowed and encouraged</b> — m7 belongs to both.</p>
+      <div class="formula-box">F = T·B + T·L = T·(L + B)</div>
+    </div>
+    <div class="card">
+      <div class="badge rl">Why engineers care</div>
+      <h4>Before vs after</h4>
+      <table>
+        <tr><th></th><th>Original SOP</th><th>Simplified</th></tr>
+        <tr><td style="text-align:left;font-family:var(--sans)">Expression</td><td style="font-size:.78rem">TL'B + TLB' + TLB</td><td>T(L + B)</td></tr>
+        <tr><td style="text-align:left;font-family:var(--sans)">AND gates</td><td class="off">3 (3-input)</td><td class="on">1 (2-input)</td></tr>
+        <tr><td style="text-align:left;font-family:var(--sans)">OR gates</td><td class="off">1 (3-input)</td><td class="on">1 (2-input)</td></tr>
+        <tr><td style="text-align:left;font-family:var(--sans)">NOT gates</td><td class="off">2</td><td class="on">0</td></tr>
+      </table>
+      <p class="mt10" style="line-height:1.65">The simplified circuit reads like the spec: <b class="hl-g">"run the fan when it's hot AND (there's load OR it's charging)."</b> Fewer gates = cheaper, faster, cooler silicon. Multiply that saving by the billions of gates in a modern CPU.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 21: SOP vs POS ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 3 · Two Standard Forms</div>
+  <h2>SOP vs POS</h2>
+  <div class="grid2">
+    <div class="card accent">
+      <h4>SOP — Sum of Products</h4>
+      <ul class="tick">
+        <li>Write <b>AND terms</b> for every row where <code class="hl-g">F = 1</code></li>
+        <li>Then <b>OR</b> (sum) them together</li>
+        <li>K-Map: place and group the <b>1s</b> (minterms)</li>
+      </ul>
+      <div class="formula-box" style="font-size:1rem">F = T·L'·B + T·L·B' + T·L·B</div>
+      <p style="color:var(--ink-dim);line-height:1.6">🗣️ Reads as: "Fan is ON when condition 1 <b>OR</b> condition 2 <b>OR</b> condition 3 is true." → natural for <b class="hl-c">triggers, alerts, actuators</b>.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--amber)">
+      <h4 style="color:var(--amber)">POS — Product of Sums</h4>
+      <ul class="tick">
+        <li>Write <b>OR terms</b> for every row where <code class="hl-r">F = 0</code></li>
+        <li>Then <b>AND</b> (multiply) them together</li>
+        <li>K-Map: place and group the <b>0s</b> (maxterms)</li>
+      </ul>
+      <div class="formula-box" style="font-size:.85rem;color:var(--amber);border-color:var(--amber)">F = (T+L+B)(T+L+B')(T+L'+B)(T+L'+B')(T'+L+B)</div>
+      <p style="color:var(--ink-dim);line-height:1.6">🗣️ Reads as: "Fan is OFF unless <b>all</b> safety conditions pass." → natural for <b class="hl-a">safety systems, locks, suppressors</b>.</p>
+    </div>
+  </div>
+  <p class="lead mt20 center">Same function, two dialects. Pick the one with <b>fewer terms</b>: lots of 1s in the table → POS is shorter; few 1s → SOP wins (like our fan: 3 ones vs 5 zeros).</p>
+</section>
+
+<!-- ============ SLIDE 22: FILL ORDER CHEAT SHEET ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 3 · Reference</div>
+  <h2>K-Map Fill Order — Visual Cheat Sheet</h2>
+  <p class="lead" style="font-size:1rem">Each number is the <b>minterm index</b> — the decimal of the binary combo formed by row + column bits. Hover / tap any cell to see its binary. Note how 3-var and 4-var maps snake through Gray code.</p>
+  <div style="display:flex;gap:34px;flex-wrap:wrap;margin-top:14px" id="cheatArea">
+    <div>
+      <h3>2-Variable (A\B)</h3>
+      <div class="kmap" style="grid-template-columns:56px 76px 76px" id="cs2"></div>
+    </div>
+    <div>
+      <h3>3-Variable (A\BC)</h3>
+      <div class="kmap" style="grid-template-columns:56px repeat(4,76px)" id="cs3"></div>
+    </div>
+    <div>
+      <h3>4-Variable (AB\CD)</h3>
+      <div class="kmap" style="grid-template-columns:56px repeat(4,76px)" id="cs4"></div>
+    </div>
+  </div>
+  <div class="feedback info" id="csInfo" style="display:block">Hover a cell — its binary breakdown will appear here.</div>
+</section>
+
+<!-- ============ SLIDE 23: ALGEBRA VS KMAP ============ -->
+<section class="slide">
+  <div class="eyebrow">Part 3 · Comparison</div>
+  <h2>Boolean Algebra vs Karnaugh Map</h2>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th style="text-align:left">Aspect</th><th style="text-align:left">Boolean Algebra</th><th style="text-align:left">Karnaugh Map</th></tr>
+    <tr><td style="text-align:left;font-family:var(--sans)">✏️ Method</td><td style="text-align:left;font-family:var(--sans)">Rules &amp; theorems</td><td style="text-align:left;font-family:var(--sans)" class="on">Visual grouping</td></tr>
+    <tr><td style="text-align:left;font-family:var(--sans)">🧠 Thinking</td><td style="text-align:left;font-family:var(--sans)">Manually apply laws (combine, factor, cancel)</td><td style="text-align:left;font-family:var(--sans)" class="on">Just group adjacent 1s or 0s</td></tr>
+    <tr><td style="text-align:left;font-family:var(--sans)">📝 Notation</td><td style="text-align:left;font-family:var(--sans)">AND, OR, NOT (A·B + C)</td><td style="text-align:left;font-family:var(--sans)">Same notation</td></tr>
+    <tr><td style="text-align:left;font-family:var(--sans)">📐 Effort</td><td style="text-align:left;font-family:var(--sans)">Gets complex with 3+ variables</td><td style="text-align:left;font-family:var(--sans)" class="on">Much easier for 2–4 variables</td></tr>
+    <tr><td style="text-align:left;font-family:var(--sans)">✅ Result</td><td style="text-align:left;font-family:var(--sans)">Boolean form</td><td style="text-align:left;font-family:var(--sans)">Also Boolean form — same answers, less pain</td></tr>
+  </table>
+  </div>
+  <p class="lead mt20">They're partners, not rivals: the K-Map <i>finds</i> the groups; Boolean algebra <i>explains why</i> the grouping works (each group of 2ᵏ cells is repeated applications of <code>XA + XA' = X</code>).</p>
+</section>
+
+<!-- ============ SLIDE 24: QUIZ ============ -->
+<section class="slide">
+  <div class="eyebrow">Checkpoint · Interactive</div>
+  <h2>🎯 Final Check — 5 Questions</h2>
+  <p class="lead" style="font-size:1rem">Answer all five. Instant feedback per question, score at the end. These are exactly the styles you'll see on the exam.</p>
+  <div id="quizArea" class="mt10"></div>
+  <div class="center mt20" id="quizScoreWrap" style="display:none">
+    <div class="score-ring" id="quizScore"></div>
+    <p class="lead center" id="quizMsg"></p>
+    <button class="btn am" id="quizRetry">↺ Retry quiz</button>
+  </div>
+</section>
+
+<!-- ============ SLIDE 25: SUMMARY ============ -->
+<section class="slide">
+  <div class="eyebrow">Wrap-Up</div>
+  <h2>Summary — What You Can Now Do</h2>
+  <div class="grid2">
+    <div>
+      <div class="pill-step"><div class="n">1</div><div><b>Truth table:</b> list all 2ⁿ input rows, mark outputs — it shows input→output behavior clearly</div></div>
+      <div class="pill-step"><div class="n">2</div><div><b>Minterms:</b> convert each F=1 row to a numbered AND-term; write F as Σ( … )</div></div>
+      <div class="pill-step"><div class="n">3</div><div><b>K-Map grid:</b> place the 1s using Gray-code headers so adjacency is honest</div></div>
+      <div class="pill-step"><div class="n">4</div><div><b>Group:</b> rectangles of size 1, 2, 4, 8… — overlaps and wrap-around allowed</div></div>
+      <div class="pill-step"><div class="n">5</div><div><b>Read off</b> the simplified SOP (or POS from the 0s) — no Boolean laws needed</div></div>
+    </div>
+    <div class="card">
+      <h4>Remember the real systems</h4>
+      <ul class="tick">
+        <li>☕ Coffee machine → AND chains (<code>P·W·D'</code>)</li>
+        <li>🛗 Elevator interlock → DeMorgan's in action</li>
+        <li>🚨 Home alarm → XOR, the diagonal K-Map pattern</li>
+        <li>🌀 Cooling fan → Σ(5,6,7) collapsed to <code>T(L+B)</code></li>
+      </ul>
+      <h4 class="mt20">Coming in Part 2</h4>
+      <p style="line-height:1.65">4-variable K-Maps, don't-care conditions (X), and building the actual gate diagrams — bring today's cheat sheet.</p>
+      <div class="formula-box mt20" style="font-size:1rem">Practice: simplify F(A,B,C) = Σ(1, 3, 5, 7) before next class. (Spoiler: it collapses to a single letter.)</div>
+    </div>
+  </div>
+</section>
+</div><!-- /deck -->
+
+<div class="chrome">
+  <span class="brand"><b>MAC283</b> · LECTURE 3 · PART 1 — BOOLEAN ALGEBRA &amp; K-MAPS</span>
+  <div class="navbtns">
+    <button class="navbtn" id="prevBtn" aria-label="Previous slide">◀</button>
+    <span class="counter" id="counter">1 / 25</span>
+    <button class="navbtn" id="nextBtn" aria-label="Next slide">▶</button>
+  </div>
+</div>
+<script>
+/* ================= NAVIGATION ================= */
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+const counter=document.getElementById('counter'), progress=document.getElementById('progress');
+function go(n){
+  if(n<0||n>=slides.length)return;
+  slides[cur].classList.remove('active');
+  cur=n;
+  slides[cur].classList.add('active');
+  slides[cur].scrollTop=0;
+  counter.textContent=(cur+1)+' / '+slides.length;
+  progress.style.width=((cur+1)/slides.length*100)+'%';
+}
+document.getElementById('prevBtn').onclick=()=>go(cur-1);
+document.getElementById('nextBtn').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  if(e.key==='Home')go(0);
+  if(e.key==='End')go(slides.length-1);
+});
+go(0);
+
+/* helper: make a switch toggleable */
+function wireSwitch(id,valId,cb){
+  const el=document.getElementById(id),val=document.getElementById(valId);
+  const flip=()=>{
+    el.classList.toggle('on');
+    const on=el.classList.contains('on');
+    el.setAttribute('aria-checked',on);
+    val.textContent=on?'1':'0';
+    val.className='sw-val '+(on?'v1':'v0');
+    cb();
+  };
+  el.addEventListener('click',flip);
+  el.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();flip();}});
+}
+const isOn=id=>document.getElementById(id).classList.contains('on')?1:0;
+function setGate(id,val,customText){
+  const g=document.getElementById(id);
+  g.classList.toggle('lit',!!val);
+  g.querySelector('.gate-res').textContent=val?'1':'0';
+  if(customText)g.querySelector('.gate-expr').textContent=customText;
+}
+
+/* ================= SLIDE 5: GATE PLAYGROUND ================= */
+function pgUpdate(){
+  const A=isOn('pgA'),B=isOn('pgB');
+  setGate('gAND',A&B); setGate('gOR',A|B); setGate('gNOTA',A?0:1);
+  setGate('gXOR',A^B); setGate('gNAND',(A&B)?0:1);
+}
+wireSwitch('pgA','pgAv',pgUpdate); wireSwitch('pgB','pgBv',pgUpdate);
+
+/* ================= SLIDE 7: COFFEE ================= */
+function cfUpdate(){
+  const P=isOn('cfP'),W=isOn('cfW'),C=P&W;
+  const msgs={
+    '00':'No power, no water → machine idle ☹️',
+    '01':'Water ready but unplugged → nothing happens',
+    '10':'Powered but tank empty → refuses to brew',
+    '11':'Power ✓ Water ✓ → BREWING! ☕'
+  };
+  const g=document.getElementById('cfOut');
+  g.classList.toggle('lit',!!C);
+  g.querySelector('.gate-res').textContent=C;
+  document.getElementById('cfMsg').textContent=msgs[''+P+W];
+}
+wireSwitch('cfP','cfPv',cfUpdate); wireSwitch('cfW','cfWv',cfUpdate);
+
+/* ================= SLIDE 9: LAW VERIFIER ================= */
+const LAWS=[
+ {name:'Identity',expr:'A + 0 = A',vars:['A'],lhs:a=>a[0]|0,rhs:a=>a[0],
+  story:'ORing with 0 ("never") adds nothing — like telling a guard "open if badge is valid OR if pigs fly."'},
+ {name:'Null',expr:'A + 1 = 1',vars:['A'],lhs:a=>a[0]|1,rhs:()=>1,
+  story:'ORing with 1 ("always") makes the whole thing always true — the other condition becomes irrelevant.'},
+ {name:'Idempotent',expr:'A · A = A',vars:['A'],lhs:a=>a[0]&a[0],rhs:a=>a[0],
+  story:'"It must be raining AND it must be raining" — saying it twice doesn\'t make it more true.'},
+ {name:'Complement',expr:"A + A' = 1",vars:['A'],lhs:a=>a[0]|(1-a[0]),rhs:()=>1,
+  story:'A statement OR its opposite covers every possibility — the light is on, or it isn\'t.'},
+ {name:'Absorption',expr:'A + A·B = A',vars:['A','B'],lhs:a=>a[0]|(a[0]&a[1]),rhs:a=>a[0],
+  story:'"I\'ll go out if it\'s sunny, OR if it\'s sunny and warm." The second clause is already covered by the first — A absorbs AB.'},
+ {name:'Distributive',expr:'A·(B + C) = A·B + A·C',vars:['A','B','C'],lhs:a=>a[0]&(a[1]|a[2]),rhs:a=>(a[0]&a[1])|(a[0]&a[2]),
+  story:'Just like arithmetic: multiply through the parentheses. This is the law that lets us factor T(L+B) in the fan example.'},
+ {name:"DeMorgan's (AND)",expr:"(A·B)' = A' + B'",vars:['A','B'],lhs:a=>(a[0]&a[1])?0:1,rhs:a=>(1-a[0])|(1-a[1]),
+  story:'"NOT (rich and famous)" means "not rich, OR not famous" — failing either one breaks the AND.'},
+ {name:"DeMorgan's (OR)",expr:"(A+B)' = A' · B'",vars:['A','B'],lhs:a=>(a[0]|a[1])?0:1,rhs:a=>(1-a[0])&(1-a[1]),
+  story:'"NOT (raining or snowing)" means "not raining AND not snowing" — the elevator interlock from earlier.'}
+];
+const lawTabs=document.getElementById('lawTabs');
+LAWS.forEach((law,i)=>{
+  const b=document.createElement('button');
+  b.className='law-tab'+(i===0?' sel':''); b.textContent=law.name;
+  b.onclick=()=>{document.querySelectorAll('.law-tab').forEach(t=>t.classList.remove('sel'));b.classList.add('sel');showLaw(i);};
+  lawTabs.appendChild(b);
+});
+function showLaw(i){
+  const law=LAWS[i];
+  document.getElementById('lawExpr').textContent=law.expr;
+  document.getElementById('lawStory').textContent=law.story;
+  const n=law.vars.length, rows=1<<n;
+  let html='<tr>'+law.vars.map(v=>'<th>'+v+'</th>').join('')+'<th>Left side</th><th>Right side</th><th>Match?</th></tr>';
+  let all=true;
+  for(let r=0;r<rows;r++){
+    const bits=[];for(let k=n-1;k>=0;k--)bits.push((r>>k)&1);
+    const L=law.lhs(bits),R=law.rhs(bits),ok=L===R; if(!ok)all=false;
+    html+='<tr>'+bits.map(b=>'<td>'+b+'</td>').join('')+
+      '<td class="'+(L?'on':'off')+'">'+L+'</td><td class="'+(R?'on':'off')+'">'+R+'</td>'+
+      '<td>'+(ok?'✓':'✗')+'</td></tr>';
+  }
+  document.getElementById('lawTable').innerHTML=html;
+  document.getElementById('lawVerdict').textContent=all?
+    '✓ Verified: both sides agree on all '+rows+' possible input rows — the law holds universally.':'✗ Mismatch found.';
+}
+showLaw(0);
+
+/* ================= SLIDE 11: SIMPLIFICATION WORKOUT ================= */
+const PROBLEMS=[
+ {q:'A + A·B',steps:['A + A·B','= A · (1 + B)  — factor out A (Distributive)','= A · 1  — because 1 + B = 1 (Null law)','= A  — Identity law'],ans:'A',
+  rl:'Real life: "Alert if the sensor fires, or if the sensor fires during the night" — the night part is redundant.'},
+ {q:"A·B + A·B'",steps:["A·B + A·B'","= A · (B + B')  — factor out A (Distributive)","= A · 1  — Complement law: B + B' = 1",'= A  — Identity law'],ans:'A',
+  rl:'This exact cancellation is what happens inside every K-Map group of two — B "disappears" because both values are covered.'},
+ {q:"(A + B)·(A + B')",steps:["(A + B)(A + B')","= A + B·B'  — reverse-Distributive over OR: (A+X)(A+Y) = A + XY","= A + 0  — Complement law: B·B' = 0",'= A  — Identity law'],ans:'A',
+  rl:'The POS version of the same trick — grouping 0s in a K-Map does this behind the scenes.'},
+ {q:"A' · B' (rewrite with one NOT)",steps:["A' · B'","= (A + B)'  — DeMorgan's law, applied in reverse"],ans:"(A + B)'",
+  rl:'Hardware win: two NOT gates + one AND gate becomes a single NOR gate.'}
+];
+const sArea=document.getElementById('simplifyArea');
+PROBLEMS.forEach((p,i)=>{
+  const card=document.createElement('div');card.className='card';card.style.marginBottom='14px';
+  card.innerHTML='<h4>Problem '+(i+1)+':&nbsp; <span style="color:var(--amber)">'+p.q+'</span></h4>'+
+    '<div class="steps" id="ps'+i+'" style="display:none;font-family:var(--mono);line-height:2;color:var(--ink-dim)"></div>'+
+    '<button class="btn" data-p="'+i+'" data-s="0">Reveal next step ▸</button>'+
+    '<p class="rl" style="display:none;color:var(--ink-dim);margin-top:10px;line-height:1.6">💡 '+p.rl+'</p>';
+  sArea.appendChild(card);
+});
+sArea.addEventListener('click',e=>{
+  const b=e.target.closest('button[data-p]');if(!b)return;
+  const p=PROBLEMS[+b.dataset.p],s=+b.dataset.s,box=document.getElementById('ps'+b.dataset.p);
+  if(s<p.steps.length){
+    box.style.display='block';
+    const line=document.createElement('div');
+    line.textContent=p.steps[s];
+    if(s===p.steps.length-1){line.style.color='var(--green)';line.style.fontWeight='800';}
+    box.appendChild(line);
+    b.dataset.s=s+1;
+    if(s+1===p.steps.length){b.textContent='✓ Simplified to '+p.ans;b.classList.add('gr');b.nextElementSibling.style.display='block';}
+  }
+});
+
+/* ================= SLIDE 13: ALARM SIM ================= */
+function alUpdate(){
+  const M=isOn('alM'),D=isOn('alD'),A=M^D;
+  const msgs={'00':'Quiet house — alarm OFF','01':'Door opened with no motion → ALARM! 🚨','10':'Motion inside, door closed → ALARM! 🚨','11':'Both sensors → owner walking in → alarm OFF'};
+  const g=document.getElementById('alOut');
+  g.classList.toggle('lit',!!A);g.querySelector('.gate-res').textContent=A;
+  document.getElementById('alMsg').textContent=msgs[''+M+D];
+}
+wireSwitch('alM','alMv',alUpdate); wireSwitch('alD','alDv',alUpdate);
+
+/* ================= SLIDE 15: 2-VAR KMAP ================= */
+const k2target={0:0,1:1,2:1,3:0};
+document.querySelectorAll('[data-k2]').forEach(c=>{
+  const t=()=>{c.classList.toggle('one');c.childNodes[0].textContent=c.classList.contains('one')?'1':'0';};
+  c.addEventListener('click',t);
+  c.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();t();}});
+});
+document.getElementById('k2check').onclick=()=>{
+  let ok=true;
+  document.querySelectorAll('[data-k2]').forEach(c=>{
+    if((c.classList.contains('one')?1:0)!==k2target[c.dataset.k2])ok=false;
+  });
+  const fb=document.getElementById('k2fb');
+  fb.className='feedback '+(ok?'ok':'bad');
+  fb.textContent=ok?
+   "✓ Perfect! The 1s sit at m1 (M=0,D=1) and m2 (M=1,D=0) — the diagonal XOR pattern. Next slide: grouping them.":
+   "✗ Not yet. Remember: Alarm = 1 only when EXACTLY ONE sensor is active. Which two rows of the truth table have output 1?";
+};
+document.getElementById('k2hint').onclick=()=>{
+  const fb=document.getElementById('k2fb');fb.className='feedback info';
+  fb.textContent="💡 The alarm fires for (M=0, D=1) and (M=1, D=0). Top row = M=0, left column = D=0. So one 1 goes top-right, the other bottom-left.";
+};
+document.getElementById('k2reset').onclick=()=>{
+  document.querySelectorAll('[data-k2]').forEach(c=>{c.classList.remove('one');c.childNodes[0].textContent='0';});
+  document.getElementById('k2fb').className='feedback';
+};
+
+/* ================= SLIDE 18: MINTERM TABLE ================= */
+const fanRows=[[0,0,0,0],[0,0,1,0],[0,1,0,0],[0,1,1,0],[1,0,0,0],[1,0,1,1],[1,1,0,1],[1,1,1,1]];
+const mtT=document.getElementById('mtTable');
+fanRows.forEach((r,i)=>{
+  const tr=document.createElement('tr');tr.style.cursor='pointer';
+  tr.innerHTML='<td>'+(i+1)+'</td><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[0]+''+r[1]+''+r[2]+'</td><td>m'+i+(r[3]?' ✅':'')+'</td><td class="'+(r[3]?'on':'off')+'">'+r[3]+'</td>';
+  tr.onclick=()=>{
+    const term=(r[0]?'T':"T'")+'·'+(r[1]?'L':"L'")+'·'+(r[2]?'B':"B'");
+    document.getElementById('mtdTitle').textContent='m'+i+' = '+term;
+    document.getElementById('mtdBody').innerHTML=
+      'Binary <code>'+r[0]+r[1]+r[2]+'</code> = decimal <b class="hl-c">'+i+'</b> → minterm <code>m'+i+'</code>.<br><br>'+
+      'T='+r[0]+' → write <code>'+(r[0]?'T':"T'")+'</code>; L='+r[1]+' → <code>'+(r[1]?'L':"L'")+'</code>; B='+r[2]+' → <code>'+(r[2]?'B':"B'")+'</code>.<br><br>'+
+      (r[3]?'<b class="hl-g">Fan = 1 here</b> — this minterm is part of F = Σ(5,6,7).':'<span class="hl-r">Fan = 0 here</span> — excluded from the SOP (but its maxterm appears in the POS form).');
+    [...mtT.rows].forEach(x=>x.style.outline='');
+    tr.style.outline='2px solid var(--cyan)';
+  };
+  mtT.appendChild(tr);
+});
+
+/* ================= SLIDE 17: FAN SIM ================= */
+function fnUpdate(){
+  const T=isOn('fnT'),L=isOn('fnL'),B=isOn('fnB'),F=T&(L|B);
+  let msg;
+  if(F)msg=T&&L&&B?'Hot + loaded + charging → fan FULL SPEED 🌀':(L?'Hot under heavy load → fan ON 🌀':'Hot while charging → fan ON 🌀');
+  else msg=T?'Hot but idle & unplugged... fan stays off (borderline case!)':(B||L?'Normal temperature → no reason to run the fan':'All normal — fan OFF, silent laptop');
+  const g=document.getElementById('fnOut');
+  g.classList.toggle('lit',!!F);g.querySelector('.gate-res').textContent=F;
+  document.getElementById('fnMsg').textContent=msg;
+}
+wireSwitch('fnT','fnTv',fnUpdate); wireSwitch('fnL','fnLv',fnUpdate); wireSwitch('fnB','fnBv',fnUpdate);
+
+/* ================= SLIDE 19: 3-VAR KMAP ================= */
+const k3target=new Set(['5','6','7']);
+document.querySelectorAll('[data-k3]').forEach(c=>{
+  const t=()=>{c.classList.toggle('one');c.childNodes[0].textContent=c.classList.contains('one')?'1':'0';};
+  c.addEventListener('click',t);
+  c.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();t();}});
+});
+document.getElementById('k3check').onclick=()=>{
+  let ok=true;
+  document.querySelectorAll('[data-k3]').forEach(c=>{
+    const should=k3target.has(c.dataset.k3);
+    if(c.classList.contains('one')!==should)ok=false;
+  });
+  const fb=document.getElementById('k3fb');
+  document.querySelectorAll('[data-k3]').forEach(c=>c.classList.remove('grpA','grpB'));
+  if(ok){
+    document.querySelector('[data-k3="5"]').classList.add('grpA');
+    document.querySelector('[data-k3="7"]').classList.add('grpA','grpB');
+    document.querySelector('[data-k3="6"]').classList.add('grpB');
+    fb.className='feedback ok';
+    fb.innerHTML="✓ Correct! Two groups drawn: <b style='color:var(--cyan)'>blue (m5+m7) → T·B</b> and <b style='color:var(--amber)'>amber (m7+m6) → T·L</b>. m7 is shared — overlap is legal. Result: F = T·B + T·L = T·(L+B).";
+  }else{
+    fb.className='feedback bad';
+    fb.textContent="✗ Check the minterm labels in the corners: you need 1s exactly at m5, m6, m7 (the entire T=1 row except m4). Watch out — the 11 and 10 columns are swapped compared to normal counting!";
+  }
+};
+document.getElementById('k3reset').onclick=()=>{
+  document.querySelectorAll('[data-k3]').forEach(c=>{c.classList.remove('one','grpA','grpB');c.childNodes[0].textContent='0';});
+  document.getElementById('k3fb').className='feedback';
+};
+
+/* ================= SLIDE 22: CHEAT SHEETS ================= */
+const gray=['00','01','11','10'];
+const csInfo=document.getElementById('csInfo');
+function cheatCell(mi,binStr,desc){
+  const d=document.createElement('div');d.className='kcell locked';d.style.width='76px';d.style.height='52px';d.style.fontSize='1.1rem';
+  d.textContent=mi;d.tabIndex=0;
+  const show=()=>{csInfo.innerHTML='Cell <b>'+mi+'</b> → binary <code>'+binStr+'</code> ('+desc+') → decimal '+mi+'. Put your 1 here if minterm m'+mi+' is in the Σ list.';};
+  d.addEventListener('mouseenter',show);d.addEventListener('focus',show);d.addEventListener('click',show);
+  return d;
+}
+function header(t){const h=document.createElement('div');h.className='kh';h.textContent=t;return h;}
+// 2-var
+const cs2=document.getElementById('cs2');
+cs2.append(header('A\\B'),header('0'),header('1'));
+[[0,'0'],[1,'1']].forEach(([a,al])=>{
+  cs2.append(header(al));
+  [0,1].forEach(b=>{const m=a*2+b;cs2.append(cheatCell(m,''+a+b,'A='+a+', B='+b));});
+});
+// 3-var
+const cs3=document.getElementById('cs3');
+cs3.append(header('A\\BC'));gray.forEach(g=>cs3.append(header(g)));
+[0,1].forEach(a=>{
+  cs3.append(header(''+a));
+  gray.forEach(g=>{const m=a*4+parseInt(g,2);cs3.append(cheatCell(m,a+g,'A='+a+', BC='+g));});
+});
+// 4-var
+const cs4=document.getElementById('cs4');
+cs4.append(header('AB\\CD'));gray.forEach(g=>cs4.append(header(g)));
+gray.forEach(ab=>{
+  cs4.append(header(ab));
+  gray.forEach(cd=>{const m=parseInt(ab,2)*4+parseInt(cd,2);cs4.append(cheatCell(m,ab+cd,'AB='+ab+', CD='+cd));});
+});
+
+/* ================= SLIDE 24: QUIZ ================= */
+const QUIZ=[
+ {q:'Q1. In Boolean algebra, what is 1 + 1 ?',
+  opts:['2','1','0','10'],a:1,
+  why:"There is no '2' — OR of two trues is simply true: 1 + 1 = 1 (Idempotent/Null behavior)."},
+ {q:"Q2. Simplify: A + A·B",
+  opts:['A·B','A + B','A','B'],a:2,
+  why:'Absorption law: the term A already covers every case where A·B is true.'},
+ {q:"Q3. Apply DeMorgan's: (X · Y)' = ?",
+  opts:["X' · Y'","X' + Y'","X + Y","(X + Y)'"],a:1,
+  why:"Break the NOT and FLIP the operator: (X·Y)' = X' + Y'. Pushing the NOT in without flipping is the classic exam trap."},
+ {q:'Q4. Why are K-Map columns labeled 00, 01, 11, 10 instead of 00, 01, 10, 11 ?',
+  opts:['Alphabetical convention','So adjacent columns differ by exactly one bit (Gray code)','To confuse students','Because 11 > 10 in binary'],a:1,
+  why:'Gray code ordering guarantees any two neighbors differ in one variable — that is what makes grouping equal simplification.'},
+ {q:'Q5. For the cooling fan, F = Σ(5,6,7) simplified to T·(L + B). What made minterm m7 special during grouping?',
+  opts:['It was ignored','It belonged to BOTH groups (overlap is allowed)','It was a don\'t-care','It became a maxterm'],a:1,
+  why:'m7 (T=1,L=1,B=1) was shared by group T·B and group T·L. Reusing a cell in multiple groups is legal and often required for the smallest answer.'}
+];
+let answered=0,scored=0;
+const qArea=document.getElementById('quizArea');
+function buildQuiz(){
+  answered=0;scored=0;qArea.innerHTML='';
+  document.getElementById('quizScoreWrap').style.display='none';
+  QUIZ.forEach((item,qi)=>{
+    const card=document.createElement('div');card.className='card';card.style.marginBottom='14px';
+    card.innerHTML='<h4 style="color:var(--ink)">'+item.q+'</h4>';
+    item.opts.forEach((o,oi)=>{
+      const b=document.createElement('button');b.className='quiz-opt';b.textContent=String.fromCharCode(65+oi)+') '+o;
+      b.onclick=()=>{
+        if(card.dataset.done)return;
+        card.dataset.done='1';answered++;
+        const fb=card.querySelector('.feedback');
+        if(oi===item.a){b.classList.add('correct');scored++;fb.className='feedback ok';fb.textContent='✓ Correct — '+item.why;}
+        else{b.classList.add('wrong');card.querySelectorAll('.quiz-opt')[item.a].classList.add('correct');fb.className='feedback bad';fb.textContent='✗ '+item.why;}
+        if(answered===QUIZ.length)showScore();
+      };
+      card.appendChild(b);
+    });
+    const fb=document.createElement('div');fb.className='feedback';card.appendChild(fb);
+    qArea.appendChild(card);
+  });
+}
+function showScore(){
+  document.getElementById('quizScoreWrap').style.display='block';
+  document.getElementById('quizScore').textContent=scored+' / '+QUIZ.length;
+  const msgs=['Review the truth tables and try again — you\'ve got this.','Solid start — revisit the laws slide before the retry.','Good work — one more pass and it\'s automatic.','Strong! You\'re K-Map ready.','Perfect score — see you in Part 2, circuit designer. 🏆'];
+  document.getElementById('quizMsg').textContent=msgs[Math.min(scored,4)];
+  document.getElementById('quizScoreWrap').scrollIntoView({behavior:'smooth'});
+}
+document.getElementById('quizRetry').onclick=buildQuiz;
+buildQuiz();
+</script>
+</body>
+</html>
