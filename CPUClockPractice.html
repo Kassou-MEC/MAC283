@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 — Practice: The CPU as a Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14;--panel:#121821;--panel2:#0e141c;--grid:#1c2733;--line:#233140;
+  --trace:#35e08c;--ch2:#ffb454;--danger:#ff6b6b;--ink:#e6edf3;--muted:#8b98a5;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--disp:'Chakra Petch',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 59px,rgba(28,39,51,.55) 59px 60px),
+    repeating-linear-gradient(90deg,transparent 0 59px,rgba(28,39,51,.55) 59px 60px);
+}
+header{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:50;
+  background:linear-gradient(180deg,#0d131b,#0b0f14);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:18px;padding:0 22px;
+}
+.ch-dot{width:10px;height:10px;border-radius:50%;background:var(--ch2);box-shadow:0 0 8px var(--ch2)}
+.readout{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+.readout b{color:var(--ch2);font-weight:600}
+.readout.g b{color:var(--trace)}
+.spacer{flex:1}
+.cycle-count{font-family:var(--disp);font-size:14px;letter-spacing:.12em}
+.cycle-count span{color:var(--trace)}
+main{position:fixed;top:58px;bottom:64px;left:0;right:0;z-index:1;overflow:hidden}
+.screen{display:none;height:100%;overflow-y:auto;padding:34px 60px 50px;max-width:1150px;margin:0 auto}
+.screen.active{display:block;animation:sweep .35s ease-out}
+@keyframes sweep{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.screen.active{animation:none}}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--ch2);text-transform:uppercase;margin-bottom:10px}
+h1{font-family:var(--disp);font-size:clamp(32px,4.2vw,52px);line-height:1.08;font-weight:700;margin-bottom:14px}
+h2{font-family:var(--disp);font-size:clamp(24px,3vw,36px);font-weight:700;margin-bottom:6px}
+h3{font-family:var(--disp);font-size:17px;font-weight:600;color:var(--trace);margin:16px 0 8px;letter-spacing:.03em}
+.lede{font-size:16.5px;color:var(--muted);max-width:72ch;line-height:1.65;margin-bottom:18px}
+.lede b,.scenario b{color:var(--ink)}
+p{line-height:1.6}
+.tagrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;border:1px solid var(--line);border-radius:20px;padding:4px 12px;color:var(--muted)}
+.tag.f{border-color:rgba(53,224,140,.5);color:var(--trace)}
+.scenario{
+  border:1px dashed rgba(255,180,84,.5);border-radius:10px;background:rgba(255,180,84,.06);
+  padding:16px 20px;margin:14px 0 18px;font-size:15.5px;line-height:1.7;
+}
+.scenario::before{content:"⏱ REAL-LIFE SCENARIO";font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ch2);display:block;margin-bottom:6px}
+.scenario .pv{font-family:var(--mono);color:var(--trace);font-weight:600}
+.formula-ref{
+  font-family:var(--mono);font-size:13.5px;background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--trace);border-radius:6px;padding:10px 16px;margin:10px 0 16px;
+  color:var(--muted);overflow-x:auto;white-space:nowrap;
+}
+.formula-ref b{color:var(--trace)}
+.parts{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.part{
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 18px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.part .plabel{flex:1;min-width:240px;font-size:14.5px}
+.part .plabel .pl{font-family:var(--mono);color:var(--ch2);margin-right:8px}
+.part input[type=number]{
+  font-family:var(--mono);font-size:16px;width:150px;background:var(--bg);color:var(--trace);
+  border:1px solid var(--line);border-radius:6px;padding:9px 12px;outline:none;
+}
+.part input[type=number]:focus{border-color:var(--trace);box-shadow:0 0 8px rgba(53,224,140,.3)}
+.part select{
+  font-family:var(--mono);font-size:14px;background:var(--bg);color:var(--trace);
+  border:1px solid var(--line);border-radius:6px;padding:9px 12px;outline:none;
+}
+.part .unit{font-family:var(--mono);font-size:13px;color:var(--muted);min-width:60px}
+.part .mark{font-family:var(--mono);font-size:18px;width:26px;text-align:center}
+.part.ok{border-color:rgba(53,224,140,.6);background:rgba(53,224,140,.06)}
+.part.ok .mark{color:var(--trace)}
+.part.bad{border-color:rgba(255,107,107,.6);background:rgba(255,107,107,.06)}
+.part.bad .mark{color:var(--danger)}
+.btnrow{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+button.btn{
+  font-family:var(--disp);font-size:14px;letter-spacing:.08em;font-weight:600;
+  background:transparent;color:var(--trace);border:1px solid var(--trace);
+  border-radius:6px;padding:10px 22px;cursor:pointer;transition:all .15s;
+}
+button.btn:hover{background:rgba(53,224,140,.12);box-shadow:0 0 12px rgba(53,224,140,.3)}
+button.btn.amber{color:var(--ch2);border-color:var(--ch2)}
+button.btn.amber:hover{background:rgba(255,180,84,.12);box-shadow:0 0 12px rgba(255,180,84,.3)}
+button.btn.ghost{color:var(--muted);border-color:var(--line)}
+button.btn.ghost:hover{color:var(--ink);border-color:var(--muted);box-shadow:none}
+button:focus-visible,.navbtn:focus-visible,.dot:focus-visible{outline:2px solid var(--ch2);outline-offset:2px}
+.hintbox,.solbox{display:none;border-radius:10px;padding:16px 20px;margin:12px 0;font-size:14.5px;line-height:1.7}
+.hintbox{border:1px solid rgba(255,180,84,.45);background:rgba(255,180,84,.06)}
+.hintbox.shown,.solbox.shown{display:block;animation:sweep .3s ease-out}
+.hintbox::before{content:"HINT";font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ch2);display:block;margin-bottom:6px}
+.solbox{border:1px solid rgba(53,224,140,.45);background:rgba(53,224,140,.05);font-family:var(--mono);font-size:14px}
+.solbox::before{content:"WORKED SOLUTION";font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--trace);display:block;margin-bottom:8px}
+.solbox .ln{display:block;padding:3px 0;border-bottom:1px dashed rgba(35,49,64,.8)}
+.solbox .ln:last-child{border-bottom:none}
+.solbox em{color:var(--ch2);font-style:normal}
+.solbox b{color:var(--trace)}
+.feedback{font-family:var(--mono);font-size:13.5px;margin:8px 0;min-height:20px}
+.feedback.good{color:var(--trace)}
+.feedback.bad{color:var(--danger)}
+.feedback.part{color:var(--ch2)}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:14px;margin:14px 0}
+th{font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--ch2);text-align:left}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line)}
+td.ok{color:var(--trace)}td.mid{color:var(--ch2)}td.no{color:var(--danger)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:16px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.card h4{font-family:var(--disp);font-size:14px;letter-spacing:.05em;margin-bottom:8px;color:var(--ch2)}
+.card p{font-size:14px;color:var(--muted)}
+.bigscore{font-family:var(--disp);font-size:clamp(40px,7vw,84px);font-weight:700;color:var(--trace);text-shadow:0 0 24px rgba(53,224,140,.4)}
+nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;height:64px;
+  background:linear-gradient(0deg,#0d131b,#0b0f14ee);border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;gap:16px;padding:0 20px;
+}
+.navbtn{
+  font-family:var(--disp);font-size:15px;font-weight:600;background:transparent;color:var(--trace);
+  border:1px solid var(--line);border-radius:6px;padding:9px 22px;cursor:pointer;letter-spacing:.06em;transition:all .15s;
+}
+.navbtn:hover{border-color:var(--trace);box-shadow:0 0 10px rgba(53,224,140,.25)}
+.dots{display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:50vw;justify-content:center}
+.dot{width:22px;height:22px;border-radius:5px;background:var(--grid);cursor:pointer;border:none;padding:0;transition:all .2s;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.dot.on{background:var(--trace);color:#06120c;box-shadow:0 0 8px var(--trace)}
+.dot.done{background:rgba(53,224,140,.35);color:var(--ink)}
+.dot.partial{background:rgba(255,180,84,.4);color:var(--ink)}
+.hint-key{position:fixed;bottom:70px;right:18px;z-index:49;font-family:var(--mono);font-size:11px;color:var(--muted);opacity:.7}
+@media(max-width:820px){
+  .screen{padding:24px 18px 50px}
+  .grid2{grid-template-columns:1fr}
+  .readout.hidesm{display:none}
+  .dots{max-width:40vw}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ch-dot"></div>
+  <div class="readout">CH2 <b>PRACTICE</b></div>
+  <div class="readout hidesm">MAC283 · <b>THE CPU AS A CLOCK</b></div>
+  <div class="spacer"></div>
+  <div class="readout g">SCORE <b id="hdrScore">0 / 30</b></div>
+  <div class="cycle-count">EX <span id="scrNow">--</span>/<span id="scrTotal">10</span></div>
+</header>
+
+<main id="deck"><!-- screens injected by JS --></main>
+
+<div class="hint-key">← → keys · numbered dots jump</div>
+<nav>
+  <button class="navbtn" id="prevBtn">◀ PREV</button>
+  <div class="dots" id="dots"></div>
+  <button class="navbtn" id="nextBtn">NEXT ▶</button>
+</nav>
+
+<script>
+"use strict";
+/* ================================================================
+   MAC283 · Practice — The CPU as a Clock
+   10 randomized real-life exercises + intro + results screen.
+   Every "NEW NUMBERS" click regenerates that exercise's parameters.
+   ================================================================ */
+
+const R=(lo,hi,step=1)=>{const n=Math.floor((hi-lo)/step)+1;return lo+step*Math.floor(Math.random()*n);};
+const R1=(lo,hi)=>Math.round(R(lo*10,hi*10,1))/10;
+const f2=x=>(+x).toFixed(2), f1=x=>(+x).toFixed(1), f3=x=>(+x).toFixed(3);
+
+/* ---------- exercise definitions ---------- */
+const EXO=[
+{ id:'clk', title:'Signal on a Smartwatch Board', tags:['T = 1/f','signal timing'],
+  formula:'T = 1/f · distance = c × T (c = 3×10⁸ m/s)',
+  gen(){ return { f: R1(2.4,5.6) }; },
+  scenario:p=>`You're the hardware intern at a wearables startup. The smartwatch SoC clocks at <span class="pv">${f1(p.f)} GHz</span>, and your lead asks you to sanity-check a PCB trace: a clock-synchronized signal must not travel farther than light can go in one cycle, or the timing budget collapses.`,
+  parts:p=>[
+    {label:'Clock period T', unit:'ps', ans:1000/p.f, tol:.02},
+    {label:'Max distance light covers in one cycle', unit:'cm', ans:30/p.f, tol:.02},
+  ],
+  hint:p=>`At X GHz the period is (1/X) ns = (1000/X) ps. For distance: c = 3×10¹⁰ cm/s, multiply by T in seconds — or just compute 30/X cm.`,
+  sol:p=>[
+    `f = ${f1(p.f)} GHz = ${f1(p.f)}×10⁹ Hz`,
+    `T = 1/f = 1/(${f1(p.f)}×10⁹) = <b>${f2(1000/p.f)} ps</b>`,
+    `d = c×T = 3×10⁸ m/s × ${f2(1000/p.f)}×10⁻¹² s = ${f3(0.3/p.f)} m = <b>${f2(30/p.f)} cm</b>`,
+    `<em>Takeaway:</em> above a few GHz, even the speed of light becomes a routing constraint — this is why DDR5 traces are length-matched to fractions of a millimeter.`,
+  ]},
+
+{ id:'iron', title:'The 4K Video Export', tags:['Iron Law','CPU time'],
+  formula:'Time = IC × CPI / f',
+  gen(){ return { ic:R(20,80,5), cpi:R1(1.2,2.4), f:R1(2.5,4.5) }; },
+  scenario:p=>`You edit YouTube videos for a client. Exporting a 4K project executes <span class="pv">${p.ic} × 10⁹</span> instructions. Your desktop CPU runs at <span class="pv">${f1(p.f)} GHz</span> and averages <span class="pv">CPI = ${f1(p.cpi)}</span> on this encoder workload. The client is on the phone asking how long the render takes.`,
+  parts:p=>[
+    {label:'Total clock cycles needed', unit:'×10⁹', ans:p.ic*p.cpi, tol:.02},
+    {label:'Export time', unit:'seconds', ans:p.ic*p.cpi/p.f, tol:.02},
+  ],
+  hint:p=>`Cycles = IC × CPI (both in the same 10⁹ scale, so multiply the plain numbers). Then time = cycles / f — the 10⁹ in "G"Hz cancels the 10⁹ in the cycle count.`,
+  sol:p=>[
+    `Cycles = IC × CPI = ${p.ic}×10⁹ × ${f1(p.cpi)} = <b>${f1(p.ic*p.cpi)} × 10⁹ cycles</b>`,
+    `Time = cycles / f = ${f1(p.ic*p.cpi)}×10⁹ / ${f1(p.f)}×10⁹ = <b>${f2(p.ic*p.cpi/p.f)} s</b>`,
+    `<em>Takeaway:</em> this is why exporters buy CPUs on encoder benchmarks, not GHz — CPI on this exact workload matters as much as the clock.`,
+  ]},
+
+{ id:'mix', title:'Profiling a Game Loop', tags:['weighted CPI','instruction mix'],
+  formula:'CPI = Σ (CPIᵢ × fracᵢ) · Time = IC × CPI / f',
+  gen(){ let a=R(35,55,5), l=R(15,30,5), b=R(10,20,5); let s=100-a-l-b; if(s<5){a-=5;s+=5;} return {a,l,s,b, ic:R1(1.5,4), f:R1(2.8,4.2)}; },
+  scenario:p=>`Your Unity game stutters, so you profile one frame's hot loop on the console's CPU (<span class="pv">${f1(p.f)} GHz</span>). The profiler reports the mix: <span class="pv">${p.a}%</span> ALU ops (CPI 1), <span class="pv">${p.l}%</span> loads (CPI 4), <span class="pv">${p.s}%</span> stores (CPI 3), <span class="pv">${p.b}%</span> branches (CPI 2). The loop executes <span class="pv">${f1(p.ic)} × 10⁹</span> instructions per second of gameplay.`,
+  parts:p=>[
+    {label:'Weighted average CPI', unit:'', ans:(p.a*1+p.l*4+p.s*3+p.b*2)/100, tol:.02},
+    {label:'CPU time consumed per gameplay second', unit:'seconds', ans:p.ic*((p.a*1+p.l*4+p.s*3+p.b*2)/100)/p.f, tol:.02},
+  ],
+  hint:p=>`Convert percentages to fractions and take the weighted sum: 0.${p.a<10?'0':''}${p.a}×1 + … Then apply the Iron Law with IC = ${f1(p.ic)}×10⁹.`,
+  sol:p=>{const cpi=(p.a*1+p.l*4+p.s*3+p.b*2)/100;return [
+    `CPI = ${p.a/100}×1 + ${p.l/100}×4 + ${p.s/100}×3 + ${p.b/100}×2 = <b>${f2(cpi)}</b>`,
+    `Time = IC × CPI / f = ${f1(p.ic)}×10⁹ × ${f2(cpi)} / ${f1(p.f)}×10⁹ = <b>${f3(p.ic*cpi/p.f)} s per gameplay second</b>`,
+    `<em>Takeaway:</em> if that number approaches 1.0, the core is saturated — no headroom, hence the stutter. The fix profilers suggest first: kill loads (CPI 4) by keeping data in registers/cache-friendly structs.`,
+  ];}},
+
+{ id:'cmp', title:'Laptop Shopping: GHz vs CPI', tags:['comparison','speedup'],
+  formula:'Time = IC × CPI / f · Speedup = T_slow / T_fast',
+  gen(){ return { ic:R(4,12), fa:R1(4.6,5.6), ca:R1(1.8,2.4), fb:R1(3.0,3.8), cb:R1(1.0,1.3) }; },
+  scenario:p=>`You're choosing a laptop for your compiler course. Both run your benchmark of <span class="pv">${p.ic} × 10⁹</span> instructions. <b>Laptop A</b> (the one with the flashy ad): <span class="pv">${f1(p.fa)} GHz</span>, CPI <span class="pv">${f1(p.ca)}</span>. <b>Laptop B</b> (boring spec sheet): <span class="pv">${f1(p.fb)} GHz</span>, CPI <span class="pv">${f1(p.cb)}</span>.`,
+  parts:p=>[
+    {label:'Time on Laptop A', unit:'seconds', ans:p.ic*p.ca/p.fa, tol:.02},
+    {label:'Time on Laptop B', unit:'seconds', ans:p.ic*p.cb/p.fb, tol:.02},
+    {type:'mc', label:'Which laptop actually finishes first?', options:['Laptop A (higher GHz)','Laptop B (lower CPI)','Exact tie'],
+      ans:(p.ic*p.ca/p.fa < p.ic*p.cb/p.fb)?0:1},
+    {label:'Speedup of the winner over the loser', unit:'×', ans:Math.max(p.ca/p.fa,p.cb/p.fb)/Math.min(p.ca/p.fa,p.cb/p.fb), tol:.02},
+  ],
+  hint:p=>`Compute both times with the Iron Law; the speedup is the bigger time divided by the smaller time (always ≥ 1).`,
+  sol:p=>{const ta=p.ic*p.ca/p.fa, tb=p.ic*p.cb/p.fb; const w=ta<tb?'A':'B';return [
+    `T_A = ${p.ic}×10⁹ × ${f1(p.ca)} / ${f1(p.fa)}×10⁹ = <b>${f2(ta)} s</b>`,
+    `T_B = ${p.ic}×10⁹ × ${f1(p.cb)} / ${f1(p.fb)}×10⁹ = <b>${f2(tb)} s</b>`,
+    `Winner: <b>Laptop ${w}</b> · Speedup = ${f2(Math.max(ta,tb))} / ${f2(Math.min(ta,tb))} = <b>${f2(Math.max(ta,tb)/Math.min(ta,tb))}×</b>`,
+    `<em>Takeaway:</em> the Pentium 4 era in miniature — clock speed is one factor of three. Only IC × CPI / f settles the argument.`,
+  ];}},
+
+{ id:'mips', title:'The Benchmark Press Release', tags:['MIPS trap','metrics'],
+  formula:'MIPS = f / (CPI × 10⁶) · Time = IC × CPI / f',
+  gen(){ return { f:R1(2,4), ic1:R(8,14), c1:1.0, ic2:R(4,6), c2:R1(1.8,2.4) }; },
+  scenario:p=>`A vendor's press release brags about MIPS. Same machine (<span class="pv">${f1(p.f)} GHz</span>), same task, two compiler settings. <b>Setting 1</b> (simple instructions): IC = <span class="pv">${p.ic1} × 10⁹</span>, CPI = <span class="pv">1.0</span>. <b>Setting 2</b> (fused complex instructions): IC = <span class="pv">${p.ic2} × 10⁹</span>, CPI = <span class="pv">${f1(p.c2)}</span>. Marketing wants to quote whichever number looks better — you're the engineer who has to check.`,
+  parts:p=>[
+    {label:'MIPS with Setting 1', unit:'MIPS', ans:p.f*1000/p.c1, tol:.02},
+    {label:'MIPS with Setting 2', unit:'MIPS', ans:p.f*1000/p.c2, tol:.02},
+    {label:'Execution time, Setting 1', unit:'seconds', ans:p.ic1*p.c1/p.f, tol:.02},
+    {label:'Execution time, Setting 2', unit:'seconds', ans:p.ic2*p.c2/p.f, tol:.02},
+  ],
+  hint:p=>`MIPS = f/(CPI×10⁶); with f in GHz that's (f×1000)/CPI. Then compute both real times — expect the rankings to disagree.`,
+  sol:p=>{const m1=p.f*1000/p.c1,m2=p.f*1000/p.c2,t1=p.ic1*p.c1/p.f,t2=p.ic2*p.c2/p.f;return [
+    `MIPS₁ = ${f1(p.f)}×10⁹/(1.0×10⁶) = <b>${f1(m1)}</b> · MIPS₂ = ${f1(p.f)}×10⁹/(${f1(p.c2)}×10⁶) = <b>${f1(m2)}</b>`,
+    `T₁ = ${p.ic1}×${f1(p.c1)}/${f1(p.f)} = <b>${f2(t1)} s</b> · T₂ = ${p.ic2}×${f1(p.c2)}/${f1(p.f)} = <b>${f2(t2)} s</b>`,
+    `Setting 1 wins the MIPS contest (${f1(m1)} vs ${f1(m2)}), but Setting <b>${t1<t2?'1':'2'}</b> actually finishes first here.`,
+    `<em>Takeaway:</em> MIPS ranks by instruction count-rate, not by work done — which is exactly how 1980s ads (all benchmarked against the "1-MIPS" VAX-11/780) misled buyers. Quote wall-clock time.`,
+  ];}},
+
+{ id:'amdahl', title:'The GPU Upgrade Pitch', tags:["Amdahl's Law",'parallelism'],
+  formula:'S = 1 / ((1−p) + p/s) · ceiling = 1/(1−p)',
+  gen(){ return { p:R(70,95,5), s:R(10,40,5), h:R(12,36,4) }; },
+  scenario:p=>`Your research lab's ML training run takes <span class="pv">${p.h} hours</span> on CPUs. Profiling shows <span class="pv">${p.p}%</span> of that time is matrix math a GPU could accelerate <span class="pv">${p.s}×</span>; the rest is data loading and Python glue. Your PI asks you to justify the GPU purchase with numbers, not vibes.`,
+  parts:p=>[
+    {label:'Overall speedup with the GPU', unit:'×', ans:1/((1-p.p/100)+(p.p/100)/p.s), tol:.02},
+    {label:'New training time', unit:'hours', ans:p.h*((1-p.p/100)+(p.p/100)/p.s), tol:.02},
+    {label:'Absolute ceiling if the GPU were infinitely fast', unit:'×', ans:1/(1-p.p/100), tol:.02},
+  ],
+  hint:p=>`p = ${p.p/100}, s = ${p.s}. Plug into 1/((1−p) + p/s). New time = old time ÷ overall speedup. Ceiling: let s → ∞, so the p/s term vanishes.`,
+  sol:p=>{const pp=p.p/100,ov=1/((1-pp)+pp/p.s);return [
+    `S = 1/((1−${pp}) + ${pp}/${p.s}) = 1/(${f3(1-pp)} + ${f3(pp/p.s)}) = <b>${f2(ov)}×</b>`,
+    `New time = ${p.h} h / ${f2(ov)} = <b>${f2(p.h/ov)} h</b>`,
+    `Ceiling = 1/(1−${pp}) = <b>${f2(1/(1-pp))}×</b> — no GPU on Earth beats this without touching the serial ${100-p.p}%.`,
+    `<em>Takeaway:</em> the honest pitch to your PI includes the ceiling. Sometimes the best "hardware" purchase is an engineer-week spent parallelizing the data loader.`,
+  ];}},
+
+{ id:'pipe', title:'The Drive-Thru Datapath', tags:['pipelining','throughput'],
+  formula:'Cycles = k + n − 1 · T_pipe = t_stage + t_reg · Speedup = (n·k·t_stage) / (Cycles·T_pipe)',
+  gen(){ return { k:R(4,6), n:R(200,900,100), t:R(120,220,20), r:R(20,50,10) }; },
+  scenario:p=>`You're designing a toy CPU for your senior project. Single-cycle version: all logic finishes in <span class="pv">k × t_stage = ${p.k} × ${p.t} = ${p.k*p.t} ps</span> per instruction. Pipelined version: <span class="pv">${p.k} stages</span> of <span class="pv">${p.t} ps</span> each, plus <span class="pv">${p.r} ps</span> of pipeline-register overhead per stage. Your test program has <span class="pv">n = ${p.n}</span> instructions, no hazards.`,
+  parts:p=>[
+    {label:'Total cycles to complete the program (pipelined)', unit:'cycles', ans:p.k+p.n-1, tol:0, abs:0.6},
+    {label:'Pipelined execution time', unit:'ns', ans:(p.k+p.n-1)*(p.t+p.r)/1000, tol:.02},
+    {label:'Speedup over the single-cycle design', unit:'×', ans:(p.n*p.k*p.t)/((p.k+p.n-1)*(p.t+p.r)), tol:.02},
+  ],
+  hint:p=>`Cycles = k + n − 1 (fill the pipe once, then one completes per cycle). Pipelined clock period = ${p.t} + ${p.r} ps. Single-cycle total time = n × ${p.k*p.t} ps.`,
+  sol:p=>{const cyc=p.k+p.n-1,tp=(p.t+p.r),tot=cyc*tp,single=p.n*p.k*p.t;return [
+    `Cycles = k + n − 1 = ${p.k} + ${p.n} − 1 = <b>${cyc}</b>`,
+    `T_pipe = ${p.t} + ${p.r} = ${tp} ps → total = ${cyc} × ${tp} ps = <b>${f1(tot/1000)} ns</b>`,
+    `Single-cycle = ${p.n} × ${p.k*p.t} ps = ${f1(single/1000)} ns → speedup = <b>${f2(single/tot)}×</b> (ideal would be ${p.k}×)`,
+    `<em>Takeaway:</em> same math as Ford's assembly line and the drive-thru — latency per instruction got slightly worse (register overhead), but one instruction now retires every ${tp} ps instead of every ${p.k*p.t} ps.`,
+  ];}},
+
+{ id:'crit', title:'Can This Chip Hit Its Boost Clock?', tags:['critical path','f_max'],
+  formula:'T_C ≥ t_pcq + t_logic + t_setup + t_skew · f_max = 1/T_C',
+  gen(){ const g={ pcq:R(30,60,5), lg:R(120,220,10), su:R(25,55,5), sk:R(10,40,5) }; g.adv=R1(3.4,4.6); return g; },
+  scenario:p=>`Silicon-validation lab, day one of your internship. A die's slowest register-to-register path measures: t_pcq = <span class="pv">${p.pcq} ps</span>, t_logic = <span class="pv">${p.lg} ps</span>, t_setup = <span class="pv">${p.su} ps</span>, clock skew = <span class="pv">${p.sk} ps</span>. Marketing has already printed boxes advertising a <span class="pv">${f1(p.adv)} GHz</span> boost clock. Your job: does this die pass?`,
+  parts:p=>[
+    {label:'Minimum legal clock period T_C', unit:'ps', ans:p.pcq+p.lg+p.su+p.sk, tol:0, abs:0.6},
+    {label:'Maximum frequency f_max', unit:'GHz', ans:1000/(p.pcq+p.lg+p.su+p.sk), tol:.02},
+    {type:'mc', label:`Verdict: can this die run at the advertised ${f1(p.adv)} GHz?`,
+      options:['Yes — bin it as the flagship','No — bin it as a slower SKU'],
+      ans:(1000/(p.pcq+p.lg+p.su+p.sk)>=p.adv)?0:1},
+  ],
+  hint:p=>`Add all four delays for T_C in ps; f_max in GHz = 1000 / T_C(ps). Compare f_max to ${f1(p.adv)} GHz.`,
+  sol:p=>{const tc=p.pcq+p.lg+p.su+p.sk,fm=1000/tc;return [
+    `T_C = ${p.pcq} + ${p.lg} + ${p.su} + ${p.sk} = <b>${tc} ps</b>`,
+    `f_max = 1000 / ${tc} = <b>${f2(fm)} GHz</b> vs advertised ${f1(p.adv)} GHz → <b>${fm>=p.adv?'PASS':'FAIL'}</b>`,
+    `<em>Takeaway:</em> this test, run on every die, is the "silicon lottery." Identical designs, microscopically different t_logic — the passes become the expensive SKU, the fails get a lower sticker and a lower price.`,
+  ];}},
+
+{ id:'amat', title:'Why Is the Checkout API Slow?', tags:['AMAT','cache'],
+  formula:'AMAT = hit + miss% × penalty · then convert cycles → ns via f',
+  gen(){ return { ht:R(1,3), mr:R(4,12), mp:R(80,200,20), f:R1(2.5,4), imp:2 }; },
+  scenario:p=>`You're on-call for an e-commerce backend. The checkout service hammers an in-memory cache: hit time <span class="pv">${p.ht} cycles</span>, miss rate <span class="pv">${p.mr}%</span>, miss penalty <span class="pv">${p.mp} cycles</span> (a trip to slower storage), on a <span class="pv">${f1(p.f)} GHz</span> server core. The infra team proposes doubling the cache, which testing shows would cut the miss rate in half.`,
+  parts:p=>[
+    {label:'Current AMAT', unit:'cycles', ans:p.ht+(p.mr/100)*p.mp, tol:.02},
+    {label:'Current AMAT in time', unit:'ns', ans:(p.ht+(p.mr/100)*p.mp)/p.f, tol:.02},
+    {label:'AMAT after the upgrade (miss rate halved)', unit:'cycles', ans:p.ht+(p.mr/200)*p.mp, tol:.02},
+  ],
+  hint:p=>`AMAT = ${p.ht} + ${p.mr/100} × ${p.mp}. To convert cycles to ns, divide by f in GHz. For the upgrade, use miss rate ${p.mr/2}%.`,
+  sol:p=>{const a1=p.ht+(p.mr/100)*p.mp,a2=p.ht+(p.mr/200)*p.mp;return [
+    `AMAT = ${p.ht} + ${p.mr/100} × ${p.mp} = <b>${f1(a1)} cycles</b> = ${f1(a1)}/${f1(p.f)} = <b>${f2(a1/p.f)} ns</b>`,
+    `After upgrade: ${p.ht} + ${p.mr/200} × ${p.mp} = <b>${f1(a2)} cycles</b> → access cost drops ${f1((1-a2/a1)*100)}%`,
+    `<em>Takeaway:</em> only ${p.mr}% of requests miss, yet misses contribute ${f1(((p.mr/100)*p.mp/a1)*100)}% of the average cost — insurance math. Halving the miss rate beats buying a faster core, and this is exactly the argument you'd put in the postmortem.`,
+  ];}},
+
+{ id:'power', title:'The Handheld Console Meltdown', tags:['P = αCV²f','power wall'],
+  formula:'P₂/P₁ = (V₂/V₁)² × (f₂/f₁) · battery hours = Wh / W',
+  gen(){ return { f0:R1(2.6,3.2), v0:1.0, w0:R(12,18), f1:R1(3.8,4.6), v1:R1(1.15,1.35), wh:R(40,60,5) }; },
+  scenario:p=>`Your team ships a handheld game console: <span class="pv">${f1(p.f0)} GHz</span> at <span class="pv">${f2(p.v0)} V</span>, drawing <span class="pv">${p.w0} W</span>, with a <span class="pv">${p.wh} Wh</span> battery. A product manager wants a "performance mode": <span class="pv">${f1(p.f1)} GHz</span>, which the silicon needs <span class="pv">${f2(p.v1)} V</span> to sustain. Before the meeting, compute what that mode costs.`,
+  parts:p=>[
+    {label:'Relative power vs normal mode', unit:'×', ans:(p.v1*p.v1*p.f1)/(p.v0*p.v0*p.f0), tol:.02},
+    {label:'Power draw in performance mode', unit:'W', ans:p.w0*(p.v1*p.v1*p.f1)/(p.v0*p.v0*p.f0), tol:.02},
+    {label:'Battery life in performance mode', unit:'hours', ans:p.wh/(p.w0*(p.v1*p.v1*p.f1)/(p.v0*p.v0*p.f0)), tol:.02},
+  ],
+  hint:p=>`Ratio = (${f2(p.v1)}/${f2(p.v0)})² × (${f1(p.f1)}/${f1(p.f0)}). Multiply by ${p.w0} W for the new draw; battery hours = ${p.wh} Wh ÷ watts.`,
+  sol:p=>{const r=(p.v1*p.v1*p.f1)/(p.v0*p.v0*p.f0),w=p.w0*r;return [
+    `Ratio = (${f2(p.v1)})² × ${f1(p.f1)} / ((${f2(p.v0)})² × ${f1(p.f0)}) = <b>${f2(r)}×</b>`,
+    `P = ${p.w0} × ${f2(r)} = <b>${f1(w)} W</b> → battery = ${p.wh}/${f1(w)} = <b>${f2(p.wh/w)} h</b> (vs ${f2(p.wh/p.w0)} h normally)`,
+    `Clock rose ${f1((p.f1/p.f0-1)*100)}%, but power rose ${f1((r-1)*100)}% — the V² term is the villain.`,
+    `<em>Takeaway:</em> this is the exact trade every phone, laptop, and Steam Deck makes when you toggle performance mode — and why "why did 10 GHz never happen" has a one-line answer: αCV²f.`,
+  ];}},
+];
+
+/* ---------- state ---------- */
+const state = EXO.map(()=>({p:null, earned:[], solShown:false, attempts:0}));
+let cur=0;
+const TOTAL_PARTS = ()=> EXO.reduce((t,e,i)=>t+e.parts(state[i].p).length,0);
+
+/* ---------- build screens ---------- */
+const deck=document.getElementById('deck');
+const screens=[];
+
+function makeScreen(html){
+  const s=document.createElement('section');
+  s.className='screen';s.innerHTML=html;
+  deck.appendChild(s);screens.push(s);
+  return s;
+}
+
+/* intro screen */
+makeScreen(`
+  <div class="eyebrow">MAC283 · Companion to "The CPU as a Clock"</div>
+  <h1>Practice: Clock Math<br>in the Real World</h1>
+  <p class="lede">Ten scenarios pulled from jobs you might actually hold — hardware intern, video editor, game programmer, on-call backend engineer, silicon validator. Each one is a costume worn by a formula from the lecture. <b>Your numbers are randomized</b>: hit NEW NUMBERS on any exercise for a fresh version, so practice as many rounds as you want.</p>
+  <div class="grid2">
+    <div class="card"><h4>HOW SCORING WORKS</h4><p>Each answer field is 1 point, earned the first time you check it correctly. Viewing the worked solution locks the remaining points for that version — regenerate the numbers to try again for full credit. Tolerance is ±2%, so don't over-round midway.</p></div>
+    <div class="card"><h4>GROUND RULES</h4><p>Calculator allowed and encouraged. Keep units honest — GHz pairs with ns and ps. Every exercise shows its formula up top; the skill being trained is <b>recognizing which formula the story is hiding</b>.</p></div>
+  </div>
+  <div class="btnrow"><button class="btn" onclick="go(1)">START EXERCISE 1 →</button></div>
+`);
+
+/* exercise screens */
+EXO.forEach((ex,i)=>{
+  const s=makeScreen('');
+  s.dataset.ex=i;
+});
+
+/* results screen */
+makeScreen(`<div class="eyebrow">Results</div><h2>Session Report</h2><div id="report"></div>`);
+
+/* ---------- render one exercise ---------- */
+function esc(x){return String(x);}
+function renderEx(i){
+  const ex=EXO[i], st=state[i], p=st.p, parts=ex.parts(p);
+  const s=screens[i+1];
+  let ph='';
+  parts.forEach((pt,j)=>{
+    const got=st.earned[j];
+    if(pt.type==='mc'){
+      const opts=pt.options.map((o,k)=>`<option value="${k}">${o}</option>`).join('');
+      ph+=`<div class="part ${got?'ok':''}" data-j="${j}">
+        <div class="plabel"><span class="pl">${String.fromCharCode(97+j)})</span>${pt.label}</div>
+        <select data-part="${j}" ${got?'disabled':''}><option value="-1">— choose —</option>${opts}</select>
+        <span class="unit"></span><span class="mark">${got?'✓':''}</span></div>`;
+    }else{
+      ph+=`<div class="part ${got?'ok':''}" data-j="${j}">
+        <div class="plabel"><span class="pl">${String.fromCharCode(97+j)})</span>${pt.label}</div>
+        <input type="number" step="any" data-part="${j}" ${got?'disabled':''} placeholder="answer">
+        <span class="unit">${pt.unit}</span><span class="mark">${got?'✓':''}</span></div>`;
+    }
+  });
+  s.innerHTML=`
+    <div class="eyebrow">Exercise ${String(i+1).padStart(2,'0')} / ${EXO.length}</div>
+    <h2>${ex.title}</h2>
+    <div class="tagrow">${ex.tags.map(t=>`<span class="tag f">${t}</span>`).join('')}<span class="tag">${parts.length} pts</span></div>
+    <div class="scenario">${ex.scenario(p)}</div>
+    <div class="formula-ref"><b>FORMULA</b> · ${ex.formula}</div>
+    <div class="parts">${ph}</div>
+    <div class="feedback" id="fb-${i}"></div>
+    <div class="btnrow">
+      <button class="btn" onclick="checkEx(${i})">CHECK ANSWERS</button>
+      <button class="btn amber" onclick="toggleHint(${i})">HINT</button>
+      <button class="btn ghost" onclick="showSol(${i})">SHOW SOLUTION</button>
+      <button class="btn ghost" onclick="regen(${i})">↻ NEW NUMBERS</button>
+    </div>
+    <div class="hintbox" id="hint-${i}">${ex.hint(p)}</div>
+    <div class="solbox" id="sol-${i}">${ex.sol(p).map(l=>`<span class="ln">${l}</span>`).join('')}</div>
+  `;
+}
+
+/* ---------- actions ---------- */
+function checkEx(i){
+  const ex=EXO[i], st=state[i], parts=ex.parts(st.p), s=screens[i+1];
+  st.attempts++;
+  let newPts=0, wrong=0, blank=0;
+  parts.forEach((pt,j)=>{
+    if(st.earned[j])return;
+    const el=s.querySelector(`[data-part="${j}"]`), box=s.querySelector(`.part[data-j="${j}"]`);
+    let ok=false, empty=false;
+    if(pt.type==='mc'){
+      const v=+el.value;
+      if(v<0)empty=true; else ok=(v===pt.ans);
+    }else{
+      if(el.value.trim()==='')empty=true;
+      else{
+        const v=parseFloat(el.value);
+        const tol=Math.max((pt.tol||0)*Math.abs(pt.ans), pt.abs!==undefined?pt.abs:1e-9, 0.005);
+        ok=Math.abs(v-pt.ans)<=tol;
+      }
+    }
+    box.classList.remove('ok','bad');
+    box.querySelector('.mark').textContent='';
+    if(empty){blank++;return;}
+    if(ok){
+      box.classList.add('ok');box.querySelector('.mark').textContent='✓';
+      el.disabled=true;
+      if(!st.solShown){st.earned[j]=true;newPts++;}
+    }else{
+      box.classList.add('bad');box.querySelector('.mark').textContent='✗';wrong++;
+    }
+  });
+  const fb=document.getElementById('fb-'+i);
+  const done=st.earned.filter(Boolean).length, tot=parts.length;
+  if(done===tot){fb.className='feedback good';fb.textContent=`◉ COMPLETE — ${tot}/${tot} pts on this exercise. On to the next one.`;}
+  else if(wrong===0&&blank>0&&newPts===0){fb.className='feedback part';fb.textContent='Fill in at least one answer field, then CHECK.';}
+  else if(wrong>0){fb.className='feedback bad';fb.textContent=`${wrong} incorrect — recheck your units (ps vs ns, % vs fraction) and try again. No penalty for retries.`;}
+  else{fb.className='feedback part';fb.textContent=`${done}/${tot} correct so far — keep going.`;}
+  updateHUD();
+}
+function toggleHint(i){document.getElementById('hint-'+i).classList.toggle('shown');}
+function showSol(i){
+  state[i].solShown=true;
+  document.getElementById('sol-'+i).classList.add('shown');
+  const fb=document.getElementById('fb-'+i);
+  fb.className='feedback part';
+  fb.textContent='Solution shown — remaining points locked for this version. Hit ↻ NEW NUMBERS for a fresh attempt at full credit.';
+}
+function regen(i){
+  state[i]={p:EXO[i].gen(), earned:[], solShown:false, attempts:0};
+  renderEx(i);updateHUD();
+}
+
+/* ---------- HUD / nav ---------- */
+const dotsBox=document.getElementById('dots');
+function updateHUD(){
+  let earned=0;
+  state.forEach(st=>earned+=st.earned.filter(Boolean).length);
+  document.getElementById('hdrScore').textContent=earned+' / '+TOTAL_PARTS();
+  dots.forEach((d,k)=>{
+    d.classList.toggle('on',k===cur);
+    if(k>0&&k<=EXO.length){
+      const st=state[k-1], tot=EXO[k-1].parts(st.p).length, got=st.earned.filter(Boolean).length;
+      d.classList.toggle('done',got===tot);
+      d.classList.toggle('partial',got>0&&got<tot);
+    }
+  });
+  const now=(cur===0)?'IN':(cur===screens.length-1?'RS':String(cur).padStart(2,'0'));
+  document.getElementById('scrNow').textContent=now;
+}
+function buildReport(){
+  let rows='',earned=0,tot=0;
+  EXO.forEach((ex,i)=>{
+    const st=state[i], t=ex.parts(st.p).length, g=st.earned.filter(Boolean).length;
+    earned+=g;tot+=t;
+    const cls=g===t?'ok':(g>0?'mid':'no');
+    rows+=`<tr><td>${String(i+1).padStart(2,'0')}</td><td>${ex.title}</td><td>${ex.tags[0]}</td>
+      <td class="${cls}">${g} / ${t}</td><td>${st.solShown?'viewed':'—'}</td></tr>`;
+  });
+  const pct=tot?Math.round(100*earned/tot):0;
+  document.getElementById('report').innerHTML=`
+    <p class="lede">Score reflects first-correct answers before viewing solutions. Regenerate any exercise and re-earn its points — mastery means solving <b>any</b> version of the numbers.</p>
+    <div class="bigscore">${earned} / ${tot} <span style="font-size:.4em;color:var(--muted)">(${pct}%)</span></div>
+    <table><tr><th>#</th><th>Exercise</th><th>Core formula</th><th>Points</th><th>Solution</th></tr>${rows}</table>
+    <div class="grid2">
+      <div class="card"><h4>IF YOU SCORED 80%+</h4><p>You own the Iron Law and its relatives. Next challenge: redo two exercises with fresh numbers <b>without</b> looking at the formula line.</p></div>
+      <div class="card"><h4>IF SOMETHING KEPT MISSING</h4><p>Check the pattern: unit slips (ps↔ns, %↔fraction) cause most wrong answers, not wrong formulas. Revisit that slide in the lecture deck and drag its sliders until the relationship feels obvious.</p></div>
+    </div>`;
+}
+
+/* nav plumbing */
+screens.forEach((s,k)=>{
+  const d=document.createElement('button');
+  d.className='dot';
+  d.textContent=(k===0)?'i':(k===screens.length-1?'★':k);
+  d.setAttribute('aria-label','go to screen '+(k+1));
+  d.onclick=()=>go(k);
+  dotsBox.appendChild(d);
+});
+const dots=[...dotsBox.children];
+document.getElementById('scrTotal').textContent=String(EXO.length).padStart(2,'0');
+function go(k){
+  cur=Math.max(0,Math.min(screens.length-1,k));
+  screens.forEach((s,j)=>{
+    const on=j===cur;
+    s.classList.toggle('active',on);
+    s.hidden=!on;
+    s.style.display=on?'block':'none';
+    if(on)s.scrollTop=0;
+  });
+  if(cur===screens.length-1)buildReport();
+  updateHUD();
+}
+document.getElementById('prevBtn').onclick=()=>go(cur-1);
+document.getElementById('nextBtn').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  const t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  if(e.key==='Home')go(0);
+  if(e.key==='End')go(screens.length-1);
+});
+
+/* ---------- boot ---------- */
+EXO.forEach((ex,i)=>{state[i].p=ex.gen();renderEx(i);});
+go(0);
+</script>
+</body>
+</html>
