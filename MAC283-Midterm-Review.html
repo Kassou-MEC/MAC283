@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 · Midterm Review</title>
+<style>
+  :root{
+    --bg:#081120;
+    --panel:#0d1b30;
+    --panel2:#12233d;
+    --line:#1d3a5f;
+    --trace:#37e6a8;      /* phosphor green */
+    --trace-dim:#1f8f6b;
+    --cyan:#4fd1e8;
+    --amber:#ffc857;
+    --red:#ff6b7a;
+    --ink:#dbe9f7;
+    --muted:#8aa5c4;
+    --mono:'Courier New',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.55;
+    background-image:
+      linear-gradient(rgba(79,209,232,.045) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(79,209,232,.045) 1px,transparent 1px);
+    background-size:28px 28px;
+    min-height:100vh;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:32px 20px 90px}
+
+  /* ---------- header ---------- */
+  header{
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,#0d1b30 0%,#0a1626 100%);
+    border-radius:10px;
+    padding:26px 28px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  header::before{
+    content:"";
+    position:absolute;inset:0;
+    background:
+      linear-gradient(rgba(55,230,168,.05) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(55,230,168,.05) 1px,transparent 1px);
+    background-size:22px 22px;
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:.72rem;
+    letter-spacing:.22em;
+    color:var(--cyan);
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:var(--mono);
+    font-size:clamp(1.5rem,4vw,2.2rem);
+    color:var(--trace);
+    letter-spacing:.02em;
+    margin:.35rem 0 .4rem;
+    text-shadow:0 0 18px rgba(55,230,168,.35);
+  }
+  header p{color:var(--muted);font-size:.95rem;max-width:60ch;position:relative}
+
+  /* scope trace under title */
+  .trace{width:100%;height:34px;margin-top:14px;position:relative}
+  .trace svg{width:100%;height:100%}
+  .trace path{
+    fill:none;stroke:var(--trace);stroke-width:2;
+    filter:drop-shadow(0 0 5px rgba(55,230,168,.7));
+    stroke-dasharray:1200;stroke-dashoffset:1200;
+    animation:sweep 2.4s ease-out forwards;
+  }
+  @keyframes sweep{to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion:reduce){
+    .trace path{animation:none;stroke-dashoffset:0}
+  }
+
+  /* ---------- score bar ---------- */
+  .hud{
+    position:sticky;top:0;z-index:20;
+    display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    background:rgba(8,17,32,.92);
+    backdrop-filter:blur(4px);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 16px;
+    margin:18px 0 8px;
+    font-family:var(--mono);font-size:.8rem;
+  }
+  .hud .seg{color:var(--trace);font-size:1.05rem;letter-spacing:.1em}
+  .hud .lbl{color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-size:.66rem}
+  .hud .bar{
+    flex:1;min-width:140px;height:8px;border:1px solid var(--line);
+    border-radius:4px;overflow:hidden;background:#0a1626;
+  }
+  .hud .bar i{
+    display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--trace-dim),var(--trace));
+    transition:width .4s ease;
+  }
+  .hud button{
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;
+    background:none;border:1px solid var(--line);color:var(--muted);
+    border-radius:5px;padding:5px 10px;cursor:pointer;
+  }
+  .hud button:hover{color:var(--ink);border-color:var(--cyan)}
+
+  /* ---------- topic nav ---------- */
+  nav.topics{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 30px}
+  nav.topics a{
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;
+    color:var(--cyan);text-decoration:none;
+    border:1px solid var(--line);border-radius:20px;
+    padding:5px 13px;background:var(--panel);
+    transition:border-color .15s,color .15s;
+  }
+  nav.topics a:hover{border-color:var(--trace);color:var(--trace)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:44px;scroll-margin-top:70px}
+  .sec-head{
+    display:flex;align-items:baseline;gap:12px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:8px;margin-bottom:18px;
+  }
+  .sec-head .tag{
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.15em;
+    color:var(--bg);background:var(--trace);
+    padding:2px 8px;border-radius:3px;font-weight:bold;
+  }
+  .sec-head h2{
+    font-family:var(--mono);font-size:1.05rem;color:var(--ink);
+    letter-spacing:.03em;font-weight:600;
+  }
+  .sec-head .count{margin-left:auto;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+
+  .hint{
+    border-left:2px solid var(--cyan);
+    background:rgba(79,209,232,.06);
+    padding:10px 14px;border-radius:0 6px 6px 0;
+    color:var(--muted);font-size:.88rem;margin-bottom:18px;
+  }
+  .hint b{color:var(--cyan);font-weight:600}
+  .hint code{font-family:var(--mono);color:var(--ink);font-size:.85em}
+
+  /* ---------- question card ---------- */
+  .q{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:18px 20px 16px;
+    margin-bottom:14px;
+  }
+  .q .qnum{
+    font-family:var(--mono);font-size:.66rem;color:var(--muted);
+    letter-spacing:.14em;text-transform:uppercase;
+  }
+  .q .stem{margin:.4rem 0 .9rem;font-size:.98rem}
+  .q .stem code,.opt code{font-family:var(--mono);color:var(--amber);font-size:.92em}
+  .opts{display:grid;gap:8px}
+  .opt{
+    display:flex;gap:10px;align-items:flex-start;
+    border:1px solid var(--line);border-radius:6px;
+    background:var(--panel2);
+    padding:9px 13px;cursor:pointer;
+    font-size:.93rem;text-align:left;color:var(--ink);
+    width:100%;font-family:var(--sans);
+    transition:border-color .12s,background .12s;
+  }
+  .opt:hover{border-color:var(--cyan)}
+  .opt .key{
+    font-family:var(--mono);color:var(--cyan);
+    font-size:.8rem;padding-top:2px;min-width:1.1em;
+  }
+  .opt.sel{border-color:var(--cyan);background:rgba(79,209,232,.09)}
+  .opt.right{border-color:var(--trace);background:rgba(55,230,168,.1)}
+  .opt.right .key{color:var(--trace)}
+  .opt.wrong{border-color:var(--red);background:rgba(255,107,122,.08)}
+  .opt.wrong .key{color:var(--red)}
+  .opt:disabled{cursor:default;opacity:.95}
+
+  .fb{
+    display:none;margin-top:12px;
+    font-size:.88rem;border-radius:6px;padding:10px 14px;
+    font-family:var(--sans);
+  }
+  .fb.show{display:block}
+  .fb.ok{border:1px solid var(--trace-dim);background:rgba(55,230,168,.07);color:var(--ink)}
+  .fb.no{border:1px solid rgba(255,107,122,.5);background:rgba(255,107,122,.06);color:var(--ink)}
+  .fb .vlabel{font-family:var(--mono);font-size:.68rem;letter-spacing:.15em;display:block;margin-bottom:4px}
+  .fb.ok .vlabel{color:var(--trace)}
+  .fb.no .vlabel{color:var(--red)}
+  .fb code{font-family:var(--mono);color:var(--amber);font-size:.86em}
+
+  /* ---------- drill ---------- */
+  .drill{
+    background:var(--panel);
+    border:1px solid var(--trace-dim);
+    border-radius:8px;
+    padding:20px 22px;
+    box-shadow:0 0 30px rgba(55,230,168,.06);
+  }
+  .drill .prompt{
+    font-family:var(--mono);font-size:1.15rem;color:var(--trace);
+    background:#0a1626;border:1px solid var(--line);border-radius:6px;
+    padding:14px 16px;margin:12px 0;letter-spacing:.05em;
+    text-shadow:0 0 10px rgba(55,230,168,.4);
+  }
+  .drill-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .drill input[type=text]{
+    font-family:var(--mono);font-size:1rem;
+    background:#0a1626;border:1px solid var(--line);color:var(--ink);
+    border-radius:6px;padding:9px 13px;flex:1;min-width:160px;
+    letter-spacing:.08em;
+  }
+  .drill input[type=text]:focus{outline:none;border-color:var(--cyan)}
+  .btn{
+    font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;
+    border-radius:6px;padding:9px 16px;cursor:pointer;
+    border:1px solid var(--trace-dim);
+    background:rgba(55,230,168,.12);color:var(--trace);
+    transition:background .12s;
+  }
+  .btn:hover{background:rgba(55,230,168,.2)}
+  .btn.ghost{border-color:var(--line);background:none;color:var(--muted)}
+  .btn.ghost:hover{color:var(--ink);border-color:var(--cyan)}
+  .drill .fb{margin-top:12px}
+  .drill .modes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+  .mode{
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;
+    border:1px solid var(--line);border-radius:20px;
+    padding:4px 12px;background:none;color:var(--muted);cursor:pointer;
+  }
+  .mode.on{border-color:var(--trace);color:var(--trace);background:rgba(55,230,168,.08)}
+  .drill .streak{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-top:10px;letter-spacing:.1em}
+  .drill .streak b{color:var(--amber)}
+
+  /* ---------- checklist ---------- */
+  .check{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:18px 22px;
+  }
+  .check ul{list-style:none;display:grid;gap:8px;grid-template-columns:1fr;margin-top:6px}
+  @media(min-width:640px){.check ul{grid-template-columns:1fr 1fr}}
+  .check li{
+    font-size:.88rem;color:var(--muted);
+    padding-left:22px;position:relative;
+  }
+  .check li::before{
+    content:"▸";position:absolute;left:4px;color:var(--trace);
+    font-family:var(--mono);
+  }
+  footer{
+    margin-top:50px;text-align:center;
+    font-family:var(--mono);font-size:.68rem;color:var(--muted);
+    letter-spacing:.12em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">MAC283 · Computer Architecture &amp; Assembler Language</div>
+  <h1>MIDTERM REVIEW CONSOLE</h1>
+  <p>Practice questions on every topic covered by the midterm. Answer, check, and read the explanation — then run the conversion drill until conversions feel automatic. Your score resets when you reload the page.</p>
+  <div class="trace" aria-hidden="true">
+    <svg viewBox="0 0 800 34" preserveAspectRatio="none">
+      <path d="M0 27 H60 V7 H120 V27 H180 V7 H210 V27 H300 V7 H330 V27 H420 V7 H480 V27 H540 V7 H570 V27 H660 V7 H720 V27 H800"/>
+    </svg>
+  </div>
+</header>
+
+<div class="hud">
+  <div>
+    <span class="lbl">Score</span><br>
+    <span class="seg" id="hudScore">00 / 00</span>
+  </div>
+  <div class="bar" aria-hidden="true"><i id="hudBar"></i></div>
+  <div>
+    <span class="lbl">Answered</span><br>
+    <span class="seg" id="hudDone">0%</span>
+  </div>
+  <button id="resetBtn" type="button">RESET</button>
+</div>
+
+<nav class="topics" aria-label="Topics">
+  <a href="#t1">Architecture</a>
+  <a href="#t2">Number Systems</a>
+  <a href="#t3">Signed Numbers</a>
+  <a href="#t4">Floating Point &amp; ASCII</a>
+  <a href="#t5">Boolean Algebra</a>
+  <a href="#t6">Gates</a>
+  <a href="#t7">K-Maps &amp; SOP</a>
+  <a href="#t8">Applied Logic</a>
+  <a href="#t9">Binary Arithmetic</a>
+  <a href="#drill">Conversion Drill</a>
+</nav>
+
+<!-- ============ 1. ARCHITECTURE ============ -->
+<section id="t1">
+  <div class="sec-head"><span class="tag">01</span><h2>Computer Architecture Basics</h2><span class="count" data-count="t1"></span></div>
+  <div class="hint"><b>Review:</b> Know the job of each major component (CPU, ALU, RAM, storage) and the defining idea of the <b>Von Neumann architecture</b>: instructions and data live in the <em>same</em> memory.</div>
+  <div data-topic="t1" class="qzone"></div>
+</section>
+
+<!-- ============ 2. NUMBER SYSTEMS ============ -->
+<section id="t2">
+  <div class="sec-head"><span class="tag">02</span><h2>Number Systems: Binary · Decimal · Hex · Octal</h2><span class="count" data-count="t2"></span></div>
+  <div class="hint"><b>Review:</b> Binary→decimal: add place values (…8, 4, 2, 1). Binary→hex: group in <b>4 bits</b> from the right. Binary→octal: group in <b>3 bits</b> from the right. Decimal→binary: repeated division by 2, read remainders bottom-up.</div>
+  <div data-topic="t2" class="qzone"></div>
+</section>
+
+<!-- ============ 3. SIGNED NUMBERS ============ -->
+<section id="t3">
+  <div class="sec-head"><span class="tag">03</span><h2>Signed Number Representation</h2><span class="count" data-count="t3"></span></div>
+  <div class="hint"><b>Review:</b> Sign-magnitude → leftmost bit is the sign. One's complement → flip every bit. <b>Two's complement</b> → flip every bit, then add 1. In two's complement, −1 is always all 1s.</div>
+  <div data-topic="t3" class="qzone"></div>
+</section>
+
+<!-- ============ 4. FLOAT + ASCII ============ -->
+<section id="t4">
+  <div class="sec-head"><span class="tag">04</span><h2>Floating Point &amp; Character Encoding</h2><span class="count" data-count="t4"></span></div>
+  <div class="hint"><b>Review:</b> IEEE 754 is the standard for <b>floating-point</b> numbers (sign · exponent · mantissa) — it trades exact precision for a huge range. Standard ASCII uses <b>7 bits</b> = 128 characters.</div>
+  <div data-topic="t4" class="qzone"></div>
+</section>
+
+<!-- ============ 5. BOOLEAN ALGEBRA ============ -->
+<section id="t5">
+  <div class="sec-head"><span class="tag">05</span><h2>Boolean Algebra Laws</h2><span class="count" data-count="t5"></span></div>
+  <div class="hint"><b>Review:</b> Absorption: <code>A + A·B = A</code> and <code>A·(A + B) = A</code>. Complement: <code>A + A' = 1</code>, <code>A·A' = 0</code>. DeMorgan: <code>(A·B)' = A' + B'</code> and <code>(A + B)' = A'·B'</code>.</div>
+  <div data-topic="t5" class="qzone"></div>
+</section>
+
+<!-- ============ 6. GATES ============ -->
+<section id="t6">
+  <div class="sec-head"><span class="tag">06</span><h2>Logic Gates</h2><span class="count" data-count="t6"></span></div>
+  <div class="hint"><b>Review:</b> XOR outputs 1 only when inputs <em>differ</em>. NAND/NOR are the inverted versions of AND/OR. Build the truth table if you're ever unsure.</div>
+  <div data-topic="t6" class="qzone"></div>
+</section>
+
+<!-- ============ 7. KMAPS ============ -->
+<section id="t7">
+  <div class="sec-head"><span class="tag">07</span><h2>K-Maps &amp; Sum of Products</h2><span class="count" data-count="t7"></span></div>
+  <div class="hint"><b>Review:</b> A K-map has <code>2ⁿ</code> cells for n variables. <code>Σ(...)</code> lists the minterm numbers where F = 1. Group 1s in powers of two (1, 2, 4, 8…) to simplify; bigger groups mean simpler terms.</div>
+  <div data-topic="t7" class="qzone"></div>
+</section>
+
+<!-- ============ 8. APPLIED ============ -->
+<section id="t8">
+  <div class="sec-head"><span class="tag">08</span><h2>Applied Logic (Word Problems)</h2><span class="count" data-count="t8"></span></div>
+  <div class="hint"><b>Review:</b> Translate English into operators: "and" → <code>·</code>, "or" → <code>+</code>, "not / is 0" → <code>'</code>. "Only if X and not Y" becomes <code>X·Y'</code>.</div>
+  <div data-topic="t8" class="qzone"></div>
+</section>
+
+<!-- ============ 9. ARITHMETIC ============ -->
+<section id="t9">
+  <div class="sec-head"><span class="tag">09</span><h2>Binary Arithmetic</h2><span class="count" data-count="t9"></span></div>
+  <div class="hint"><b>Review:</b> Add column by column from the right: <code>1+1 = 10</code> (write 0, carry 1), <code>1+1+1 = 11</code> (write 1, carry 1). Track your carries carefully — that's where points are lost.</div>
+  <div data-topic="t9" class="qzone"></div>
+</section>
+
+<!-- ============ DRILL ============ -->
+<section id="drill">
+  <div class="sec-head"><span class="tag">10</span><h2>Conversion Drill — Unlimited Practice</h2></div>
+  <div class="drill">
+    <div class="modes" id="drillModes">
+      <button class="mode on" data-mode="d2b" type="button">DEC → BIN</button>
+      <button class="mode" data-mode="b2d" type="button">BIN → DEC</button>
+      <button class="mode" data-mode="b2h" type="button">BIN → HEX</button>
+      <button class="mode" data-mode="b2o" type="button">BIN → OCT</button>
+      <button class="mode" data-mode="tc"  type="button">TWO'S COMP (−n)</button>
+    </div>
+    <div class="prompt" id="drillPrompt">—</div>
+    <div class="drill-row">
+      <input type="text" id="drillInput" autocomplete="off" spellcheck="false" placeholder="type your answer…" aria-label="Drill answer">
+      <button class="btn" id="drillCheck" type="button">CHECK</button>
+      <button class="btn ghost" id="drillNew" type="button">NEW NUMBER</button>
+    </div>
+    <div class="fb" id="drillFb"></div>
+    <div class="streak">STREAK: <b id="drillStreak">0</b> &nbsp;·&nbsp; BEST: <b id="drillBest">0</b></div>
+  </div>
+</section>
+
+<!-- ============ CHECKLIST ============ -->
+<section>
+  <div class="sec-head"><span class="tag">✓</span><h2>Before Exam Day — Can You…</h2></div>
+  <div class="check">
+    <ul>
+      <li>Explain what the CPU and ALU do, and what makes Von Neumann architecture special</li>
+      <li>Convert any number between binary, decimal, hexadecimal, and octal — both directions</li>
+      <li>Write the 8-bit two's complement of any small negative number</li>
+      <li>State what the leftmost bit means in sign-magnitude representation</li>
+      <li>Say what IEEE 754 represents and why floating point exists</li>
+      <li>Recall how many bits standard ASCII uses and what the acronym means</li>
+      <li>Apply absorption, complement, and DeMorgan's laws from memory</li>
+      <li>Fill out truth tables for AND, OR, NOT, XOR, NAND, NOR</li>
+      <li>Place minterms from Σ notation into a K-map and group them</li>
+      <li>Translate a word problem ("only if… and not…") into a Boolean expression</li>
+      <li>Add two binary numbers with carries, without a calculator</li>
+      <li>Evaluate an expression like A·(B+C) for given input values</li>
+    </ul>
+  </div>
+</section>
+
+<footer>MAC283 · MIDTERM REVIEW · MEC DEPARTMENT · LAGUARDIA COMMUNITY COLLEGE</footer>
+</div>
+
+<script>
+/* ============================================================
+   QUESTION BANK — practice variants of midterm topics.
+   Each: { t: stem(HTML), o: [4 options], a: correctIndex, x: explanation(HTML) }
+   ============================================================ */
+const BANK = {
+t1:[
+ {t:"Which component actually <em>executes</em> program instructions and performs calculations?",
+  o:["RAM","CPU","Hard drive","Network card"],a:1,
+  x:"The CPU (Central Processing Unit) is the \"brain\": it fetches, decodes, and executes instructions. RAM only holds data temporarily; storage holds it permanently."},
+ {t:"Inside the CPU, which unit performs arithmetic and logical operations such as addition and AND/OR?",
+  o:["Control Unit","Cache","ALU","Register file"],a:2,
+  x:"The ALU (Arithmetic Logic Unit) does the math and logic. The Control Unit directs traffic; registers and cache just hold values close to the ALU."},
+ {t:"What is the defining feature of the Von Neumann architecture?",
+  o:["Instructions and data are stored in separate memories","Instructions and data share the same memory","All processing happens on the GPU","It has no ALU"],a:1,
+  x:"In Von Neumann architecture, one shared memory holds <em>both</em> program instructions and data. (Separate memories for each is the Harvard architecture.)"},
+ {t:"Which component provides fast, <em>temporary</em> working storage that is erased when power is lost?",
+  o:["RAM","SSD","ROM","CPU"],a:0,
+  x:"RAM is volatile working memory — fast, but cleared on power-off. SSDs and ROM are non-volatile."}
+],
+t2:[
+ {t:"What is the binary equivalent of decimal <code>11</code>?",
+  o:["1011","1101","1110","1001"],a:0,
+  x:"11 = 8 + 2 + 1 → place values 8,4,2,1 give <code>1011</code>. Or divide by 2: 11→5 r1, 5→2 r1, 2→1 r0, 1→0 r1, read up: 1011."},
+ {t:"Convert binary <code>1110</code> to decimal.",
+  o:["12","13","14","15"],a:2,
+  x:"1110 = 8 + 4 + 2 + 0 = <code>14</code>. Add the place values of the 1-bits."},
+ {t:"What is the hexadecimal value of binary <code>1010 0110</code>?",
+  o:["A6","B6","A5","96"],a:0,
+  x:"Group 4 bits at a time: <code>1010</code> = A, <code>0110</code> = 6 → <code>A6</code>."},
+ {t:"What is the octal representation of binary <code>110101</code>?",
+  o:["55","65","61","53"],a:1,
+  x:"Group 3 bits from the right: <code>110</code> = 6, <code>101</code> = 5 → <code>65</code>₈."},
+ {t:"Which is the correct decimal-to-binary conversion of <code>22</code>?",
+  o:["10100","10110","11010","10011"],a:1,
+  x:"22 = 16 + 4 + 2 → <code>10110</code>. Check: 16+0+4+2+0 = 22. ✔"}
+],
+t3:[
+ {t:"What is the 8-bit two's complement representation of <code>−2</code>?",
+  o:["10000010","11111101","11111110","00000010"],a:2,
+  x:"+2 = 00000010 → flip: 11111101 → add 1: <code>11111110</code>. Shortcut: −1 is all 1s, so −2 is one less."},
+ {t:"In two's complement, an 8-bit value of all 1s (<code>11111111</code>) equals:",
+  o:["−1","−127","255 always","−0"],a:0,
+  x:"All 1s is always <code>−1</code> in two's complement, regardless of width. (255 is only correct if the byte is interpreted as <em>unsigned</em>.)"},
+ {t:"Which representation is obtained by flipping all bits <em>without</em> adding 1?",
+  o:["Sign-magnitude","One's complement","Two's complement","BCD"],a:1,
+  x:"Flipping every bit gives <b>one's</b> complement. Add 1 afterward and you get <b>two's</b> complement."},
+ {t:"In sign-magnitude representation, the leftmost bit indicates:",
+  o:["Overflow","Parity","The sign of the number","The magnitude's highest digit"],a:2,
+  x:"The MSB is the sign flag: 0 = positive, 1 = negative. The remaining bits store the magnitude."}
+],
+t4:[
+ {t:"IEEE 754 is the standard format for representing:",
+  o:["Memory addresses","Floating-point numbers","Unicode text","Machine instructions"],a:1,
+  x:"IEEE 754 defines floating-point layout: a sign bit, an exponent field, and a mantissa (fraction)."},
+ {t:"Compared to fixed-point, the main advantage of floating-point representation is:",
+  o:["It is always exact","It supports a much larger range of values","It uses fewer bits","It can store text"],a:1,
+  x:"Floating point moves the binary point using an exponent, so it can represent very large and very small values — at the cost of some precision."},
+ {t:"How many bits does <em>standard</em> ASCII use per character?",
+  o:["5","6","7","8"],a:2,
+  x:"Standard ASCII is <code>7 bits</code> → 128 characters. Extended ASCII uses 8."},
+ {t:"ASCII stands for:",
+  o:["American Standard Code for Information Interchange","American System for Code Integration and Interface","Asynchronous Code for Software Interface","Active Standard Code for Internet Interchange"],a:0,
+  x:"American <b>S</b>tandard <b>C</b>ode for <b>I</b>nformation <b>I</b>nterchange — worth memorizing exactly."}
+],
+t5:[
+ {t:"Simplify <code>A·(A + B)</code>.",
+  o:["A + B","A·B","A","B"],a:2,
+  x:"Absorption Law: <code>A·(A + B) = A</code>. Distribute to verify: A·A + A·B = A + A·B = A."},
+ {t:"Which law simplifies <code>A + A·B</code> directly to <code>A</code>?",
+  o:["Identity Law","Absorption Law","Distributive Law","DeMorgan's Law"],a:1,
+  x:"That is the Absorption Law's other form. Intuition: if A is 1 the result is 1 regardless of B; if A is 0 both terms are 0."},
+ {t:"What is <code>A · A'</code>?",
+  o:["1","A","A'","0"],a:3,
+  x:"Complement Law: a variable ANDed with its own inverse is always <code>0</code> (they can never both be 1). Note the pair: <code>A + A' = 1</code>."},
+ {t:"By DeMorgan's Law, <code>(A·B)'</code> equals:",
+  o:["A'·B'","A' + B'","A + B","(A + B)'"],a:1,
+  x:"Break the bar, change the operator: <code>(A·B)' = A' + B'</code>. Likewise <code>(A+B)' = A'·B'</code>."}
+],
+t6:[
+ {t:"What is the output of an XOR gate when A = 1 and B = 0?",
+  o:["0","1","Undefined","Depends on the clock"],a:1,
+  x:"XOR outputs 1 when the inputs <em>differ</em>. 1 ⊕ 0 = 1; 1 ⊕ 1 = 0; 0 ⊕ 0 = 0."},
+ {t:"Which gate outputs 0 <em>only</em> when both inputs are 1?",
+  o:["OR","NOR","NAND","AND"],a:2,
+  x:"NAND = NOT(AND). AND is 1 only for (1,1), so NAND is 0 only for (1,1)."},
+ {t:"For which input pair does an OR gate output 0?",
+  o:["A=0, B=0","A=0, B=1","A=1, B=0","A=1, B=1"],a:0,
+  x:"OR outputs 1 if <em>at least one</em> input is 1 — so the only 0 row is (0,0)."}
+],
+t7:[
+ {t:"What is a K-map used for?",
+  o:["Storing data in memory","Simplifying Boolean expressions","Converting binary to decimal","Timing CPU clock cycles"],a:1,
+  x:"A Karnaugh map arranges minterms so adjacent cells differ by one variable, letting you group 1s and read off a simplified expression."},
+ {t:"How many cells does a <b>4-variable</b> K-map have?",
+  o:["8","12","16","32"],a:2,
+  x:"2ⁿ cells for n variables: 2⁴ = <code>16</code>. (3 variables → 8 cells, 2 variables → 4 cells.)"},
+ {t:"If F(A,B,C) = Σ(0, 2, 4, 6), which minterm cells are marked with 1s?",
+  o:["0, 2, 4, 6","1, 3, 5, 7","2, 4, 6, 8","0, 1, 2, 3"],a:0,
+  x:"Σ notation lists exactly the minterm numbers where F = 1 — no conversion needed, just read the list."},
+ {t:"F(A,B,C) = Σ(0, 2, 4, 6) covers every minterm where C = 0. The simplified expression is:",
+  o:["C","C'","A'","A·C"],a:1,
+  x:"Minterms 0,2,4,6 in binary are 000, 010, 100, 110 — A and B take every combination while C is always 0, so F = <code>C'</code>. (Compare: Σ(1,3,5,7) simplifies to C.)"},
+ {t:"When grouping 1s in a K-map, valid group sizes are:",
+  o:["Any size","Only pairs","Powers of two: 1, 2, 4, 8…","Odd numbers only"],a:2,
+  x:"Groups must be rectangles of size 1, 2, 4, 8… Larger groups eliminate more variables and give simpler terms."}
+],
+t8:[
+ {t:"A cooling fan turns on only when the room is hot (H = 1) <em>and</em> the window is closed (W = 0). The Boolean expression for the fan is:",
+  o:["H + W","H·W","H·W'","H'·W'"],a:2,
+  x:"\"Only if H and not W\" → AND the conditions, complementing the one that must be 0: <code>F = H·W'</code>."},
+ {t:"A hallway light turns on (L = 1) when switch one is on (S₁ = 1) <em>or</em> switch two is on (S₂ = 1). The expression is:",
+  o:["S₁·S₂","S₁ + S₂","S₁·S₂'","S₁' + S₂'"],a:1,
+  x:"\"Either… or…\" maps directly to OR: <code>L = S₁ + S₂</code>."},
+ {t:"Given F(A,B,C) = <code>A·(B + C)</code>, which input combination produces F = 1?",
+  o:["A=0, B=1, C=1","A=1, B=0, C=0","A=1, B=0, C=1","A=0, B=0, C=1"],a:2,
+  x:"F needs A = 1 <em>and</em> at least one of B, C equal to 1. Only option (c) satisfies both: 1·(0+1) = 1."},
+ {t:"A machine stops (X = 1) when the emergency button is pressed (E = 1) or the temperature sensor is <em>not</em> normal (N = 0). The expression is:",
+  o:["E·N","E + N'","E·N'","E' + N"],a:1,
+  x:"\"E or not-N\" → <code>X = E + N'</code>. OR the two triggering conditions, complementing N because it triggers at 0."}
+],
+t9:[
+ {t:"What is the binary result of <code>1011 + 0110</code>?",
+  o:["10001","11101","10111","01111"],a:0,
+  x:"Right to left: 1+0=1 · 1+1=0 carry 1 · 0+1+1=0 carry 1 · 1+0+1=10 → <code>10001</code>. Check in decimal: 11 + 6 = 17 = 10001₂. ✔"},
+ {t:"What is <code>0111 + 0011</code> in binary?",
+  o:["1010","1001","1100","1011"],a:0,
+  x:"7 + 3 = 10 = <code>1010</code>₂. Verify column by column and watch the chained carries."},
+ {t:"When adding binary digits, <code>1 + 1 + 1</code> (including a carry-in) gives:",
+  o:["Write 0, carry 1","Write 1, carry 1","Write 1, carry 0","Write 0, carry 0"],a:1,
+  x:"1+1+1 = 3 = <code>11</code>₂ → write 1, carry 1. This triple-one case is the most common source of addition mistakes."}
+]
+};
+
+/* ---------- render questions ---------- */
+const state = {answered:0, correct:0, total:0};
+const letters = ["a","b","c","d"];
+
+document.querySelectorAll(".qzone").forEach(zone=>{
+  const topic = zone.dataset.topic;
+  const qs = BANK[topic];
+  state.total += qs.length;
+  const counter = document.querySelector(`[data-count="${topic}"]`);
+  if(counter) counter.textContent = qs.length + " QUESTIONS";
+  qs.forEach((q,i)=>{
+    const card = document.createElement("div");
+    card.className = "q";
+    card.innerHTML =
+      `<div class="qnum">Practice ${topic.slice(1)}.${i+1}</div>
+       <div class="stem">${q.t}</div>
+       <div class="opts">` +
+       q.o.map((opt,j)=>`<button type="button" class="opt" data-j="${j}"><span class="key">${letters[j]})</span><span>${opt}</span></button>`).join("") +
+      `</div><div class="fb"></div>`;
+    const fb = card.querySelector(".fb");
+    const opts = card.querySelectorAll(".opt");
+    let done = false;
+    opts.forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        if(done) return;
+        done = true;
+        const pick = +btn.dataset.j;
+        const ok = pick === q.a;
+        opts.forEach(b=>{
+          b.disabled = true;
+          const j = +b.dataset.j;
+          if(j === q.a) b.classList.add("right");
+          else if(j === pick) b.classList.add("wrong");
+        });
+        fb.className = "fb show " + (ok ? "ok" : "no");
+        fb.innerHTML = `<span class="vlabel">${ok ? "✓ CORRECT" : "✗ NOT QUITE — correct answer: " + letters[q.a] + ")"}</span>${q.x}`;
+        state.answered++;
+        if(ok) state.correct++;
+        updateHud();
+      });
+    });
+    zone.appendChild(card);
+  });
+});
+
+function updateHud(){
+  const pad = n => String(n).padStart(2,"0");
+  document.getElementById("hudScore").textContent = `${pad(state.correct)} / ${pad(state.total)}`;
+  document.getElementById("hudDone").textContent = Math.round(100*state.answered/state.total) + "%";
+  document.getElementById("hudBar").style.width = (100*state.correct/state.total) + "%";
+}
+updateHud();
+document.getElementById("resetBtn").addEventListener("click",()=>location.reload());
+
+/* ---------- conversion drill ---------- */
+const dEls = {
+  prompt: document.getElementById("drillPrompt"),
+  input:  document.getElementById("drillInput"),
+  fb:     document.getElementById("drillFb"),
+  streak: document.getElementById("drillStreak"),
+  best:   document.getElementById("drillBest")
+};
+let dMode = "d2b", dAnswer = "", dStreak = 0, dBest = 0, dExplain = "";
+
+const rnd = (lo,hi)=>Math.floor(Math.random()*(hi-lo+1))+lo;
+
+function newDrill(){
+  dEls.fb.className = "fb";
+  dEls.fb.innerHTML = "";
+  dEls.input.value = "";
+  let n;
+  switch(dMode){
+    case "d2b":
+      n = rnd(5,63);
+      dAnswer = n.toString(2);
+      dExplain = `${n} = ${dAnswer}₂ — repeated division by 2, remainders read bottom-up.`;
+      dEls.prompt.textContent = `Convert decimal ${n} to BINARY`;
+      break;
+    case "b2d":
+      n = rnd(5,63);
+      dAnswer = String(n);
+      dExplain = `${n.toString(2)}₂ = ${n} — add the place values of the 1-bits.`;
+      dEls.prompt.textContent = `Convert binary ${n.toString(2)} to DECIMAL`;
+      break;
+    case "b2h":
+      n = rnd(16,255);
+      dAnswer = n.toString(16).toUpperCase();
+      dExplain = `${n.toString(2).padStart(8,"0")}₂ = ${dAnswer}₁₆ — group 4 bits from the right.`;
+      dEls.prompt.textContent = `Convert binary ${n.toString(2).padStart(8,"0")} to HEX`;
+      break;
+    case "b2o":
+      n = rnd(8,63);
+      dAnswer = n.toString(8);
+      dExplain = `${n.toString(2)}₂ = ${dAnswer}₈ — group 3 bits from the right.`;
+      dEls.prompt.textContent = `Convert binary ${n.toString(2)} to OCTAL`;
+      break;
+    case "tc":
+      n = rnd(1,127);
+      dAnswer = ((256 - n) >>> 0).toString(2).padStart(8,"0");
+      dExplain = `+${n} = ${n.toString(2).padStart(8,"0")} → flip → add 1 → ${dAnswer}.`;
+      dEls.prompt.textContent = `8-bit two's complement of −${n} ?`;
+      break;
+  }
+}
+
+function checkDrill(){
+  const raw = dEls.input.value.trim().toUpperCase().replace(/\s+/g,"");
+  if(!raw) return;
+  let user = raw;
+  // normalize leading zeros for binary/octal/hex modes (but two's comp must be full 8 bits)
+  if(dMode !== "tc" && dMode !== "b2d") user = user.replace(/^0+(?=.)/,"");
+  const target = (dMode !== "tc" && dMode !== "b2d") ? dAnswer.toUpperCase().replace(/^0+(?=.)/,"") : dAnswer.toUpperCase();
+  const ok = user === target;
+  if(ok){
+    dStreak++; dBest = Math.max(dBest,dStreak);
+    dEls.fb.className = "fb show ok";
+    dEls.fb.innerHTML = `<span class="vlabel">✓ CORRECT</span>${dExplain}`;
+    setTimeout(newDrill, 1400);
+  }else{
+    dStreak = 0;
+    dEls.fb.className = "fb show no";
+    dEls.fb.innerHTML = `<span class="vlabel">✗ NOT QUITE</span>${dExplain} Try a new one.`;
+  }
+  dEls.streak.textContent = dStreak;
+  dEls.best.textContent = dBest;
+}
+
+document.getElementById("drillCheck").addEventListener("click",checkDrill);
+document.getElementById("drillNew").addEventListener("click",newDrill);
+dEls.input.addEventListener("keydown",e=>{ if(e.key==="Enter") checkDrill(); });
+document.querySelectorAll("#drillModes .mode").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("#drillModes .mode").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    dMode = b.dataset.mode;
+    dStreak = 0; dEls.streak.textContent = 0;
+    newDrill();
+  });
+});
+newDrill();
+</script>
+</body>
+</html>
