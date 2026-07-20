@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 — The Contract: Instruction Set Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14;
+  --panel:#121821;
+  --panel2:#0e141c;
+  --grid:#1c2733;
+  --line:#233140;
+  --trace:#35e08c;        /* CH1 — phosphor green */
+  --trace-dim:rgba(53,224,140,.14);
+  --ch2:#ffb454;          /* CH2 — amber */
+  --ch2-dim:rgba(255,180,84,.14);
+  --danger:#ff6b6b;
+  --blue:#5ac8fa;
+  --purple:#c792ea;
+  --pink:#ff8fa3;
+  --ink:#e6edf3;
+  --muted:#8b98a5;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --disp:'Chakra Petch',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  overflow:hidden;
+}
+/* ---------- scope graticule backdrop ---------- */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 59px,rgba(28,39,51,.55) 59px 60px),
+    repeating-linear-gradient(90deg,transparent 0 59px,rgba(28,39,51,.55) 59px 60px);
+}
+/* ---------- top scope readout bar ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:50;
+  background:linear-gradient(180deg,#0d131b 0%,#0b0f14 100%);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:18px;padding:0 22px;
+}
+.ch-dot{width:10px;height:10px;border-radius:50%;background:var(--trace);box-shadow:0 0 8px var(--trace)}
+.readout{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+.readout b{color:var(--trace);font-weight:600}
+.readout.ch2 b{color:var(--ch2)}
+#hdrBits{flex:1;height:34px;min-width:120px;overflow:hidden;opacity:.9}
+#hdrBits svg{height:34px}
+.cycle-count{font-family:var(--disp);font-size:14px;letter-spacing:.12em;color:var(--ink)}
+.cycle-count span{color:var(--trace)}
+/* ---------- deck ---------- */
+main{
+  position:fixed;top:58px;bottom:64px;left:0;right:0;z-index:1;
+  overflow:hidden;
+}
+.slide{
+  display:none;height:100%;overflow-y:auto;
+  padding:36px 64px 50px;max-width:1200px;margin:0 auto;
+}
+.slide.active{display:block;animation:sweep .35s ease-out}
+@keyframes sweep{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .slide.active{animation:none}
+  .wave-anim{animation:none !important}
+}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--ch2);
+  text-transform:uppercase;margin-bottom:10px;
+}
+h1{font-family:var(--disp);font-size:clamp(34px,4.6vw,58px);line-height:1.06;font-weight:700;margin-bottom:14px}
+h2{font-family:var(--disp);font-size:clamp(26px,3.2vw,40px);font-weight:700;margin-bottom:8px}
+h3{font-family:var(--disp);font-size:18px;font-weight:600;color:var(--trace);margin-bottom:8px;letter-spacing:.03em}
+.lede{font-size:17px;color:var(--muted);max-width:70ch;line-height:1.65;margin-bottom:22px}
+.lede strong,.card p strong{color:var(--ink)}
+p{line-height:1.65}
+/* ---------- plain-words explainer ---------- */
+.plain{
+  border-left:3px solid var(--ch2);background:rgba(255,180,84,.05);
+  border-radius:0 8px 8px 0;padding:13px 18px;margin:0 0 20px;
+  font-size:14.5px;color:var(--muted);line-height:1.65;max-width:78ch;
+}
+.plain::before{
+  content:"IN PLAIN WORDS";display:block;font-family:var(--mono);
+  font-size:11px;letter-spacing:.2em;color:var(--ch2);margin-bottom:5px;
+}
+.plain b{color:var(--ink)}
+/* ---------- formula blocks ---------- */
+.formula{
+  font-family:var(--mono);
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-left:3px solid var(--trace);
+  border-radius:8px;
+  padding:18px 24px;margin:16px 0;
+  font-size:clamp(16px,2vw,21px);
+  overflow-x:auto;white-space:nowrap;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.formula.ch2b{border-left-color:var(--ch2)}
+.formula .op{color:var(--muted);padding:0 4px}
+.formula .v{color:var(--trace)}
+.formula .v2{color:var(--ch2)}
+.frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 4px}
+.frac .num{padding:0 8px 3px;border-bottom:1.5px solid var(--ink)}
+.frac .den{padding:3px 8px 0}
+sub,sup{font-size:.68em}
+/* ---------- layout helpers ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:18px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:20px 22px;
+}
+.card.accent{border-color:rgba(53,224,140,.4);background:linear-gradient(180deg,rgba(53,224,140,.05),var(--panel))}
+.card.warn{border-color:rgba(255,180,84,.45);background:linear-gradient(180deg,rgba(255,180,84,.05),var(--panel))}
+.card h4{font-family:var(--disp);font-size:15px;letter-spacing:.05em;margin-bottom:8px;color:var(--ch2)}
+.card p{font-size:14.5px;color:var(--muted)}
+.irl{
+  border:1px dashed rgba(255,180,84,.5);border-radius:10px;background:var(--ch2-dim);
+  padding:16px 20px;margin:16px 0;font-size:15px;line-height:1.6;
+}
+.irl::before{content:"⏱ REAL LIFE";font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ch2);display:block;margin-bottom:6px}
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:14px;margin:14px 0}
+th{font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--ch2);text-align:left}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line)}
+tr:hover td{background:rgba(53,224,140,.04)}
+td.num{color:var(--trace)}
+/* ---------- controls ---------- */
+.lab{
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:22px 26px;margin:20px 0;position:relative;
+}
+.lab::before{
+  content:attr(data-title);position:absolute;top:-11px;left:18px;
+  background:var(--bg);padding:0 10px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;color:var(--trace);
+}
+.ctl{margin:14px 0}
+.ctl label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:6px}
+.ctl label output{color:var(--trace);font-weight:600}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;
+  background:var(--grid);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--trace);border:2px solid #0b0f14;box-shadow:0 0 8px rgba(53,224,140,.6);cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:var(--trace);
+  border:2px solid #0b0f14;box-shadow:0 0 8px rgba(53,224,140,.6);cursor:pointer;
+}
+select{
+  font-family:var(--mono);font-size:14px;background:var(--panel);color:var(--trace);
+  border:1px solid var(--line);border-radius:6px;padding:8px 10px;cursor:pointer;outline:none;
+}
+select:focus-visible{outline:2px solid var(--ch2);outline-offset:2px}
+.selrow{display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin:6px 0 14px}
+.selrow .sel label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.result-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px}
+.result{
+  flex:1;min-width:150px;background:var(--bg);border:1px solid var(--line);border-radius:8px;
+  padding:12px 16px;text-align:center;
+}
+.result .rl{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.result .rv{font-family:var(--disp);font-size:clamp(18px,2.4vw,26px);font-weight:700;color:var(--trace);margin-top:4px}
+.result.a .rv{color:var(--ch2)}
+.result.r .rv{color:var(--danger)}
+button.btn{
+  font-family:var(--disp);font-size:14px;letter-spacing:.08em;font-weight:600;
+  background:transparent;color:var(--trace);border:1px solid var(--trace);
+  border-radius:6px;padding:9px 20px;cursor:pointer;transition:all .15s;
+}
+button.btn:hover{background:rgba(53,224,140,.12);box-shadow:0 0 12px rgba(53,224,140,.3)}
+button.btn.amber{color:var(--ch2);border-color:var(--ch2)}
+button.btn.amber:hover{background:rgba(255,180,84,.12);box-shadow:0 0 12px rgba(255,180,84,.3)}
+button.btn:focus-visible,.qopt:focus-visible,.navbtn:focus-visible{outline:2px solid var(--ch2);outline-offset:2px}
+/* ---------- step reveal ---------- */
+.steps .step{
+  border-left:2px solid var(--grid);padding:10px 18px;margin:8px 0;
+  font-family:var(--mono);font-size:15px;display:none;line-height:1.7;
+}
+.steps .step.shown{display:block;border-left-color:var(--trace);animation:sweep .3s ease-out}
+.steps .step em{color:var(--ch2);font-style:normal}
+.steps .step b{color:var(--trace)}
+/* ---------- assembly code blocks ---------- */
+.asm{
+  font-family:var(--mono);font-size:15px;line-height:1.9;background:var(--panel);
+  border:1px solid var(--line);border-radius:8px;padding:16px 22px;margin:14px 0;
+  overflow-x:auto;white-space:pre;
+}
+.asm .k{color:var(--trace);font-weight:600}      /* mnemonic */
+.asm .r{color:var(--ch2)}                        /* register */
+.asm .n{color:var(--blue)}                       /* number / immediate */
+.asm .l{color:var(--purple)}                     /* label */
+.asm .c{color:var(--muted)}                      /* comment */
+.asm .cur{background:rgba(53,224,140,.14);display:inline-block;width:100%;border-radius:4px}
+/* ---------- bit-field displays ---------- */
+.bits{display:flex;flex-wrap:wrap;gap:3px;margin:12px 0;font-family:var(--mono)}
+.bf{border-radius:6px;padding:7px 0;text-align:center;position:relative;min-width:0}
+.bf .fv{font-size:clamp(10px,1.15vw,14px);letter-spacing:.06em;font-weight:600;color:#06120c;word-break:break-all;padding:0 4px}
+.bf .fl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);margin-top:6px;text-transform:uppercase}
+.bf.op{background:var(--trace)}
+.bf.rs{background:var(--ch2)}
+.bf.rt{background:var(--blue)}
+.bf.rd{background:var(--purple)}
+.bf.sh{background:#5a6b7d}
+.bf.fu{background:var(--pink)}
+.bf.im{background:var(--blue)}
+.bf.ad{background:var(--purple)}
+.bitscale{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;justify-content:space-between;margin-top:-4px;margin-bottom:8px}
+/* ---------- memory strip (addressing modes) ---------- */
+.memstrip{display:flex;gap:4px;flex-wrap:wrap;margin:14px 0}
+.mcell{
+  flex:1;min-width:86px;background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:8px 6px;text-align:center;font-family:var(--mono);transition:all .2s;
+}
+.mcell .ma{font-size:11px;color:var(--muted)}
+.mcell .mv{font-size:15px;color:var(--ink);margin-top:3px}
+.mcell.hit{border-color:var(--trace);background:rgba(53,224,140,.12);box-shadow:0 0 12px rgba(53,224,140,.35)}
+.mcell.hit .mv{color:var(--trace);font-weight:600}
+.mcell.base{border-color:var(--ch2)}
+.mcell.base .ma{color:var(--ch2)}
+/* ---------- mini CPU sim ---------- */
+.sim{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin:14px 0}
+@media(max-width:820px){.sim{grid-template-columns:1fr}}
+.regbox{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-family:var(--mono);font-size:14px}
+.regbox .rrow{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--grid)}
+.regbox .rrow:last-child{border-bottom:none}
+.regbox .rn{color:var(--ch2)}
+.regbox .rvv{color:var(--ink)}
+.regbox .rrow.chg .rvv{color:var(--trace);font-weight:600;text-shadow:0 0 8px rgba(53,224,140,.5)}
+/* ---------- quiz ---------- */
+.q{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin:14px 0}
+.q .qt{font-weight:600;margin-bottom:12px}
+.qopt{
+  display:block;width:100%;text-align:left;font-family:var(--mono);font-size:14px;
+  background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;
+  padding:10px 14px;margin:6px 0;cursor:pointer;transition:all .15s;
+}
+.qopt:hover{border-color:var(--trace)}
+.qopt.correct{border-color:var(--trace);background:rgba(53,224,140,.12);color:var(--trace)}
+.qopt.wrong{border-color:var(--danger);background:rgba(255,107,107,.1);color:var(--danger)}
+.qexp{display:none;font-size:14px;color:var(--muted);margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+.qexp.shown{display:block}
+/* ---------- nav ---------- */
+nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;height:64px;
+  background:linear-gradient(0deg,#0d131b,#0b0f14ee);border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;gap:18px;padding:0 20px;
+}
+.navbtn{
+  font-family:var(--disp);font-size:15px;font-weight:600;background:transparent;
+  color:var(--trace);border:1px solid var(--line);border-radius:6px;
+  padding:9px 22px;cursor:pointer;letter-spacing:.06em;transition:all .15s;
+}
+.navbtn:hover{border-color:var(--trace);box-shadow:0 0 10px rgba(53,224,140,.25)}
+.dots{display:flex;gap:7px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--grid);cursor:pointer;border:none;padding:0;transition:all .2s}
+.dot.on{background:var(--trace);box-shadow:0 0 8px var(--trace)}
+.hint{position:fixed;bottom:70px;right:18px;z-index:49;font-family:var(--mono);font-size:11px;color:var(--muted);opacity:.7}
+/* ---------- hero ---------- */
+.hero{display:flex;flex-direction:column;justify-content:center;min-height:70vh}
+.hero-wave{margin:26px 0}
+.hero-meta{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:.06em;line-height:2}
+.hero-meta b{color:var(--ch2)}
+.bigclock{font-family:var(--disp);font-size:clamp(15px,1.6vw,18px);color:var(--muted);margin-top:8px}
+.bigclock span{color:var(--trace)}
+canvas{max-width:100%}
+.wave-anim{animation:scroll 6s linear infinite}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-680px)}}
+/* ---------- translation ladder ---------- */
+.ladder{display:flex;flex-direction:column;gap:0;margin:16px 0;max-width:760px}
+.rung{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 20px}
+.rung .rt2{font-family:var(--disp);font-size:14px;letter-spacing:.08em;color:var(--ch2);margin-bottom:4px}
+.rung .rc{font-family:var(--mono);font-size:14.5px;color:var(--ink);white-space:pre;overflow-x:auto}
+.ladder .arrow{align-self:center;font-family:var(--mono);font-size:12px;color:var(--trace);padding:6px 0;letter-spacing:.14em}
+@media(max-width:820px){
+  .slide{padding:28px 20px 110px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  header{gap:10px;padding:0 12px}
+  .readout.hidesm{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ch-dot" aria-hidden="true"></div>
+  <div class="readout">CH1 <b>ISA</b></div>
+  <div class="readout hidesm">MAC283 · <b>COMPUTER ARCHITECTURE</b></div>
+  <div id="hdrBits" aria-hidden="true">
+    <svg width="2400" height="34" viewBox="0 0 2400 34">
+      <text class="wave-anim" x="0" y="22" fill="#35e08c" opacity=".7" font-family="IBM Plex Mono" font-size="13" letter-spacing="3">000000 10001 10010 01000 00000 100000&#160;&#160;·&#160;&#160;100011 10000 01000 0000000000100000&#160;&#160;·&#160;&#160;000100 10011 10100 0000000000000001&#160;&#160;·&#160;&#160;000000 10001 10010 01000 00000 100000&#160;&#160;·&#160;&#160;100011 10000 01000 0000000000100000&#160;&#160;·&#160;&#160;000100 10011 10100 0000000000000001</text>
+    </svg>
+  </div>
+  <div class="readout ch2 hidesm">ISA = <b>MIPS32</b></div>
+  <div class="cycle-count">CYCLE <span id="slideNow">01</span>/<span id="slideTotal">14</span></div>
+</header>
+
+<main id="deck">
+
+<!-- ================= SLIDE 1 : TITLE ================= -->
+<section class="slide hero">
+  <div class="eyebrow">MAC283 · Computer Architecture &amp; Assembler Language</div>
+  <h1>The Contract:<br>How Software Speaks to Silicon</h1>
+  <p class="lede">Last lecture, the Iron Law gave you three knobs: <strong>IC × CPI × T<sub>C</sub></strong>. Today we open the knob your code owns — <strong>IC</strong>. The Instruction Set Architecture is the contract between every program ever written and the metal that runs it: a fixed vocabulary of operations, registers, and formats. Learn the vocabulary, and assembly language is just reading the contract out loud.</p>
+  <div class="hero-wave">
+    <svg width="100%" height="130" viewBox="0 0 1200 130" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <rect x="20"  y="30" width="200" height="52" rx="8" fill="#35e08c"/>
+      <rect x="228" y="30" width="168" height="52" rx="8" fill="#ffb454"/>
+      <rect x="404" y="30" width="168" height="52" rx="8" fill="#5ac8fa"/>
+      <rect x="580" y="30" width="168" height="52" rx="8" fill="#c792ea"/>
+      <rect x="756" y="30" width="168" height="52" rx="8" fill="#5a6b7d"/>
+      <rect x="932" y="30" width="200" height="52" rx="8" fill="#ff8fa3"/>
+      <text x="120" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#06120c">000000</text>
+      <text x="312" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#06120c">10001</text>
+      <text x="488" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#06120c">10010</text>
+      <text x="664" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#06120c">01000</text>
+      <text x="840" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#e6edf3">00000</text>
+      <text x="1032" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#06120c">100000</text>
+      <text x="120"  y="102" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#8b98a5" letter-spacing="2">OPCODE</text>
+      <text x="312"  y="102" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#8b98a5" letter-spacing="2">RS=$S1</text>
+      <text x="488"  y="102" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#8b98a5" letter-spacing="2">RT=$S2</text>
+      <text x="664"  y="102" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#8b98a5" letter-spacing="2">RD=$T0</text>
+      <text x="840"  y="102" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#8b98a5" letter-spacing="2">SHAMT</text>
+      <text x="1032" y="102" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#8b98a5" letter-spacing="2">FUNCT=ADD</text>
+      <text x="20" y="125" font-family="IBM Plex Mono" font-size="13" fill="#8b98a5">↑ this 32-bit word IS the instruction  add $t0, $s1, $s2 — by the end of today you will read it fluently</text>
+    </svg>
+  </div>
+  <div class="hero-meta">
+    INSTRUMENT &nbsp;: interactive deck · single HTML file · no installs<br>
+    TRIGGER &nbsp;&nbsp;&nbsp;&nbsp;: → / ← arrow keys, or the buttons below<br>
+    OPERATOR &nbsp;&nbsp;&nbsp;: Prof. K. Kassou · <b>LaGuardia Community College — MEC</b>
+  </div>
+  <div class="bigclock" id="liveInstr"></div>
+</section>
+
+<!-- ================= SLIDE 2 : WHAT IS AN ISA ================= -->
+<section class="slide">
+  <div class="eyebrow">01 · The Big Picture</div>
+  <h2>The ISA Is a Contract</h2>
+  <p class="lede">The ISA is the complete list of everything a programmer can ask the hardware to do: the <strong>instructions</strong>, the <strong>registers</strong>, the <strong>memory model</strong>, and the <strong>binary encodings</strong>. Above the line, software promises to only use this vocabulary. Below the line, hardware promises that any chip — any vendor, any year — will honor it identically.</p>
+  <div class="plain">Think of the ISA as a <b>restaurant menu</b>. You (the program) may order only what's printed on it. The kitchen (the microarchitecture) can reorganize, hire, buy new ovens — as long as every dish on the menu comes out exactly as described. That's why a program compiled in 2005 still runs on a 2026 x86 CPU: <b>same menu, wildly different kitchen</b>.</div>
+
+  <div class="ladder">
+    <div class="rung"><div class="rt2">HIGH-LEVEL LANGUAGE — what you write</div><div class="rc">g = h + A[8];</div></div>
+    <div class="arrow">▼ COMPILER</div>
+    <div class="rung"><div class="rt2">ASSEMBLY LANGUAGE — the ISA in human-readable form</div><div class="rc">lw  $t0, 32($s3)
+add $s0, $s1, $t0</div></div>
+    <div class="arrow">▼ ASSEMBLER</div>
+    <div class="rung"><div class="rt2">MACHINE CODE — the same ISA as raw bits</div><div class="rc">10001110011010000000000000100000
+00000010001010001000000000100000</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card accent">
+      <h4>ABOVE THE CONTRACT</h4>
+      <p>Algorithms, compilers, your assembly skills. Together they decide <strong>IC</strong> — how many instructions the program executes. This is the Iron Law knob we study today and for the rest of the semester.</p>
+    </div>
+    <div class="card warn">
+      <h4>BELOW THE CONTRACT</h4>
+      <p>Pipelines, caches, branch predictors — the microarchitecture. It decides <strong>CPI</strong>, invisible to the contract. Two chips can run the identical ISA with totally different speed (remember Machine A vs Machine B last lecture).</p>
+    </div>
+  </div>
+
+  <div class="irl">
+    The contract is a business asset. Intel and AMD have a decades-long cross-license just to legally share the x86 menu. Apple's 2020 Mac transition swapped the <b>entire kitchen</b> (x86 → ARM) and used Rosetta 2 to translate one menu into the other — a contract-to-contract translator. When you hear "M-series runs x86 apps," that's ISA translation, live, on your laptop.
+  </div>
+</section>
+
+<!-- ================= SLIDE 3 : REGISTERS ================= -->
+<section class="slide">
+  <div class="eyebrow">02 · The Workbench</div>
+  <h2>Registers: Zero-Distance Data</h2>
+  <p class="lede">Last lecture: light travels 8.6 cm per cycle, and RAM is ~250 cycles away. The ISA's answer is a tiny set of storage cells <strong>inside</strong> the CPU — registers — reachable in zero extra cycles. MIPS gives you exactly <strong>32</strong> of them, each 32 bits wide. Every computation happens here.</p>
+  <div class="plain">Registers are the <b>workbench</b>; memory is the <b>warehouse</b>. A carpenter doesn't walk to the warehouse for every nail — they keep the tools in hand and make warehouse trips (loads/stores) as rare as possible. Great assembly programmers and great compilers are judged by how well they keep work on the bench.</div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>THE MIPS REGISTER FILE (by convention)</h4>
+      <table>
+        <tr><th>Name</th><th>#</th><th>Job</th></tr>
+        <tr><td class="num">$zero</td><td>0</td><td>hard-wired constant 0</td></tr>
+        <tr><td class="num">$v0–$v1</td><td>2–3</td><td>function return values</td></tr>
+        <tr><td class="num">$a0–$a3</td><td>4–7</td><td>function arguments</td></tr>
+        <tr><td class="num">$t0–$t9</td><td>8–15, 24–25</td><td>temporaries (scratch)</td></tr>
+        <tr><td class="num">$s0–$s7</td><td>16–23</td><td>saved variables</td></tr>
+        <tr><td class="num">$sp / $ra</td><td>29 / 31</td><td>stack pointer / return address</td></tr>
+      </table>
+    </div>
+    <div class="card accent">
+      <h4>WHY EXACTLY 32?</h4>
+      <p>A register number must fit in an instruction field. 32 registers → <strong>5 bits</strong> per register name (2⁵ = 32) — three of them fit comfortably inside one 32-bit instruction. More registers would mean wider fields, fatter instructions, bigger programs. This is the number-systems math from Week 1 making a billion-dollar design decision.</p>
+      <p style="margin-top:10px"><strong>$zero</strong> is the strangest and most useful: reading it always yields 0, writing to it does nothing. Want a copy? <span style="color:var(--trace);font-family:var(--mono)">add $t0, $s1, $zero</span>. One wired-to-ground register replaces a whole family of special instructions.</p>
+    </div>
+  </div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · THE COST OF DISTANCE">
+    <div class="result-row">
+      <div class="result"><div class="rl">Register access</div><div class="rv">0 extra cycles</div></div>
+      <div class="result a"><div class="rl">L1 cache hit</div><div class="rv">~2–4 cycles</div></div>
+      <div class="result r"><div class="rl">Main RAM (miss)</div><div class="rv">~250 cycles</div></div>
+    </div>
+    <p style="font-size:14px;color:var(--muted);margin-top:12px">These are the AMAT numbers from last lecture wearing their ISA costume. The load/store design of MIPS exists to make the red column rare.</p>
+  </div>
+</section>
+
+<!-- ================= SLIDE 4 : INSTRUCTION ANATOMY + ENCODER ================= -->
+<section class="slide">
+  <div class="eyebrow">03 · Anatomy</div>
+  <h2>Dissecting an Instruction</h2>
+  <p class="lede">Every MIPS instruction is exactly <strong>one 32-bit word</strong>. An arithmetic (R-format) instruction packs six fields: what to do (opcode + funct), where the inputs live (rs, rt), and where the answer goes (rd). Assembly language is just these fields with names instead of bit patterns.</p>
+  <div class="plain">Read <b>add $t0, $s1, $s2</b> left to right as: "<b>add</b>, and the <b>first</b> register listed is the <b>destination</b>." So it means $t0 = $s1 + $s2. The destination-first rule trips up every beginner exactly once — let it be today, not on the exam.</div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · 32-BIT INSTRUCTION ASSEMBLER">
+    <div class="selrow">
+      <div class="sel"><label for="encOp">operation</label>
+        <select id="encOp">
+          <option value="add">add</option><option value="sub">sub</option>
+          <option value="and">and</option><option value="or">or</option>
+          <option value="slt">slt</option>
+        </select></div>
+      <div class="sel"><label for="encRd">rd (dest)</label><select id="encRd"></select></div>
+      <div class="sel"><label for="encRs">rs (src 1)</label><select id="encRs"></select></div>
+      <div class="sel"><label for="encRt">rt (src 2)</label><select id="encRt"></select></div>
+    </div>
+    <div class="asm" id="encAsm"></div>
+    <div class="bits" id="encBits" aria-live="polite"></div>
+    <div class="bitscale"><span>bit 31</span><span>bit 0</span></div>
+    <div class="result-row">
+      <div class="result"><div class="rl">Machine code (hex)</div><div class="rv" id="encHex">0x02324020</div></div>
+      <div class="result a"><div class="rl">Meaning</div><div class="rv" id="encMean" style="font-size:17px"></div></div>
+    </div>
+  </div>
+
+  <div class="irl">
+    Change the registers above and watch <b>only 5-bit fields flip</b> — the opcode/funct stay put. That's what the decoder hardware sees: fixed fields at fixed positions, every time. Your hex-to-binary drills from the number systems unit are literally the skill of reading this display without the colors.
+  </div>
+</section>
+
+<!-- ================= SLIDE 5 : THE THREE FORMATS ================= -->
+<section class="slide">
+  <div class="eyebrow">04 · Formats</div>
+  <h2>Three Formats Rule Them All</h2>
+  <p class="lede">MIPS encodes its entire vocabulary in just <strong>three templates</strong>: R (register), I (immediate), and J (jump). Same width, same opcode position — so the decoder knows where to look before it even knows what the instruction is.</p>
+  <div class="plain">Three formats is a <b>design promise to the hardware</b>: "you will never have to guess where a field starts." Compare x86, where instructions run 1 to 15 bytes and the decoder must read a byte just to learn how many more to read. Regularity is what makes fast, pipelined decoding cheap — remember, shorter t<sub>logic</sub> → shorter T<sub>C</sub> → higher f.</div>
+
+  <div class="card" style="margin-bottom:14px">
+    <h4>R-FORMAT — register arithmetic · add, sub, and, or, slt</h4>
+    <div class="bits">
+      <div class="bf op" style="flex:6"><div class="fv">op·6</div></div>
+      <div class="bf rs" style="flex:5"><div class="fv">rs·5</div></div>
+      <div class="bf rt" style="flex:5"><div class="fv">rt·5</div></div>
+      <div class="bf rd" style="flex:5"><div class="fv">rd·5</div></div>
+      <div class="bf sh" style="flex:5"><div class="fv">shamt·5</div></div>
+      <div class="bf fu" style="flex:6"><div class="fv">funct·6</div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <h4>I-FORMAT — immediates, loads/stores, branches · addi, lw, sw, beq</h4>
+    <div class="bits">
+      <div class="bf op" style="flex:6"><div class="fv">op·6</div></div>
+      <div class="bf rs" style="flex:5"><div class="fv">rs·5</div></div>
+      <div class="bf rt" style="flex:5"><div class="fv">rt·5</div></div>
+      <div class="bf im" style="flex:16"><div class="fv">immediate / offset · 16 bits (two's complement!)</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h4>J-FORMAT — unconditional jumps · j, jal</h4>
+    <div class="bits">
+      <div class="bf op" style="flex:6"><div class="fv">op·6</div></div>
+      <div class="bf ad" style="flex:26"><div class="fv">target address · 26 bits</div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:18px">
+    <div class="card accent">
+      <h4>THE 16-BIT CATCH</h4>
+      <p>An I-format immediate is 16 bits of <strong>two's complement</strong> — range −32,768 … +32,767. Need a bigger constant? The assembler quietly splits it into two instructions (lui + ori). Your two's-complement unit wasn't a warm-up — it's load-bearing.</p>
+    </div>
+    <div class="card warn">
+      <h4>DESIGN PRINCIPLE</h4>
+      <p><strong>Regularity enables speed.</strong> rs and rt sit at the same bit positions in R and I formats, so the register file can be read <em>before decoding finishes</em> — a trick the pipelined datapath (coming soon) depends on.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 6 : INSTRUCTION CLASSES ================= -->
+<section class="slide">
+  <div class="eyebrow">05 · Vocabulary</div>
+  <h2>The Three Jobs Every ISA Must Do</h2>
+  <p class="lede">Strip away the hundreds of mnemonics and every instruction ever designed does one of three jobs: <strong>compute</strong>, <strong>move data</strong>, or <strong>decide what runs next</strong>. These are exactly the CPI classes you mixed with sliders last lecture — now you meet them by name.</p>
+  <div class="plain">This slide is the bridge between the two lectures. Last week: "loads cost CPI 4, ALU ops cost 1" — abstract weights. Today: a load is <b>lw</b>, an ALU op is <b>add</b>. When we later count a program's instruction mix, you'll be counting these.</div>
+
+  <table>
+    <tr><th>Class</th><th>MIPS examples</th><th>Job</th><th>Typical CPI (last lecture!)</th></tr>
+    <tr><td class="num">Arithmetic / logic</td><td>add, sub, addi, and, or, slt</td><td>compute in registers</td><td>1</td></tr>
+    <tr><td class="num">Data transfer</td><td>lw, sw, lb, sb</td><td>registers ⇄ memory</td><td>3–4 (memory is far)</td></tr>
+    <tr><td class="num">Control flow</td><td>beq, bne, j, jal, jr</td><td>choose the next instruction</td><td>2 (+ stall risk)</td></tr>
+  </table>
+
+  <div class="grid3">
+    <div class="card"><h4>add $t0,$s1,$s2</h4><p>$t0 ← $s1 + $s2. Pure workbench: three registers, no memory, one cycle of ALU time.</p></div>
+    <div class="card"><h4>lw $t0, 32($s3)</h4><p>$t0 ← Memory[$s3 + 32]. A warehouse trip: compute an address, then wait for data to arrive.</p></div>
+    <div class="card"><h4>beq $s3,$s4,L1</h4><p>If $s3 == $s4, continue at label L1. The instruction that makes if, while, and for possible.</p></div>
+  </div>
+
+  <div class="irl">
+    Real measured mixes (SPEC benchmarks on MIPS-class machines): roughly <b>~50% arithmetic, ~35% data transfer, ~15% control</b>. Now the CPI slider defaults from last lecture stop being arbitrary — they were a real program's diet. A compiler that converts loads into register reuse is literally moving weight from the CPI-4 row to the CPI-1 row.
+  </div>
+</section>
+
+<!-- ================= SLIDE 7 : ADDRESSING MODES ================= -->
+<section class="slide">
+  <div class="eyebrow">06 · Finding Data</div>
+  <h2>Addressing Modes: base + offset</h2>
+  <p class="lede">A load must name a memory address, but addresses are 32 bits and the instruction only spares 16. The MIPS answer: keep a <strong>base address in a register</strong>, put a small <strong>constant offset</strong> in the instruction, and add them. One mode covers variables, array elements, and struct fields.</p>
+  <div class="plain">It's a street address system: the register holds the <b>building</b> ($s0 = where the array starts) and the offset is the <b>apartment number</b> (which element). Because MIPS memory is <b>byte-addressed</b> and a word is 4 bytes, apartment i lives at offset <b>4 × i</b> — forgetting the ×4 is this unit's classic exam wound.</div>
+
+  <div class="formula">
+    <span class="v">Effective address</span><span class="op">=</span>
+    <span class="v2">base register</span><span class="op">+</span><span class="v2">offset</span>
+    <span class="op">&nbsp;&nbsp;·&nbsp;&nbsp;A[i] lives at&nbsp;</span>
+    <span class="v">&amp;A + 4i</span>
+  </div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · EFFECTIVE ADDRESS CALCULATOR">
+    <div class="ctl">
+      <label>Base register $s0 (start of array A) <output id="baseOut">1000</output></label>
+      <input type="range" id="baseSlider" min="0" max="4" step="1" value="1" aria-label="base address">
+    </div>
+    <div class="ctl">
+      <label>Offset in the instruction <output id="offOut">8</output></label>
+      <input type="range" id="offSlider" min="0" max="7" step="1" value="2" aria-label="offset">
+    </div>
+    <div class="asm" id="lwAsm"></div>
+    <div class="memstrip" id="memStrip"></div>
+    <div class="result-row">
+      <div class="result"><div class="rl">Effective address</div><div class="rv" id="eaOut">1008</div></div>
+      <div class="result a"><div class="rl">Array element loaded</div><div class="rv" id="elOut">A[2]</div></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card accent"><h4>THE MODES MIPS USES</h4>
+      <p><strong>Register</strong> (add $t0,$s1,$s2) · <strong>Immediate</strong> (addi $t0,$s1,4) · <strong>Base+displacement</strong> (lw $t0,32($s3)) · <strong>PC-relative</strong> (beq — branch target = PC + 4 + offset×4) · <strong>Pseudodirect</strong> (j — 26-bit field into the PC).</p></div>
+    <div class="card warn"><h4>WHY SO FEW?</h4>
+      <p>x86 offers exotic modes like base + index×scale + displacement in one instruction. Powerful — and slow to decode. MIPS bets that <strong>two simple instructions beat one complicated one</strong>. Hold that thought for two slides.</p></div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 8 : LOAD/STORE + HAND COMPILING ================= -->
+<section class="slide">
+  <div class="eyebrow">07 · The Discipline</div>
+  <h2>Load/Store: Be Your Own Compiler</h2>
+  <p class="lede">MIPS is a <strong>load/store architecture</strong>: only lw and sw may touch memory; arithmetic works on registers, period. So every line of C becomes a ritual — <strong>fetch</strong> operands to the bench, <strong>compute</strong>, <strong>put away</strong> the result. Let's compile by hand.</p>
+  <div class="plain">The ritual has three verbs: <b>load</b> what you need, <b>work</b> on the bench, <b>store</b> what you promised. Every hand-compilation problem on the exam is these three verbs plus the ×4 address math from the previous slide. Nothing else.</div>
+
+  <div class="card" style="margin-bottom:6px">
+    <h4>COMPILE THIS · variables: g→$s1, h→$s2, base of A→$s3</h4>
+    <div class="asm"><span class="c">// C source</span>
+A[12] = h + A[8];</div>
+  </div>
+
+  <div class="steps" id="compileSteps">
+    <div class="step">A[8] is 8 words past the base → byte offset = 8 × 4 = <b>32</b>. Fetch it to the bench: <em>lw $t0, 32($s3)</em></div>
+    <div class="step">Compute on registers only: <em>add $t0, $s2, $t0</em> &nbsp;→ $t0 now holds h + A[8]</div>
+    <div class="step">A[12] → byte offset 12 × 4 = <b>48</b>. Put the result away: <em>sw $t0, 48($s3)</em></div>
+    <div class="step">Done — one C statement became <b>IC = 3 instructions</b>: 2 memory ops + 1 ALU op. With last lecture's weights (lw=4, add=1, sw=3) that's 8 cycles of CPI budget for a single "=" sign.</div>
+  </div>
+  <button class="btn" onclick="revealStep('compileSteps')">REVEAL NEXT STEP →</button>
+
+  <div class="irl">
+    Now you can see what an <b>optimizing compiler</b> earns its keep doing: if A[8] was already loaded two lines earlier and nothing changed it, the compiler skips the lw and reuses the register — deleting a CPI-4 instruction. Multiply that by a million-line program and "compiler flags" (-O2) stop being magic and start being arithmetic.
+  </div>
+</section>
+
+<!-- ================= SLIDE 9 : CONTROL FLOW ================= -->
+<section class="slide">
+  <div class="eyebrow">08 · Decisions</div>
+  <h2>Branches: How if and while Are Built</h2>
+  <p class="lede">There is no "if statement" in silicon. There is only <strong>beq / bne</strong> (branch if equal / not equal) and <strong>j</strong> (jump). Every if, else, while, and for in every language you know compiles down to these — usually with the test <strong>inverted</strong>.</p>
+  <div class="plain">The compiler's habit that confuses everyone: to compile "if (i == j) do X", it emits "<b>bne</b> … skip X". You branch <b>around</b> the code when the condition <b>fails</b>, and fall through into it when the condition holds. Read branches as "bail out if…" and assembly control flow becomes readable.</div>
+
+  <div class="card" style="margin-bottom:6px">
+    <h4>COMPILE THIS · f→$s0, g→$s1, h→$s2, i→$s3, j→$s4</h4>
+    <div class="asm"><span class="c">// C source</span>
+if (i == j)  f = g + h;
+else         f = g - h;</div>
+  </div>
+
+  <div class="steps" id="branchSteps">
+    <div class="step">Invert the test — bail to Else when it fails: <em>bne $s3, $s4, Else</em></div>
+    <div class="step">Fall-through path (condition true): <em>add $s0, $s1, $s2</em></div>
+    <div class="step">True path must skip over the else code: <em>j Exit</em></div>
+    <div class="step">The other arm: <em>Else: sub $s0, $s1, $s2</em> &nbsp;then&nbsp; <em>Exit:</em> — labels are just names for addresses; the assembler turns them into PC-relative offsets (I-format) for you.</div>
+    <div class="step">Total: <b>IC = 4 instructions</b> and one of them is a branch — the CPI-2, stall-risk class. When we study pipeline hazards, <b>this exact pattern</b> is where the bubbles will appear.</div>
+  </div>
+  <button class="btn" onclick="revealStep('branchSteps')">REVEAL NEXT STEP →</button>
+
+  <div class="irl">
+    A while-loop is the same trick pointing backwards: test at the top, <b>bne</b> out when done, <b>j</b> back to the test. Your Unity game loop (MAC280 crowd), your Java for-loops (MAC286) — under every one of them, right now, is a conditional branch executed millions of times per second. Branch prediction hardware exists because loops make branches the most-repeated instructions on Earth.
+  </div>
+</section>
+
+<!-- ================= SLIDE 10 : RISC vs CISC ================= -->
+<section class="slide">
+  <div class="eyebrow">09 · The Design War</div>
+  <h2>RISC vs CISC: One Law, Two Bets</h2>
+  <p class="lede">Should an ISA offer few, simple, fast instructions — or many, powerful, slow ones? This 45-year argument is just the Iron Law with two different strategies: CISC bets on shrinking <strong>IC</strong>; RISC bets on shrinking <strong>CPI × T<sub>C</sub></strong>.</p>
+  <div class="plain">Recall the MIPS-trap slide: Compiler 1 used many simple instructions, Compiler 2 used few complex ones — and instruction count alone told you nothing. RISC vs CISC is that table turned into a <b>philosophy of hardware design</b>. Neither side "wins" by ideology; the Iron Law referees every match.</div>
+
+  <table>
+    <tr><th></th><th>CISC (x86)</th><th>RISC (MIPS, ARM, RISC-V)</th></tr>
+    <tr><td class="num">Instruction length</td><td>1–15 bytes, variable</td><td>4 bytes, fixed</td></tr>
+    <tr><td class="num">Memory access</td><td>most instructions may touch memory</td><td>only lw / sw</td></tr>
+    <tr><td class="num">Addressing modes</td><td>many, elaborate</td><td>few, simple</td></tr>
+    <tr><td class="num">Iron Law bet</td><td>lower IC, tolerate higher CPI</td><td>lower CPI &amp; T<sub>C</sub>, tolerate higher IC</td></tr>
+    <tr><td class="num">Decoder hardware</td><td>complex, power-hungry</td><td>small, fast, pipeline-friendly</td></tr>
+  </table>
+
+  <div class="card" style="margin:18px 0 6px">
+    <h4>SETTLE IT WITH THE IRON LAW · same program, same 2.0 GHz clock</h4>
+    <p style="font-family:var(--mono);font-size:14.5px;color:var(--ink)">CISC machine: IC = 4×10⁹, CPI = 2.0 &nbsp;·&nbsp; RISC machine: IC = 8×10⁹, CPI = 0.8</p>
+  </div>
+  <div class="steps" id="warSteps">
+    <div class="step">Time<sub>CISC</sub> = IC × CPI / f = 4×10⁹ × 2.0 / 2×10⁹ = <b>4.0 s</b></div>
+    <div class="step">Time<sub>RISC</sub> = 8×10⁹ × 0.8 / 2×10⁹ = <b>3.2 s</b> — twice the instructions, still 20% faster</div>
+    <div class="step">Speedup = 4.0 / 3.2 = <b>1.25×</b>. The RISC machine executes <em>more</em> instructions and wins anyway — MIPS-the-metric would have called this backwards.</div>
+  </div>
+  <button class="btn" onclick="revealStep('warSteps')">REVEAL NEXT STEP →</button>
+
+  <div class="irl">
+    The plot twist of the modern era: <b>x86 chips are secretly RISC inside</b>. Since the mid-90s, Intel/AMD decoders translate CISC instructions into internal RISC-like micro-ops, then run those on a RISC-style core — paying a decoder tax on every instruction, forever. ARM (your phone, Apple M-series) and RISC-V (free &amp; open, the academic darling) skip the tax. That's a big piece of why performance-per-watt now favors RISC designs — connect it to the power wall from last lecture.
+  </div>
+</section>
+
+<!-- ================= SLIDE 11 : STORED PROGRAM + FETCH-EXECUTE SIM ================= -->
+<section class="slide">
+  <div class="eyebrow">10 · The Engine Turns</div>
+  <h2>The Stored Program &amp; the Fetch–Execute Cycle</h2>
+  <p class="lede">Here is the deepest idea in computing: instructions are <strong>just numbers in memory</strong>, sitting beside the data. One register — the <strong>program counter (PC)</strong> — holds the address of the next one. Fetch it, decode it, execute it, add 4 to PC, repeat forever. That loop <em>is</em> your computer.</p>
+  <div class="plain">Every clock cycle you measured last lecture is spent somewhere inside this loop. Watch the PC below: it counts <b>by 4</b>, because every MIPS instruction is 4 bytes — the fixed-width promise from the formats slide is what makes "PC + 4" possible at all.</div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · SINGLE-STEP CPU">
+    <div class="sim">
+      <div>
+        <div class="asm" id="simProg"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn" id="simStep">STEP ⏭ EXECUTE</button>
+          <button class="btn amber" id="simReset">RESET</button>
+        </div>
+      </div>
+      <div>
+        <div class="regbox" id="simRegs"></div>
+        <div class="result-row">
+          <div class="result"><div class="rl">PC</div><div class="rv" id="simPC">0x0040_0000</div></div>
+          <div class="result a"><div class="rl">Mem[$s0+0]</div><div class="rv" id="simMem">?</div></div>
+        </div>
+      </div>
+    </div>
+    <p id="simSay" style="font-family:var(--mono);font-size:13.5px;color:var(--muted);margin-top:8px">Press STEP to fetch and execute the first instruction.</p>
+  </div>
+
+  <div class="irl">
+    "Instructions are data" is why software exists at all: a compiler is a program whose <b>output is instructions</b>; an OS loads programs by <b>copying numbers into memory</b> and pointing PC at them. It's also why security is hard — a buffer overflow is an attacker sneaking numbers into memory and convincing PC to visit them. One idea, 80 years of consequences (von Neumann, 1945).
+  </div>
+</section>
+
+<!-- ================= SLIDE 12 : IRON LAW REVISITED ================= -->
+<section class="slide">
+  <div class="eyebrow">11 · Closing the Loop</div>
+  <h2>Your Hands on the IC Knob</h2>
+  <p class="lede">The Iron Law promised your code owns one knob. Now it's literal: every lw you avoid, every value you keep on the bench, every branch you restructure changes IC — and, through the instruction mix, CPI too. Same clock, same chip, faster program.</p>
+  <div class="plain">This is the whole reason an app developer should care about this course: the two programs below do <b>the same job on the same machine</b>. The only difference is how well their author speaks the ISA.</div>
+
+  <div class="formula">
+    <span class="v">CPU Time</span><span class="op">=</span>
+    <span class="v2">IC</span><span class="op">×</span><span class="v2">CPI</span><span class="op">×</span><span class="v2">T<sub>C</sub></span>
+    <span class="op">&nbsp;— today's lecture lives in the first two factors</span>
+  </div>
+
+  <div class="grid2">
+    <div class="card warn">
+      <h4>NAIVE · reload everything, every time</h4>
+      <div class="asm"><span class="c"># sum = A[0]+A[1], twice used</span>
+<span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">0</span>(<span class="r">$s3</span>)
+<span class="k">lw</span>   <span class="r">$t1</span>, <span class="n">4</span>(<span class="r">$s3</span>)
+<span class="k">add</span>  <span class="r">$t2</span>, <span class="r">$t0</span>, <span class="r">$t1</span>
+<span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">0</span>(<span class="r">$s3</span>)   <span class="c"># reload!</span>
+<span class="k">lw</span>   <span class="r">$t1</span>, <span class="n">4</span>(<span class="r">$s3</span>)   <span class="c"># reload!</span>
+<span class="k">add</span>  <span class="r">$t3</span>, <span class="r">$t0</span>, <span class="r">$t1</span></div>
+      <p>IC = 6 · cycles = 4 lw × 4 + 2 add × 1 = <strong>18 cycles</strong></p>
+    </div>
+    <div class="card accent">
+      <h4>FLUENT · the bench remembers</h4>
+      <div class="asm"><span class="c"># load once, reuse registers</span>
+<span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">0</span>(<span class="r">$s3</span>)
+<span class="k">lw</span>   <span class="r">$t1</span>, <span class="n">4</span>(<span class="r">$s3</span>)
+<span class="k">add</span>  <span class="r">$t2</span>, <span class="r">$t0</span>, <span class="r">$t1</span>
+<span class="k">add</span>  <span class="r">$t3</span>, <span class="r">$t0</span>, <span class="r">$t1</span>
+
+
+
+</div>
+      <p>IC = 4 · cycles = 2 lw × 4 + 2 add × 1 = <strong>10 cycles — a 1.8× speedup from literacy alone</strong></p>
+    </div>
+  </div>
+
+  <div class="irl">
+    Scale it up: at 3 GHz, saving 8 cycles per iteration of a loop that runs 10⁹ times returns <b>2.7 seconds</b> — from editing four lines of assembly. This is the skill the rest of the semester trains: next we build the <b>datapath</b> that executes these instructions, then pipeline it, and suddenly the stalls and hazards will happen to <b>code you can read</b>.
+  </div>
+</section>
+
+<!-- ================= SLIDE 13 : CHECKPOINT ================= -->
+<section class="slide">
+  <div class="eyebrow">12 · Checkpoint</div>
+  <h2>Prove It — Quick Checkpoint</h2>
+  <p class="lede">Mental math only. Click an answer for instant feedback.</p>
+  <div class="plain">Each question maps to one slide: Q1 → formats, Q2 → anatomy, Q3 → addressing, Q4 → registers, Q5 → RISC vs CISC via the Iron Law. Miss one → revisit that slide and play with its instrument until the answer feels obvious.</div>
+
+  <div class="q">
+    <div class="qt">Q1 · How long is a MIPS instruction?</div>
+    <button class="qopt" data-ok="0">It varies with the instruction</button>
+    <button class="qopt" data-ok="1">Always exactly 32 bits</button>
+    <button class="qopt" data-ok="0">Always exactly 8 bits</button>
+    <div class="qexp">Every MIPS instruction is one 32-bit word — the fixed-width promise. That's why PC always advances by 4 and why decoding is fast. (x86 is the variable-length counterexample.)</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q2 · After <span style="font-family:var(--mono);color:var(--trace)">add $t0, $s1, $s2</span>, which register changed?</div>
+    <button class="qopt" data-ok="1">$t0 — the first-listed register is the destination</button>
+    <button class="qopt" data-ok="0">$s2 — the last register gets the result</button>
+    <button class="qopt" data-ok="0">All three of them</button>
+    <div class="qexp">Destination first: $t0 ← $s1 + $s2. Sources are only read, never written.</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q3 · <span style="font-family:var(--mono);color:var(--trace)">lw $t0, 12($s0)</span> with $s0 = 2000. What address is read?</div>
+    <button class="qopt" data-ok="0">12</button>
+    <button class="qopt" data-ok="1">2012</button>
+    <button class="qopt" data-ok="0">2048</button>
+    <div class="qexp">Effective address = base + offset = 2000 + 12 = 2012. (And if that 12 was meant to be "element 12", the programmer wanted offset 48 — the ×4 trap!)</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q4 · What does <span style="font-family:var(--mono);color:var(--trace)">$zero</span> hold after you write 7 into it?</div>
+    <button class="qopt" data-ok="0">7, until it's overwritten</button>
+    <button class="qopt" data-ok="1">0 — it is hard-wired; writes are ignored</button>
+    <button class="qopt" data-ok="0">Whatever was there before</button>
+    <div class="qexp">$zero is physically wired to 0. It exists so common patterns (copy, compare-to-zero, load small constant) don't need special instructions.</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q5 · Same program, same 2 GHz clock. CISC: IC = 4×10⁹, CPI = 2.0. RISC: IC = 8×10⁹, CPI = 0.8. Which is faster?</div>
+    <button class="qopt" data-ok="0">CISC — half the instructions must win</button>
+    <button class="qopt" data-ok="1">RISC — 3.2 s vs 4.0 s</button>
+    <button class="qopt" data-ok="0">Exactly tied</button>
+    <div class="qexp">Iron Law: CISC = 4×10⁹×2.0/2×10⁹ = 4.0 s; RISC = 8×10⁹×0.8/2×10⁹ = 3.2 s. Instruction count alone is the MIPS trap all over again.</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 14 : TAKE-HOME CARD ================= -->
+<section class="slide">
+  <div class="eyebrow">13 · Take-Home</div>
+  <h2>The Contract Card</h2>
+  <p class="lede">Today's vocabulary on one screen. If you can hand-assemble one R-format instruction to hex and hand-compile one if-statement, you own this material.</p>
+  <div class="plain">Read it as a story: the contract defines the words (row 1), the words operate on the bench (row 2), name data by base+offset (row 3), make decisions by branching around code (row 4) — and the Iron Law scores how well you speak (rows 5–6).</div>
+
+  <div class="grid3">
+    <div class="card"><h4>THE FORMATS</h4>
+      <p style="font-family:var(--mono)">R: op·rs·rt·rd·shamt·funct<br>I: op·rs·rt·imm16<br>J: op·addr26<br>All exactly 32 bits.</p></div>
+    <div class="card"><h4>THE BENCH</h4>
+      <p style="font-family:var(--mono)">32 registers × 32 bits<br>$zero ≡ 0 always<br>$t* scratch · $s* saved<br>5 bits name a register</p></div>
+    <div class="card"><h4>FINDING DATA</h4>
+      <p style="font-family:var(--mono)">EA = base + offset<br>A[i] ↔ 4×i bytes<br>imm16: −32768…32767<br>branches: PC-relative</p></div>
+    <div class="card"><h4>THE RITUAL</h4>
+      <p style="font-family:var(--mono)">load → compute → store<br>lw/sw only touch memory<br>dest register listed first<br>invert tests: bne around</p></div>
+    <div class="card"><h4>THE LOOP</h4>
+      <p style="font-family:var(--mono)">fetch → decode → execute<br>PC ← PC + 4<br>instructions are numbers<br>living beside the data</p></div>
+    <div class="card"><h4>THE SCOREBOARD</h4>
+      <p style="font-family:var(--mono)">Time = IC × CPI × T꜀<br>CISC bets on IC ↓<br>RISC bets on CPI·T꜀ ↓<br>the Iron Law referees</p></div>
+  </div>
+
+  <div class="irl" style="margin-top:22px">
+    <b>The one-sentence version of this lecture:</b> an ISA is the fixed contract of registers, formats, and operations through which all software must speak to hardware — and assembly language is you speaking it directly, with your hands on the Iron Law's IC knob.
+  </div>
+
+  <p style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:26px">MAC283 · Prof. K. Kassou · LaGuardia Community College — MEC Department</p>
+</section>
+
+</main>
+
+<div class="hint">← → keys · Home/End</div>
+
+<nav>
+  <button class="navbtn" id="prevBtn" aria-label="previous slide">◀ PREV</button>
+  <div class="dots" id="dots" role="tablist"></div>
+  <button class="navbtn" id="nextBtn" aria-label="next slide">NEXT ▶</button>
+</nav>
+
+<script>
+"use strict";
+/* ============ DECK NAV ============ */
+const slides=[...document.querySelectorAll('.slide')];
+const dotsBox=document.getElementById('dots');
+let cur=0;
+slides.forEach((s,i)=>{
+  const d=document.createElement('button');
+  d.className='dot';d.setAttribute('aria-label','go to slide '+(i+1));
+  d.onclick=()=>go(i);dotsBox.appendChild(d);
+});
+const dots=[...dotsBox.children];
+document.getElementById('slideTotal').textContent=String(slides.length).padStart(2,'0');
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,j)=>{
+    const on=(j===cur);
+    s.classList.toggle('active',on);
+    s.hidden=!on;
+    s.style.display=on?'block':'none';
+    if(on)s.scrollTop=0;
+  });
+  dots.forEach((d,j)=>d.classList.toggle('on',j===cur));
+  document.getElementById('slideNow').textContent=String(cur+1).padStart(2,'0');
+}
+document.getElementById('prevBtn').onclick=()=>go(cur-1);
+document.getElementById('nextBtn').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  if(e.key==='Home')go(0);
+  if(e.key==='End')go(slides.length-1);
+});
+go(0);
+
+/* ============ TITLE: live instruction odometer ============ */
+const liveEl=document.getElementById('liveInstr');
+const t0=performance.now();
+setInterval(()=>{
+  const secs=(performance.now()-t0)/1000;
+  const ins=secs*3.5e9/1.25; // 3.5 GHz at CPI 1.25 — last lecture's numbers
+  liveEl.innerHTML='While you read this slide, a 3.5 GHz CPU (CPI 1.25) has fetched, decoded, and executed <span>'+
+    ins.toExponential(3).replace('e+9',' × 10⁹')+'</span> instructions — every one of them written in the contract.';
+},120);
+
+/* ============ STEP REVEAL ============ */
+function revealStep(id){
+  const box=document.getElementById(id);
+  const nxt=box.querySelector('.step:not(.shown)');
+  if(nxt)nxt.classList.add('shown');
+}
+
+/* ============ SLIDE 4: instruction encoder ============ */
+const REGS={
+  '$zero':0,'$v0':2,'$a0':4,'$t0':8,'$t1':9,'$t2':10,'$t3':11,
+  '$s0':16,'$s1':17,'$s2':18,'$s3':19,'$s4':20,'$sp':29,'$ra':31
+};
+const FUNCT={add:32,sub:34,and:36,or:37,slt:42};
+const SYM={add:'+',sub:'−',and:'AND',or:'OR',slt:'< (set 1/0)'};
+function fillRegSel(id,def){
+  const s=document.getElementById(id);
+  Object.keys(REGS).forEach(r=>{
+    const o=document.createElement('option');o.value=r;o.textContent=r+' ('+REGS[r]+')';
+    if(r===def)o.selected=true;s.appendChild(o);
+  });
+  s.addEventListener('change',updEnc);
+}
+fillRegSel('encRd','$t0');fillRegSel('encRs','$s1');fillRegSel('encRt','$s2');
+document.getElementById('encOp').addEventListener('change',updEnc);
+function b(n,w){return n.toString(2).padStart(w,'0');}
+function updEnc(){
+  const op=document.getElementById('encOp').value;
+  const rd=document.getElementById('encRd').value;
+  const rs=document.getElementById('encRs').value;
+  const rt=document.getElementById('encRt').value;
+  const f={op:'000000',rs:b(REGS[rs],5),rt:b(REGS[rt],5),rd:b(REGS[rd],5),sh:'00000',fu:b(FUNCT[op],6)};
+  document.getElementById('encAsm').innerHTML=
+    '<span class="k">'+op+'</span>  <span class="r">'+rd+'</span>, <span class="r">'+rs+'</span>, <span class="r">'+rt+
+    '</span>   <span class="c"># '+rd+' = '+rs+' '+SYM[op]+' '+rt+'</span>';
+  const bitsEl=document.getElementById('encBits');
+  bitsEl.innerHTML='';
+  [['op',f.op,'opcode',6],['rs',f.rs,'rs '+rs,5],['rt',f.rt,'rt '+rt,5],
+   ['rd',f.rd,'rd '+rd,5],['sh',f.sh,'shamt',5],['fu',f.fu,'funct '+op,6]].forEach(([cls,val,lab,w])=>{
+    const d=document.createElement('div');d.className='bf '+cls;d.style.flex=String(w);
+    d.innerHTML='<div class="fv">'+val+'</div><div class="fl">'+lab+'</div>';
+    bitsEl.appendChild(d);
+  });
+  const word=f.op+f.rs+f.rt+f.rd+f.sh+f.fu;
+  document.getElementById('encHex').textContent='0x'+parseInt(word,2).toString(16).padStart(8,'0');
+  document.getElementById('encMean').textContent=rd+' ← '+rs+' '+SYM[op].split(' ')[0]+' '+rt;
+}
+updEnc();
+
+/* ============ SLIDE 7: effective address ============ */
+const AVALS=[41,7,13,88,5,23,61,9]; // pretend array contents
+function updEA(){
+  const base=1000+Number(document.getElementById('baseSlider').value)*100;
+  const idx=Number(document.getElementById('offSlider').value);
+  const off=idx*4;
+  const ea=base+off;
+  document.getElementById('baseOut').textContent=String(base);
+  document.getElementById('offOut').textContent=String(off);
+  document.getElementById('eaOut').textContent=String(ea);
+  document.getElementById('elOut').textContent='A['+idx+'] = '+AVALS[idx];
+  document.getElementById('lwAsm').innerHTML=
+    '<span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">'+off+'</span>(<span class="r">$s0</span>)'+
+    '   <span class="c"># $t0 ← Memory['+base+' + '+off+'] = Memory['+ea+']</span>';
+  const strip=document.getElementById('memStrip');
+  strip.innerHTML='';
+  for(let i=0;i<8;i++){
+    const c=document.createElement('div');
+    c.className='mcell'+(i===0?' base':'')+(i===idx?' hit':'');
+    c.innerHTML='<div class="ma">'+(base+4*i)+(i===0?' ←$s0':'')+'</div><div class="mv">A['+i+']='+AVALS[i]+'</div>';
+    strip.appendChild(c);
+  }
+}
+['baseSlider','offSlider'].forEach(id=>document.getElementById(id).addEventListener('input',updEA));
+updEA();
+
+/* ============ SLIDE 11: single-step CPU ============ */
+const PROG=[
+  {t:'addi <span class="r">$t0</span>, <span class="r">$zero</span>, <span class="n">5</span>',say:'FETCH @ PC → DECODE: I-format addi → EXECUTE: $t0 ← 0 + 5. PC ← PC + 4.',
+   run:s=>{s.t0=5;s.chg='t0';}},
+  {t:'addi <span class="r">$t1</span>, <span class="r">$zero</span>, <span class="n">7</span>',say:'Same ritual: $t1 ← 0 + 7. Notice $zero doing its job as a free constant.',
+   run:s=>{s.t1=7;s.chg='t1';}},
+  {t:'add  <span class="r">$t2</span>, <span class="r">$t0</span>, <span class="r">$t1</span>',say:'R-format: $t2 ← $t0 + $t1 = 12. Pure workbench, one cycle of ALU.',
+   run:s=>{s.t2=s.t0+s.t1;s.chg='t2';}},
+  {t:'sw   <span class="r">$t2</span>, <span class="n">0</span>(<span class="r">$s0</span>)',say:'Store: Memory[$s0 + 0] ← 12. The warehouse now has the result — this is the CPI-3 trip.',
+   run:s=>{s.mem=s.t2;s.chg='mem';}},
+  {t:'<span class="c"># halted — program complete</span>',say:'Done: 4 instructions fetched, decoded, executed. IC = 4. Press RESET to run it again.',
+   run:s=>{s.chg=null;}}
+];
+let S;
+function simReset(){
+  S={pc:0x00400000,t0:'?',t1:'?',t2:'?',mem:'?',line:0,chg:null};
+  paintSim('Press STEP to fetch and execute the first instruction.');
+}
+function paintSim(msg){
+  const prog=document.getElementById('simProg');
+  prog.innerHTML=PROG.map((p,i)=>{
+    const k=p.t.replace(/^(\w+)/,'<span class="k">$1</span>');
+    return (i===S.line&&i<PROG.length-1?'<span class="cur">':'')+
+      '0x'+(0x00400000+4*i).toString(16).padStart(8,'0')+'  '+k+
+      (i===S.line&&i<PROG.length-1?'</span>':'');
+  }).join('\n');
+  const rb=document.getElementById('simRegs');
+  rb.innerHTML=[['$t0',S.t0,'t0'],['$t1',S.t1,'t1'],['$t2',S.t2,'t2'],['$s0','0x1000 (base)','s0']]
+    .map(([n,v,key])=>'<div class="rrow'+(S.chg===key?' chg':'')+'"><span class="rn">'+n+'</span><span class="rvv">'+v+'</span></div>').join('');
+  document.getElementById('simPC').textContent='0x'+S.pc.toString(16).padStart(8,'0');
+  const mEl=document.getElementById('simMem');
+  mEl.textContent=String(S.mem);
+  mEl.parentElement.classList.toggle('a',S.chg!=='mem');
+  document.getElementById('simSay').textContent=msg;
+}
+document.getElementById('simStep').onclick=()=>{
+  if(S.line>=PROG.length-1){paintSim(PROG[PROG.length-1].say);return;}
+  const p=PROG[S.line];
+  p.run(S);
+  S.pc+=4;S.line++;
+  paintSim(p.say);
+};
+document.getElementById('simReset').onclick=simReset;
+simReset();
+
+/* ============ QUIZ ============ */
+document.querySelectorAll('.q').forEach(q=>{
+  q.querySelectorAll('.qopt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      q.querySelectorAll('.qopt').forEach(o=>{
+        o.classList.remove('correct','wrong');
+        if(o.dataset.ok==='1')o.classList.add('correct');
+      });
+      if(btn.dataset.ok!=='1')btn.classList.add('wrong');
+      q.querySelector('.qexp').classList.add('shown');
+    });
+  });
+});
+</script>
+</body>
+</html>
