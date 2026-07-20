@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 — The Contract, Applied: Worked Examples in MIPS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14;
+  --panel:#121821;
+  --panel2:#0e141c;
+  --grid:#1c2733;
+  --line:#233140;
+  --trace:#35e08c;
+  --trace-dim:rgba(53,224,140,.14);
+  --ch2:#ffb454;
+  --ch2-dim:rgba(255,180,84,.14);
+  --danger:#ff6b6b;
+  --blue:#5ac8fa;
+  --purple:#c792ea;
+  --pink:#ff8fa3;
+  --ink:#e6edf3;
+  --muted:#8b98a5;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --disp:'Chakra Petch',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 59px,rgba(28,39,51,.55) 59px 60px),
+    repeating-linear-gradient(90deg,transparent 0 59px,rgba(28,39,51,.55) 59px 60px);
+}
+header{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:50;
+  background:linear-gradient(180deg,#0d131b 0%,#0b0f14 100%);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:18px;padding:0 22px;
+}
+.ch-dot{width:10px;height:10px;border-radius:50%;background:var(--trace);box-shadow:0 0 8px var(--trace)}
+.readout{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+.readout b{color:var(--trace);font-weight:600}
+.readout.ch2 b{color:var(--ch2)}
+#hdrBits{flex:1;height:34px;min-width:120px;overflow:hidden;opacity:.9}
+#hdrBits svg{height:34px}
+.cycle-count{font-family:var(--disp);font-size:14px;letter-spacing:.12em;color:var(--ink)}
+.cycle-count span{color:var(--trace)}
+main{position:fixed;top:58px;bottom:64px;left:0;right:0;z-index:1;overflow:hidden}
+.slide{display:none;height:100%;overflow-y:auto;padding:36px 64px 50px;max-width:1200px;margin:0 auto}
+.slide.active{display:block;animation:sweep .35s ease-out}
+@keyframes sweep{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .slide.active{animation:none}
+  .wave-anim{animation:none !important}
+}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--ch2);text-transform:uppercase;margin-bottom:10px}
+h1{font-family:var(--disp);font-size:clamp(34px,4.6vw,58px);line-height:1.06;font-weight:700;margin-bottom:14px}
+h2{font-family:var(--disp);font-size:clamp(26px,3.2vw,40px);font-weight:700;margin-bottom:8px}
+h3{font-family:var(--disp);font-size:18px;font-weight:600;color:var(--trace);margin-bottom:8px;letter-spacing:.03em}
+.lede{font-size:17px;color:var(--muted);max-width:70ch;line-height:1.65;margin-bottom:22px}
+.lede strong,.card p strong{color:var(--ink)}
+p{line-height:1.65}
+.plain{
+  border-left:3px solid var(--ch2);background:rgba(255,180,84,.05);
+  border-radius:0 8px 8px 0;padding:13px 18px;margin:0 0 20px;
+  font-size:14.5px;color:var(--muted);line-height:1.65;max-width:78ch;
+}
+.plain::before{content:"IN PLAIN WORDS";display:block;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ch2);margin-bottom:5px}
+.plain b{color:var(--ink)}
+.formula{
+  font-family:var(--mono);background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--trace);border-radius:8px;padding:18px 24px;margin:16px 0;
+  font-size:clamp(16px,2vw,21px);overflow-x:auto;white-space:nowrap;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.formula .op{color:var(--muted);padding:0 4px}
+.formula .v{color:var(--trace)}
+.formula .v2{color:var(--ch2)}
+sub,sup{font-size:.68em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:18px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 22px}
+.card.accent{border-color:rgba(53,224,140,.4);background:linear-gradient(180deg,rgba(53,224,140,.05),var(--panel))}
+.card.warn{border-color:rgba(255,180,84,.45);background:linear-gradient(180deg,rgba(255,180,84,.05),var(--panel))}
+.card h4{font-family:var(--disp);font-size:15px;letter-spacing:.05em;margin-bottom:8px;color:var(--ch2)}
+.card p{font-size:14.5px;color:var(--muted)}
+.irl{
+  border:1px dashed rgba(255,180,84,.5);border-radius:10px;background:var(--ch2-dim);
+  padding:16px 20px;margin:16px 0;font-size:15px;line-height:1.6;
+}
+.irl::before{content:"⏱ REAL LIFE";font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ch2);display:block;margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:14px;margin:14px 0}
+th{font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--ch2);text-align:left}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line)}
+tr:hover td{background:rgba(53,224,140,.04)}
+td.num{color:var(--trace)}
+.lab{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:20px 0;position:relative}
+.lab::before{
+  content:attr(data-title);position:absolute;top:-11px;left:18px;
+  background:var(--bg);padding:0 10px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;color:var(--trace);
+}
+.ctl{margin:14px 0}
+.ctl label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:6px}
+.ctl label output{color:var(--trace);font-weight:600}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--grid);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--trace);border:2px solid #0b0f14;box-shadow:0 0 8px rgba(53,224,140,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--trace);border:2px solid #0b0f14;box-shadow:0 0 8px rgba(53,224,140,.6);cursor:pointer}
+select{font-family:var(--mono);font-size:14px;background:var(--panel);color:var(--trace);border:1px solid var(--line);border-radius:6px;padding:8px 10px;cursor:pointer;outline:none}
+select:focus-visible{outline:2px solid var(--ch2);outline-offset:2px}
+.selrow{display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin:6px 0 14px}
+.selrow .sel label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.result-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px}
+.result{flex:1;min-width:150px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 16px;text-align:center}
+.result .rl{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.result .rv{font-family:var(--disp);font-size:clamp(18px,2.4vw,26px);font-weight:700;color:var(--trace);margin-top:4px}
+.result.a .rv{color:var(--ch2)}
+.result.r .rv{color:var(--danger)}
+button.btn{
+  font-family:var(--disp);font-size:14px;letter-spacing:.08em;font-weight:600;
+  background:transparent;color:var(--trace);border:1px solid var(--trace);
+  border-radius:6px;padding:9px 20px;cursor:pointer;transition:all .15s;
+}
+button.btn:hover{background:rgba(53,224,140,.12);box-shadow:0 0 12px rgba(53,224,140,.3)}
+button.btn.amber{color:var(--ch2);border-color:var(--ch2)}
+button.btn.amber:hover{background:rgba(255,180,84,.12);box-shadow:0 0 12px rgba(255,180,84,.3)}
+button.btn:focus-visible,.qopt:focus-visible,.navbtn:focus-visible{outline:2px solid var(--ch2);outline-offset:2px}
+.steps .step{border-left:2px solid var(--grid);padding:10px 18px;margin:8px 0;font-family:var(--mono);font-size:15px;display:none;line-height:1.7}
+.steps .step.shown{display:block;border-left-color:var(--trace);animation:sweep .3s ease-out}
+.steps .step em{color:var(--ch2);font-style:normal}
+.steps .step b{color:var(--trace)}
+.asm{
+  font-family:var(--mono);font-size:15px;line-height:1.9;background:var(--panel);
+  border:1px solid var(--line);border-radius:8px;padding:16px 22px;margin:14px 0;
+  overflow-x:auto;white-space:pre;
+}
+.asm .k{color:var(--trace);font-weight:600}
+.asm .r{color:var(--ch2)}
+.asm .n{color:var(--blue)}
+.asm .l{color:var(--purple)}
+.asm .c{color:var(--muted)}
+.asm .cur{background:rgba(53,224,140,.14);display:inline-block;width:100%;border-radius:4px}
+.bits{display:flex;flex-wrap:wrap;gap:3px;margin:12px 0;font-family:var(--mono)}
+.bf{border-radius:6px;padding:7px 0;text-align:center;position:relative;min-width:0}
+.bf .fv{font-size:clamp(10px,1.15vw,14px);letter-spacing:.06em;font-weight:600;color:#06120c;word-break:break-all;padding:0 4px}
+.bf .fl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);margin-top:6px;text-transform:uppercase}
+.bf.op{background:var(--trace)}
+.bf.rs{background:var(--ch2)}
+.bf.rt{background:var(--blue)}
+.bf.rd{background:var(--purple)}
+.bf.sh{background:#5a6b7d}
+.bf.fu{background:var(--pink)}
+.bf.im{background:var(--blue)}
+.memstrip{display:flex;gap:4px;flex-wrap:wrap;margin:14px 0}
+.mcell{flex:1;min-width:86px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 6px;text-align:center;font-family:var(--mono);transition:all .2s}
+.mcell .ma{font-size:11px;color:var(--muted)}
+.mcell .mv{font-size:15px;color:var(--ink);margin-top:3px}
+.mcell.hit{border-color:var(--trace);background:rgba(53,224,140,.12);box-shadow:0 0 12px rgba(53,224,140,.35)}
+.mcell.hit .mv{color:var(--trace);font-weight:600}
+.mcell.done{opacity:.45}
+.mcell.base{border-color:var(--ch2)}
+.mcell.base .ma{color:var(--ch2)}
+.q{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin:14px 0}
+.q .qt{font-weight:600;margin-bottom:12px}
+.qopt{display:block;width:100%;text-align:left;font-family:var(--mono);font-size:14px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin:6px 0;cursor:pointer;transition:all .15s}
+.qopt:hover{border-color:var(--trace)}
+.qopt.correct{border-color:var(--trace);background:rgba(53,224,140,.12);color:var(--trace)}
+.qopt.wrong{border-color:var(--danger);background:rgba(255,107,107,.1);color:var(--danger)}
+.qexp{display:none;font-size:14px;color:var(--muted);margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+.qexp.shown{display:block}
+nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;height:64px;
+  background:linear-gradient(0deg,#0d131b,#0b0f14ee);border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;gap:18px;padding:0 20px;
+}
+.navbtn{font-family:var(--disp);font-size:15px;font-weight:600;background:transparent;color:var(--trace);border:1px solid var(--line);border-radius:6px;padding:9px 22px;cursor:pointer;letter-spacing:.06em;transition:all .15s}
+.navbtn:hover{border-color:var(--trace);box-shadow:0 0 10px rgba(53,224,140,.25)}
+.dots{display:flex;gap:7px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--grid);cursor:pointer;border:none;padding:0;transition:all .2s}
+.dot.on{background:var(--trace);box-shadow:0 0 8px var(--trace)}
+.hint{position:fixed;bottom:70px;right:18px;z-index:49;font-family:var(--mono);font-size:11px;color:var(--muted);opacity:.7}
+.hero{display:flex;flex-direction:column;justify-content:center;min-height:70vh}
+.hero-meta{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:.06em;line-height:2}
+.hero-meta b{color:var(--ch2)}
+.bigclock{font-family:var(--disp);font-size:clamp(15px,1.6vw,18px);color:var(--muted);margin-top:8px}
+.bigclock span{color:var(--trace)}
+.wave-anim{animation:scroll 6s linear infinite}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-680px)}}
+.pattern{font-family:var(--mono);font-size:13px;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:10px 14px;color:var(--muted);margin-top:10px}
+.pattern b{color:var(--trace)}
+@media(max-width:820px){
+  .slide{padding:28px 20px 110px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  header{gap:10px;padding:0 12px}
+  .readout.hidesm{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ch-dot" aria-hidden="true"></div>
+  <div class="readout">CH1 <b>ISA</b></div>
+  <div class="readout hidesm">MAC283 · <b>COMPUTER ARCHITECTURE</b></div>
+  <div id="hdrBits" aria-hidden="true">
+    <svg width="2400" height="34" viewBox="0 0 2400 34">
+      <text class="wave-anim" x="0" y="22" fill="#35e08c" opacity=".7" font-family="IBM Plex Mono" font-size="13" letter-spacing="2">lw $t0, 32($s3) · add $s0, $s1, $t0 · sw $s0, 48($s3) · bne $s3, $s4, Else · sll $t1, $s3, 2 · jal Fee · jr $ra · lw $t0, 32($s3) · add $s0, $s1, $t0 · sw $s0, 48($s3) · bne $s3, $s4, Else · sll $t1, $s3, 2 · jal Fee · jr $ra</text>
+    </svg>
+  </div>
+  <div class="readout ch2 hidesm">MODE = <b>PRACTICE</b></div>
+  <div class="cycle-count">CYCLE <span id="slideNow">01</span>/<span id="slideTotal">14</span></div>
+</header>
+
+<main id="deck">
+
+<!-- ================= SLIDE 1 : TITLE ================= -->
+<section class="slide hero">
+  <div class="eyebrow">MAC283 · Computer Architecture &amp; Assembler Language</div>
+  <h1>The Contract, Applied:<br>Worked Examples in MIPS</h1>
+  <p class="lede">The last lecture handed you the contract — registers, formats, load/store, branches. This session is the <strong>practice room</strong>: we translate real code both directions, by hand, until the patterns are muscle memory. Every example ends the same way: count IC, weigh the cycles, and let the Iron Law grade the code.</p>
+
+  <div class="grid3">
+    <div class="card accent"><h4>READ ↔ WRITE</h4><p>Translate instructions to English and English back to instructions — fluency runs both directions.</p></div>
+    <div class="card accent"><h4>ENCODE ↔ DECODE</h4><p>Assemble instructions to hex by hand, and disassemble mystery hex back to assembly.</p></div>
+    <div class="card accent"><h4>COMPILE ↔ COUNT</h4><p>Turn C into MIPS — arrays, ifs, loops, function calls — then bill every cycle.</p></div>
+  </div>
+
+  <div class="hero-meta" style="margin-top:18px">
+    INSTRUMENT &nbsp;: interactive deck · single HTML file · no installs<br>
+    TRIGGER &nbsp;&nbsp;&nbsp;&nbsp;: → / ← arrow keys, or the buttons below<br>
+    OPERATOR &nbsp;&nbsp;&nbsp;: Prof. K. Kassou · <b>LaGuardia Community College — MEC</b>
+  </div>
+  <div class="bigclock" id="liveInstr"></div>
+</section>
+
+<!-- ================= SLIDE 2 : READING WARM-UP ================= -->
+<section class="slide">
+  <div class="eyebrow">01 · Warm-Up</div>
+  <h2>Read the Contract Out Loud</h2>
+  <p class="lede">Before writing assembly, learn to <strong>read</strong> it the way the CPU does: destination first, sources next, memory in base(offset) form. Pick any instruction below and watch it happen to real register values.</p>
+  <div class="plain">Reading trick that works every time: say "<b>gets</b>" for the first comma. <b>add $t0, $s1, $s2</b> → "$t0 <b>gets</b> $s1 plus $s2." <b>lw $t0, 8($s0)</b> → "$t0 <b>gets</b> the word at $s0 + 8." Once "gets" is automatic, no instruction is confusing.</div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · INSTRUCTION TRANSLATOR">
+    <div class="selrow">
+      <div class="sel"><label for="trSel">choose an instruction</label>
+        <select id="trSel"></select></div>
+    </div>
+    <div class="asm" id="trAsm"></div>
+    <div class="result-row">
+      <div class="result" style="flex:2"><div class="rl">In English</div><div class="rv" id="trEng" style="font-size:16px"></div></div>
+      <div class="result a"><div class="rl">Before</div><div class="rv" id="trBefore" style="font-size:15px"></div></div>
+      <div class="result"><div class="rl">After</div><div class="rv" id="trAfter" style="font-size:15px"></div></div>
+      <div class="result a"><div class="rl">Class · CPI weight</div><div class="rv" id="trCPI" style="font-size:15px"></div></div>
+    </div>
+  </div>
+
+  <div class="irl">
+    Notice the last readout: every instruction you translate already carries its <b>CPI price tag</b> from the clock lecture. Fluent readers of assembly see two things at once — what the line does, and what it costs. That double vision is the whole skill.
+  </div>
+</section>
+
+<!-- ================= SLIDE 3 : ENCODE BY HAND ================= -->
+<section class="slide">
+  <div class="eyebrow">02 · Encoding I</div>
+  <h2>Worked Example: Assemble sub by Hand</h2>
+  <p class="lede">Machines don't read mnemonics — the assembler converts them to 32 bits. On the exam, <strong>you</strong> are the assembler. Let's encode <span style="font-family:var(--mono);color:var(--trace)">sub $s0, $t3, $t4</span> step by step.</p>
+  <div class="plain">The recipe never changes: <b>1)</b> name the format, <b>2)</b> look up the numbers (opcode/funct, register numbers), <b>3)</b> write each number in binary at its fixed width, <b>4)</b> concatenate, <b>5)</b> group into 4-bit nibbles → hex. Five steps, every time, for every R-format instruction ever.</div>
+
+  <div class="steps" id="encSteps">
+    <div class="step"><em>Format?</em> Three registers, no memory, no constant → <b>R-format</b>: op·rs·rt·rd·shamt·funct.</div>
+    <div class="step"><em>Numbers.</em> sub → op = 0, funct = <b>34</b>. Registers: $s0 = <b>16</b>, $t3 = <b>11</b>, $t4 = <b>12</b>. Careful: assembly order is rd, rs, rt — but the <b>encoding order is rs, rt, rd</b>.</div>
+    <div class="step"><em>Binary at fixed widths.</em> op=<b>000000</b> · rs($t3)=<b>01011</b> · rt($t4)=<b>01100</b> · rd($s0)=<b>10000</b> · shamt=<b>00000</b> · funct(34)=<b>100010</b></div>
+    <div class="step"><em>Concatenate:</em> 0000 0001 0110 1100 1000 0000 0010 0010</div>
+    <div class="step"><em>Hex nibbles:</em> <b>0x016C8022</b> — done. That 8-digit number IS the instruction; burn it into a ROM and any MIPS chip on Earth executes "$s0 gets $t3 minus $t4."</div>
+  </div>
+  <button class="btn" onclick="revealStep('encSteps')">REVEAL NEXT STEP →</button>
+
+  <div class="card warn" style="margin-top:18px">
+    <h4>THE CLASSIC TRAP</h4>
+    <p>Students write the fields in <strong>assembly order</strong> (rd first) instead of <strong>encoding order</strong> (rs, rt, rd). The mnemonic is for humans; the bit layout is for the decoder — and they disagree on purpose. Check yourself: rd lives in bits 15–11, the <em>middle</em> of the word.</p>
+  </div>
+</section>
+
+<!-- ================= SLIDE 4 : DECODE A MYSTERY WORD ================= -->
+<section class="slide">
+  <div class="eyebrow">03 · Decoding</div>
+  <h2>Disassembly: Read a Mystery Word</h2>
+  <p class="lede">Now the reverse — you find <strong>0x02324020</strong> sitting in memory. What does the machine do with it? Exactly what a disassembler (or a reverse engineer) does: slice fields at fixed positions.</p>
+  <div class="plain">Decoding starts at the <b>opcode</b> (top 6 bits): if it's 000000, you have R-format and the <b>funct</b> field (bottom 6 bits) names the operation. Any other opcode names the operation directly and tells you the format. First 6 bits → everything else follows.</div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · FIELD SLICER — pick a mystery word">
+    <div class="selrow">
+      <div class="sel"><label for="decSel">mystery machine word</label>
+        <select id="decSel">
+          <option value="0">0x02324020</option>
+          <option value="1">0x016C8022</option>
+          <option value="2">0x8E680020</option>
+          <option value="3">0x2129FFF8</option>
+        </select></div>
+    </div>
+    <div class="bits" id="decBits"></div>
+    <div class="asm" id="decAsm"></div>
+    <div class="result-row">
+      <div class="result"><div class="rl">Format</div><div class="rv" id="decFmt"></div></div>
+      <div class="result a" style="flex:2"><div class="rl">Meaning</div><div class="rv" id="decMean" style="font-size:16px"></div></div>
+    </div>
+  </div>
+
+  <div class="irl">
+    Try word #4 (0x2129FFF8): the immediate field reads <b>FFF8</b> — which is <b>−8</b> in 16-bit two's complement, so the instruction subtracts by adding. Your two's-complement drills are exactly what separates "addi with 65528??" from the correct read. Malware analysts, game modders, and console emulator authors do this slicing all day — an emulator is just this slide running a billion times per second.
+  </div>
+</section>
+
+<!-- ================= SLIDE 5 : ARRAY COMPILER ================= -->
+<section class="slide">
+  <div class="eyebrow">04 · Arrays</div>
+  <h2>The Array Pattern: A[i] = A[j] + A[k]</h2>
+  <p class="lede">Every array statement compiles to the same skeleton: <strong>load the sources, compute, store the destination</strong> — with byte offsets 4× the index. Move the sliders and watch the compiler in your head become code on the screen.</p>
+  <div class="plain">Only the <b>offsets</b> change when the indices change — the instructions and their order never do. That's what "pattern" means: memorize the skeleton once, then array problems become multiplication by 4.</div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · POCKET COMPILER — base of A in $s3">
+    <div class="grid3" style="margin:0 0 8px">
+      <div class="ctl"><label>destination index i <output id="aiOut">5</output></label><input type="range" id="aiSlider" min="0" max="7" value="5"></div>
+      <div class="ctl"><label>source index j <output id="ajOut">3</output></label><input type="range" id="ajSlider" min="0" max="7" value="3"></div>
+      <div class="ctl"><label>source index k <output id="akOut">7</output></label><input type="range" id="akSlider" min="0" max="7" value="7"></div>
+    </div>
+    <div class="asm" id="arrAsm"></div>
+    <div class="memstrip" id="arrStrip"></div>
+    <div class="result-row">
+      <div class="result"><div class="rl">IC</div><div class="rv">4</div></div>
+      <div class="result a"><div class="rl">Cycle bill (lw=4, add=1, sw=3)</div><div class="rv">4+4+1+3 = 12</div></div>
+      <div class="result"><div class="rl">Result stored</div><div class="rv" id="arrRes"></div></div>
+    </div>
+  </div>
+
+  <div class="pattern"><b>PATTERN CARD · ARRAY ASSIGNMENT</b> — lw sources (offset = 4×index) → compute on registers → sw destination. One C statement ≈ (loads + 1 ALU + 1 store).</div>
+</section>
+
+<!-- ================= SLIDE 6 : SWAP ================= -->
+<section class="slide">
+  <div class="eyebrow">05 · A Famous Four Lines</div>
+  <h2>Worked Example: swap(A, k)</h2>
+  <p class="lede">Swap A[k] and A[k+1] — the inner move of bubble sort, and the most famous four instructions in the Patterson &amp; Hennessy textbook. In C you'd need a temp variable; in MIPS, <strong>registers are the temp variables</strong>.</p>
+  <div class="plain">The trick: load <b>both</b> values onto the bench first, then store them back <b>crossed</b>. No third copy needed — $t0 and $t1 hold both originals while memory is being overwritten. The bench remembers while the warehouse changes.</div>
+
+  <div class="card" style="margin-bottom:6px">
+    <h4>COMPILE THIS · k→$s0, base of A→$s3</h4>
+    <div class="asm"><span class="c">// C source</span>
+temp     = A[k];
+A[k]     = A[k+1];
+A[k+1]   = temp;</div>
+  </div>
+
+  <div class="steps" id="swapSteps">
+    <div class="step"><em>Address math first.</em> A[k] lives at $s3 + 4k. Compute 4k with a shift: <em>sll $t1, $s0, 2</em> (shift left 2 = ×4, one cycle — new tool, straight from your binary unit) then <em>add $t1, $t1, $s3</em> → $t1 now points at A[k].</div>
+    <div class="step"><em>Both values to the bench:</em> <em>lw $t0, 0($t1)</em> (A[k]) and <em>lw $t2, 4($t1)</em> (A[k+1] — just 4 bytes further, no new address math).</div>
+    <div class="step"><em>Store back crossed:</em> <em>sw $t2, 0($t1)</em> and <em>sw $t0, 4($t1)</em>. The "temp variable" was $t0 all along.</div>
+    <div class="step"><em>The bill:</em> IC = <b>6</b> (sll, add, lw, lw, sw, sw). Cycles = 1+1+4+4+3+3 = <b>16</b>. Bubble sort calls this millions of times — now you know why sorting algorithms are measured in swaps.</div>
+  </div>
+  <button class="btn" onclick="revealStep('swapSteps')">REVEAL NEXT STEP →</button>
+
+  <div class="pattern"><b>PATTERN CARD · SWAP</b> — one address computation serves both elements (0 and 4 offsets); load both, store crossed; registers are free temp variables.</div>
+</section>
+
+<!-- ================= SLIDE 7 : IF/ELSE TWICE ================= -->
+<section class="slide">
+  <div class="eyebrow">06 · Decisions, Twice</div>
+  <h2>Two if Examples: == and &lt;</h2>
+  <p class="lede">Equality tests compile straight to <strong>bne/beq</strong>. Less-than needs a helper: <strong>slt</strong> writes 1 or 0 into a register, then a branch tests that. Two examples, same inversion habit: <strong>branch around the code when the test fails</strong>.</p>
+  <div class="plain">Why no "blt" (branch-if-less-than) in real MIPS? A magnitude compare is <b>slower hardware</b> than an equality check — it would stretch the critical path and drag f<sub>max</sub> down for every instruction. So the contract splits it: slt does the compare (1 cycle), beq/bne do the jump. ISA design decisions are clock decisions.</div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>EXAMPLE A · if (i == j) f = g + h;   (i→$s3, j→$s4)</h4>
+      <div class="asm">      <span class="k">bne</span>  <span class="r">$s3</span>, <span class="r">$s4</span>, <span class="l">Skip</span>   <span class="c"># bail if i ≠ j</span>
+      <span class="k">add</span>  <span class="r">$s0</span>, <span class="r">$s1</span>, <span class="r">$s2</span>
+<span class="l">Skip:</span> <span class="c">...</span></div>
+      <p>Test inverted: the branch <strong>jumps over</strong> the body when the condition fails. IC = 2 on the taken path, 2 on the fall-through.</p>
+    </div>
+    <div class="card">
+      <h4>EXAMPLE B · if (a &lt; b) f = 1;   (a→$s1, b→$s2)</h4>
+      <div class="asm">      <span class="k">slt</span>  <span class="r">$t0</span>, <span class="r">$s1</span>, <span class="r">$s2</span>   <span class="c"># $t0 = (a&lt;b) ? 1 : 0</span>
+      <span class="k">beq</span>  <span class="r">$t0</span>, <span class="r">$zero</span>, <span class="l">Skip</span>
+      <span class="k">addi</span> <span class="r">$s0</span>, <span class="r">$zero</span>, <span class="n">1</span>
+<span class="l">Skip:</span> <span class="c">...</span></div>
+      <p>The slt + beq $zero pair is the universal "&lt;" idiom — note $zero earning its keep again as the free comparison partner.</p>
+    </div>
+  </div>
+
+  <div class="irl">
+    Count the cost of a decision: Example B spends <b>3 instructions</b> to guard one. In a hot loop, branches are also the CPI-2, stall-risk class from the clock lecture — which is why compilers sometimes replace tiny ifs with branchless slt arithmetic, and why "branchless programming" is a real optimization genre in game engines and crypto code.
+  </div>
+
+  <div class="pattern"><b>PATTERN CARD · IF</b> — invert the test, branch around the body. For &lt;/&gt;: slt into a temp, then beq/bne against $zero.</div>
+</section>
+
+<!-- ================= SLIDE 8 : THE LOOP, TRACED LIVE ================= -->
+<section class="slide">
+  <div class="eyebrow">07 · The Loop</div>
+  <h2>Trace a while Loop, Iteration by Iteration</h2>
+  <p class="lede">The search loop — <span style="font-family:var(--mono);color:var(--trace)">while (A[i] != k) i = i + 1;</span> — is five patterns glued together: address math, load, compare, branch, jump back. Pick a target k and single-step the machine through the array.</p>
+  <div class="plain">A loop is just an <b>if that jumps backwards</b>. Each pass: compute where A[i] lives, fetch it, compare to k — <b>beq bails out</b> when found, otherwise bump i and <b>j back to the top</b>. Watch the instruction counter: the loop body's price × the number of passes is where whole programs spend their lives.</div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · LOOP TRACER — i→$s0 (starts 0), k→$s5, base→$s6, A = [3, 8, 2, 9, 5, 7, 1, 6]">
+    <div class="ctl">
+      <label>search target k <output id="kOut">9</output></label>
+      <input type="range" id="kSlider" min="0" max="7" value="3" aria-label="target index">
+    </div>
+    <div class="grid2" style="margin:6px 0">
+      <div class="asm" id="loopAsm"></div>
+      <div>
+        <div class="memstrip" id="loopStrip" style="margin-top:0"></div>
+        <div class="result-row" style="margin-top:8px">
+          <div class="result"><div class="rl">i ($s0)</div><div class="rv" id="loopI">0</div></div>
+          <div class="result a"><div class="rl">Instructions executed</div><div class="rv" id="loopIC">0</div></div>
+          <div class="result"><div class="rl">Verdict</div><div class="rv" id="loopV" style="font-size:15px">not started</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn" id="loopStep">STEP ⏭ ONE ITERATION</button>
+      <button class="btn amber" id="loopReset">RESET</button>
+    </div>
+    <p id="loopSay" style="font-family:var(--mono);font-size:13.5px;color:var(--muted);margin-top:10px">Press STEP to run the first iteration.</p>
+  </div>
+
+  <div class="pattern"><b>PATTERN CARD · WHILE</b> — Loop: address → lw → compare/branch out → bump counter → j Loop. Cost ≈ 6 instructions per pass; total IC ≈ 6 × (passes) + exit.</div>
+</section>
+
+<!-- ================= SLIDE 9 : FUNCTIONS ================= -->
+<section class="slide">
+  <div class="eyebrow">08 · Calling For Help</div>
+  <h2>Functions: jal, $ra, and the Deal</h2>
+  <p class="lede">A function call needs three agreements written into the contract: <strong>where arguments go</strong> ($a0–$a3), <strong>where the result comes back</strong> ($v0), and <strong>how to find your way home</strong> ($ra). Two instructions run the whole show: <strong>jal</strong> and <strong>jr $ra</strong>.</p>
+  <div class="plain"><b>jal Fee</b> does two things at once: writes the return address (PC + 4) into $ra, then jumps to Fee. The function does its work and ends with <b>jr $ra</b> — "jump to whatever address is in $ra" — which lands exactly on the instruction after the call. It's leaving a bookmark before opening another book.</div>
+
+  <div class="card" style="margin-bottom:6px">
+    <h4>WORKED EXAMPLE · total = addFee(price) where addFee(x) returns x + 25</h4>
+  </div>
+  <div class="steps" id="fnSteps">
+    <div class="step"><em>Caller sets up the argument:</em> <em>add $a0, $s1, $zero</em> — copy price into the agreed mailbox $a0.</div>
+    <div class="step"><em>Make the call:</em> <em>jal AddFee</em> — hardware silently does $ra ← PC + 4, then PC ← AddFee. The bookmark is placed.</div>
+    <div class="step"><em>The function (a "leaf" — it calls no one):</em> <em>AddFee: addi $v0, $a0, 25</em> — result goes in the agreed return mailbox $v0.</div>
+    <div class="step"><em>Come home:</em> <em>jr $ra</em> — PC ← $ra, execution resumes right after the jal.</div>
+    <div class="step"><em>Caller collects:</em> <em>add $s2, $v0, $zero</em> — total ← result. Whole round trip: <b>IC = 5</b>. Every function call in every language you've ever run is this handshake (plus a stack, when functions call functions — that's a later lecture).</div>
+  </div>
+  <button class="btn" onclick="revealStep('fnSteps')">REVEAL NEXT STEP →</button>
+
+  <div class="irl">
+    This is why deep call chains cost real time: each call/return pair is overhead instructions that do no math. When a compiler <b>inlines</b> a small function — pasting its body into the caller — it's deleting the jal/jr handshake to cut IC. "Function call overhead" in your profiler is this slide, measured.
+  </div>
+
+  <div class="pattern"><b>PATTERN CARD · CALL</b> — args in $a0–$a3 → jal F (bookmarks $ra) → result in $v0 → jr $ra → caller reads $v0.</div>
+</section>
+
+<!-- ================= SLIDE 10 : GRAND EXAMPLE ================= -->
+<section class="slide">
+  <div class="eyebrow">09 · The Grand Example</div>
+  <h2>Full Translation: Sum an Array</h2>
+  <p class="lede">Everything at once: <span style="font-family:var(--mono);color:var(--trace)">sum = 0; for (i = 0; i &lt; N; i++) sum += A[i];</span> — initialization, a compare with slt, the array pattern, and a backwards jump. This is the shape of most real computation on Earth.</p>
+  <div class="plain">Read it as three zones: <b>setup</b> (2 instructions, runs once), <b>loop body</b> (8 instructions, runs N times), <b>exit check</b> (2 instructions, runs once more to discover it's done). Total IC = 8N + 4 — the N term is everything; the constants are noise.</div>
+
+  <div class="asm">      <span class="c"># sum→$s0, i→$s3, N→$s1, base of A→$s6</span>
+      <span class="k">add</span>  <span class="r">$s0</span>, <span class="r">$zero</span>, <span class="r">$zero</span>   <span class="c"># sum = 0</span>
+      <span class="k">add</span>  <span class="r">$s3</span>, <span class="r">$zero</span>, <span class="r">$zero</span>   <span class="c"># i = 0</span>
+<span class="l">Loop:</span> <span class="k">slt</span>  <span class="r">$t2</span>, <span class="r">$s3</span>, <span class="r">$s1</span>       <span class="c"># $t2 = (i &lt; N)?</span>
+      <span class="k">beq</span>  <span class="r">$t2</span>, <span class="r">$zero</span>, <span class="l">Exit</span>   <span class="c"># bail when done</span>
+      <span class="k">sll</span>  <span class="r">$t1</span>, <span class="r">$s3</span>, <span class="n">2</span>         <span class="c"># 4×i</span>
+      <span class="k">add</span>  <span class="r">$t1</span>, <span class="r">$t1</span>, <span class="r">$s6</span>       <span class="c"># &amp;A[i]</span>
+      <span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">0</span>(<span class="r">$t1</span>)        <span class="c"># fetch A[i]</span>
+      <span class="k">add</span>  <span class="r">$s0</span>, <span class="r">$s0</span>, <span class="r">$t0</span>       <span class="c"># sum += A[i]</span>
+      <span class="k">addi</span> <span class="r">$s3</span>, <span class="r">$s3</span>, <span class="n">1</span>         <span class="c"># i++</span>
+      <span class="k">j</span>    <span class="l">Loop</span>
+<span class="l">Exit:</span></div>
+
+  <div class="lab" data-title="LIVE INSTRUMENT · BILL THE LOOP WITH THE IRON LAW">
+    <div class="grid2" style="margin:0">
+      <div class="ctl"><label>array length N <output id="nOut">1,000,000</output></label><input type="range" id="nSlider" min="3" max="9" step="1" value="6"></div>
+      <div class="ctl"><label>clock frequency <output id="fOut">3.0 GHz</output></label><input type="range" id="fSlider" min="1" max="5" step="0.5" value="3"></div>
+    </div>
+    <div class="result-row">
+      <div class="result"><div class="rl">IC = 8N + 4</div><div class="rv" id="icOut"></div></div>
+      <div class="result a"><div class="rl">Cycles (lw=4, rest=1)</div><div class="rv" id="cycOut"></div></div>
+      <div class="result"><div class="rl">CPU time</div><div class="rv" id="timeOut"></div></div>
+      <div class="result a"><div class="rl">Effective CPI</div><div class="rv" id="cpiOut"></div></div>
+    </div>
+    <p style="font-size:14px;color:var(--muted);margin-top:12px">Per pass: 7 one-cycle instructions + one lw at 4 = <b>11 cycles / iteration</b>. Slide N up and watch the setup constants vanish into rounding — loops are where the Iron Law collects.</p>
+  </div>
+
+  <div class="irl">
+    This ten-line loop <b>is</b> an audio filter, a grade-average calculator, a neural-network layer, a pixel pass in your Unity shader. Change what happens to $t0 in one line and it becomes any of them. When hardware designers say "make the common case fast," this loop is the common case.
+  </div>
+</section>
+
+<!-- ================= SLIDE 11 : OPTIMIZE IT ================= -->
+<section class="slide">
+  <div class="eyebrow">10 · Speak It Better</div>
+  <h2>Same Loop, Fewer Instructions</h2>
+  <p class="lede">A fluent speaker looks at the loop and sees waste: recomputing the address from i every pass. Keep a <strong>moving pointer</strong> instead — march $t1 through the array 4 bytes at a time, and two instructions vanish from the body.</p>
+  <div class="plain">Instead of asking "where is A[i]?" every pass (sll + add), keep your finger on the current element and just <b>slide it 4 bytes forward</b> (one addi). Same answer, less math — the classic "strength reduction" a good compiler performs, done here by hand.</div>
+
+  <div class="grid2">
+    <div class="card warn">
+      <h4>BEFORE · index arithmetic each pass · 8 / iteration</h4>
+      <div class="asm"><span class="l">Loop:</span> <span class="k">slt</span>  <span class="r">$t2</span>,<span class="r">$s3</span>,<span class="r">$s1</span>
+      <span class="k">beq</span>  <span class="r">$t2</span>,<span class="r">$zero</span>,<span class="l">Exit</span>
+      <span class="k">sll</span>  <span class="r">$t1</span>,<span class="r">$s3</span>,<span class="n">2</span>
+      <span class="k">add</span>  <span class="r">$t1</span>,<span class="r">$t1</span>,<span class="r">$s6</span>
+      <span class="k">lw</span>   <span class="r">$t0</span>,<span class="n">0</span>(<span class="r">$t1</span>)
+      <span class="k">add</span>  <span class="r">$s0</span>,<span class="r">$s0</span>,<span class="r">$t0</span>
+      <span class="k">addi</span> <span class="r">$s3</span>,<span class="r">$s3</span>,<span class="n">1</span>
+      <span class="k">j</span>    <span class="l">Loop</span></div>
+      <p>11 cycles / iteration (7×1 + lw 4)</p>
+    </div>
+    <div class="card accent">
+      <h4>AFTER · moving pointer · 5 / iteration</h4>
+      <div class="asm">      <span class="c"># $t1 = &amp;A[0], $t3 = &amp;A[N] (once)</span>
+<span class="l">Loop:</span> <span class="k">beq</span>  <span class="r">$t1</span>,<span class="r">$t3</span>,<span class="l">Exit</span>
+      <span class="k">lw</span>   <span class="r">$t0</span>,<span class="n">0</span>(<span class="r">$t1</span>)
+      <span class="k">add</span>  <span class="r">$s0</span>,<span class="r">$s0</span>,<span class="r">$t0</span>
+      <span class="k">addi</span> <span class="r">$t1</span>,<span class="r">$t1</span>,<span class="n">4</span>
+      <span class="k">j</span>    <span class="l">Loop</span>
+</div>
+      <p>8 cycles / iteration (4×1 + lw 4) — and the slt is gone entirely</p>
+    </div>
+  </div>
+
+  <div class="formula">
+    <span class="op">Speedup =</span><span class="v">11 / 8</span><span class="op">=</span><span class="v2">1.38×</span>
+    <span class="op">— same machine, same clock, same answer. Only the speaker improved.</span>
+  </div>
+
+  <div class="irl">
+    At N = 10⁹ on a 3 GHz clock, that's <b>3.67 s → 2.67 s</b>: a full second recovered by rewriting five lines. This is precisely what -O2 does to your C, what the JIT does to your Java (MAC286), and what Burst does to your Unity C# (MAC280). Compilers are fluent speakers of the contract — this course teaches you to check their work.
+  </div>
+</section>
+
+<!-- ================= SLIDE 12 : DECODE THE PROGRAM ================= -->
+<section class="slide">
+  <div class="eyebrow">11 · Capstone</div>
+  <h2>Capstone: Raw Memory → Running Program</h2>
+  <p class="lede">Final boss. Four words sit in memory starting at 0x00400000. Decode them one at a time, then say what the program computes. Everything from both lectures funnels into this one exercise.</p>
+  <div class="plain">Work the recipe per word: top 6 bits → format → slice fields → name registers → read with "gets." Then zoom out: four instructions in a row are a <b>program</b>, and programs have meaning beyond their lines.</div>
+
+  <div class="asm">0x00400000:  20080005
+0x00400004:  20090003
+0x00400008:  01095020
+0x0040000C:  AE0A0000</div>
+
+  <div class="steps" id="capSteps">
+    <div class="step"><em>Word 1:</em> 20080005 → op = 001000 = <b>addi</b> (I-format). rs=00000 ($zero), rt=01000 ($t0), imm=5 → <b>addi $t0, $zero, 5</b> — "$t0 gets 5."</div>
+    <div class="step"><em>Word 2:</em> 20090003 → same opcode → <b>addi $t1, $zero, 3</b> — "$t1 gets 3."</div>
+    <div class="step"><em>Word 3:</em> 01095020 → op = 000000 → R-format, funct = 100000 = <b>add</b>. rs=01000 ($t0), rt=01001 ($t1), rd=01010 ($t2) → <b>add $t2, $t0, $t1</b> — "$t2 gets 8."</div>
+    <div class="step"><em>Word 4:</em> AE0A0000 → op = 101011 = <b>sw</b>. rs=10000 ($s0), rt=01010 ($t2), offset 0 → <b>sw $t2, 0($s0)</b> — "memory at $s0 gets 8."</div>
+    <div class="step"><em>Zoom out:</em> the program computes <b>5 + 3 and stores 8</b> at the address in $s0. You just did, by hand, what a disassembler and a CPU decoder both do — and you can now read a program that was never written in any language, only in numbers. That's fluency.</div>
+  </div>
+  <button class="btn" onclick="revealStep('capSteps')">REVEAL NEXT STEP →</button>
+
+  <div class="irl">
+    This skill has a job title. Security researchers decoding firmware, engineers debugging a crash dump with no source code, historians resurrecting 1970s software from ROM chips — all of them are doing this slide. The contract outlives its programs, its programmers, and sometimes its companies.
+  </div>
+</section>
+
+<!-- ================= SLIDE 13 : CHECKPOINT ================= -->
+<section class="slide">
+  <div class="eyebrow">12 · Checkpoint</div>
+  <h2>Prove It — Quick Checkpoint</h2>
+  <p class="lede">Mental math only. Click an answer for instant feedback.</p>
+  <div class="plain">Each question is one pattern card: Q1 → arrays, Q2 → reading, Q3 → branches, Q4 → loops &amp; the Iron Law, Q5 → sll. Miss one → replay that slide's instrument.</div>
+
+  <div class="q">
+    <div class="qt">Q1 · What byte offset reaches A[7] from the base of a word array?</div>
+    <button class="qopt" data-ok="0">7</button>
+    <button class="qopt" data-ok="1">28</button>
+    <button class="qopt" data-ok="0">74</button>
+    <div class="qexp">Words are 4 bytes: offset = 4 × 7 = 28. The ×4 reflex should now be automatic.</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q2 · Before: $s0 = 10, $t0 = 4. After <span style="font-family:var(--mono);color:var(--trace)">sub $s0, $s0, $t0</span>, $s0 = ?</div>
+    <button class="qopt" data-ok="1">6 — "$s0 gets $s0 minus $t0"</button>
+    <button class="qopt" data-ok="0">−6 — sources subtract the destination</button>
+    <button class="qopt" data-ok="0">10 — sub doesn't write registers</button>
+    <div class="qexp">Destination first, "gets" at the first comma: $s0 ← 10 − 4 = 6.</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q3 · <span style="font-family:var(--mono);color:var(--trace)">beq $t0, $t1, Skip</span> executes while $t0 = $t1. What runs next?</div>
+    <button class="qopt" data-ok="0">The instruction right below the beq</button>
+    <button class="qopt" data-ok="1">The instruction at label Skip</button>
+    <button class="qopt" data-ok="0">The program halts</button>
+    <div class="qexp">Equal → branch taken → PC jumps to Skip. If they differed, execution would fall through to the next line.</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q4 · A loop body is 6 instructions and runs 1000 times, plus 4 instructions of setup/exit. IC = ?</div>
+    <button class="qopt" data-ok="0">1000</button>
+    <button class="qopt" data-ok="0">6000</button>
+    <button class="qopt" data-ok="1">6004</button>
+    <div class="qexp">IC = 6 × 1000 + 4 = 6004. And per the Iron Law, the 6 is worth optimizing; the 4 never is.</div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Q5 · Why does <span style="font-family:var(--mono);color:var(--trace)">sll $t1, $s3, 2</span> compute 4 × $s3?</div>
+    <button class="qopt" data-ok="1">Shifting left 2 bits multiplies by 2² = 4</button>
+    <button class="qopt" data-ok="0">sll adds the operand to itself twice</button>
+    <button class="qopt" data-ok="0">It doesn't — sll divides by 4</button>
+    <div class="qexp">Left shift by n = multiply by 2ⁿ, in one cycle — binary place value doing real work. It's why array indexing loves power-of-2 element sizes.</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 14 : PATTERN CARD ================= -->
+<section class="slide">
+  <div class="eyebrow">13 · Take-Home</div>
+  <h2>The Six Patterns Card</h2>
+  <p class="lede">Every program you will ever read or write in this course is these six patterns, composed. If you can produce each from memory, the practice room did its job.</p>
+  <div class="plain">Don't memorize programs — memorize <b>patterns</b> and the <b>bill</b> each one runs up. Fluency is knowing the skeleton before you start writing, and knowing the cost before you finish.</div>
+
+  <div class="grid3">
+    <div class="card"><h4>1 · READ ALOUD</h4>
+      <p style="font-family:var(--mono)">first comma = "gets"<br>dest first, sources next<br>offset(base) = memory<br>CPI tag rides along</p></div>
+    <div class="card"><h4>2 · ARRAY ACCESS</h4>
+      <p style="font-family:var(--mono)">offset = 4 × index<br>or: sll ·2 then add base<br>load → compute → store<br>bill: 4+…+3 cycles</p></div>
+    <div class="card"><h4>3 · SWAP</h4>
+      <p style="font-family:var(--mono)">one address, two offsets<br>load both, store crossed<br>registers = free temps<br>IC 6 · 16 cycles</p></div>
+    <div class="card"><h4>4 · IF</h4>
+      <p style="font-family:var(--mono)">invert the test<br>branch around the body<br>&lt; needs slt + beq $zero<br>branches: CPI 2 + risk</p></div>
+    <div class="card"><h4>5 · LOOP</h4>
+      <p style="font-family:var(--mono)">an if that jumps back<br>IC ≈ body × passes<br>pointer beats index math<br>where the Iron Law collects</p></div>
+    <div class="card"><h4>6 · CALL</h4>
+      <p style="font-family:var(--mono)">args $a0–3 · result $v0<br>jal bookmarks $ra<br>jr $ra comes home<br>inline to erase overhead</p></div>
+  </div>
+
+  <div class="irl" style="margin-top:22px">
+    <b>The one-sentence version of this session:</b> assembly fluency is six patterns plus a price list — and every optimization you'll ever meet, from -O2 to game-engine tricks, is somebody speaking those patterns with fewer, cheaper instructions.
+  </div>
+
+  <p style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:26px">MAC283 · Prof. K. Kassou · LaGuardia Community College — MEC Department</p>
+</section>
+
+</main>
+
+<div class="hint">← → keys · Home/End</div>
+
+<nav>
+  <button class="navbtn" id="prevBtn" aria-label="previous slide">◀ PREV</button>
+  <div class="dots" id="dots" role="tablist"></div>
+  <button class="navbtn" id="nextBtn" aria-label="next slide">NEXT ▶</button>
+</nav>
+
+<script>
+"use strict";
+/* ============ DECK NAV ============ */
+const slides=[...document.querySelectorAll('.slide')];
+const dotsBox=document.getElementById('dots');
+let cur=0;
+slides.forEach((s,i)=>{
+  const d=document.createElement('button');
+  d.className='dot';d.setAttribute('aria-label','go to slide '+(i+1));
+  d.onclick=()=>go(i);dotsBox.appendChild(d);
+});
+const dots=[...dotsBox.children];
+document.getElementById('slideTotal').textContent=String(slides.length).padStart(2,'0');
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,j)=>{
+    const on=(j===cur);
+    s.classList.toggle('active',on);
+    s.hidden=!on;
+    s.style.display=on?'block':'none';
+    if(on)s.scrollTop=0;
+  });
+  dots.forEach((d,j)=>d.classList.toggle('on',j===cur));
+  document.getElementById('slideNow').textContent=String(cur+1).padStart(2,'0');
+}
+document.getElementById('prevBtn').onclick=()=>go(cur-1);
+document.getElementById('nextBtn').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  if(e.key==='Home')go(0);
+  if(e.key==='End')go(slides.length-1);
+});
+go(0);
+
+/* ============ TITLE: live odometer ============ */
+const liveEl=document.getElementById('liveInstr');
+const t0=performance.now();
+setInterval(()=>{
+  const secs=(performance.now()-t0)/1000;
+  const loops=secs*3.0e9/11; // grand-example loop: 11 cycles per iteration at 3 GHz
+  liveEl.innerHTML='While you read this slide, a 3 GHz CPU could have run the sum-an-array loop from slide 10 <span>'+
+    Math.round(loops).toLocaleString('en-US')+'</span> times.';
+},120);
+
+/* ============ STEP REVEAL ============ */
+function revealStep(id){
+  const box=document.getElementById(id);
+  const nxt=box.querySelector('.step:not(.shown)');
+  if(nxt)nxt.classList.add('shown');
+}
+
+/* ============ SLIDE 2: instruction translator ============ */
+const TR=[
+  {a:'<span class="k">add</span>  <span class="r">$t0</span>, <span class="r">$s1</span>, <span class="r">$s2</span>',
+   e:'$t0 gets $s1 plus $s2',b:'$s1=6, $s2=4',f:'$t0=10',c:'ALU · CPI 1'},
+  {a:'<span class="k">sub</span>  <span class="r">$s0</span>, <span class="r">$s0</span>, <span class="r">$t0</span>',
+   e:'$s0 gets $s0 minus $t0',b:'$s0=10, $t0=4',f:'$s0=6',c:'ALU · CPI 1'},
+  {a:'<span class="k">addi</span> <span class="r">$t0</span>, <span class="r">$zero</span>, <span class="n">42</span>',
+   e:'$t0 gets 0 plus 42 — loading a constant',b:'$t0=?',f:'$t0=42',c:'ALU · CPI 1'},
+  {a:'<span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">8</span>(<span class="r">$s0</span>)',
+   e:'$t0 gets the word at address $s0 + 8',b:'$s0=1000, Mem[1008]=77',f:'$t0=77',c:'LOAD · CPI 4'},
+  {a:'<span class="k">sw</span>   <span class="r">$t0</span>, <span class="n">12</span>(<span class="r">$s0</span>)',
+   e:'the word at $s0 + 12 gets $t0',b:'$t0=77, $s0=1000',f:'Mem[1012]=77',c:'STORE · CPI 3'},
+  {a:'<span class="k">slt</span>  <span class="r">$t2</span>, <span class="r">$s3</span>, <span class="r">$s1</span>',
+   e:'$t2 gets 1 if $s3 &lt; $s1, else 0',b:'$s3=2, $s1=8',f:'$t2=1',c:'ALU · CPI 1'},
+  {a:'<span class="k">bne</span>  <span class="r">$s3</span>, <span class="r">$s4</span>, <span class="l">Else</span>',
+   e:'jump to Else if $s3 ≠ $s4; otherwise continue',b:'$s3=5, $s4=5',f:'falls through',c:'BRANCH · CPI 2'},
+  {a:'<span class="k">sll</span>  <span class="r">$t1</span>, <span class="r">$s3</span>, <span class="n">2</span>',
+   e:'$t1 gets $s3 shifted left 2 bits ( × 4 )',b:'$s3=6',f:'$t1=24',c:'ALU · CPI 1'}
+];
+const trSel=document.getElementById('trSel');
+TR.forEach((t,i)=>{
+  const o=document.createElement('option');o.value=String(i);
+  o.textContent=t.a.replace(/<[^>]+>/g,'');
+  trSel.appendChild(o);
+});
+function updTr(){
+  const t=TR[Number(trSel.value)];
+  document.getElementById('trAsm').innerHTML=t.a;
+  document.getElementById('trEng').innerHTML=t.e;
+  document.getElementById('trBefore').textContent=t.b;
+  document.getElementById('trAfter').textContent=t.f;
+  document.getElementById('trCPI').textContent=t.c;
+}
+trSel.addEventListener('change',updTr);updTr();
+
+/* ============ SLIDE 4: field slicer ============ */
+const RN={};
+Object.entries({zero:0,at:1,v0:2,v1:3,a0:4,a1:5,a2:6,a3:7,t0:8,t1:9,t2:10,t3:11,t4:12,t5:13,t6:14,t7:15,
+s0:16,s1:17,s2:18,s3:19,s4:20,s5:21,s6:22,s7:23,t8:24,t9:25,gp:28,sp:29,fp:30,ra:31})
+.forEach(([k,v])=>RN[v]='$'+k);
+const DEC=[
+  {hex:'0x02324020'},{hex:'0x016C8022'},{hex:'0x8E680020'},{hex:'0x2129FFF8'}
+];
+const FUN={32:'add',34:'sub',36:'and',37:'or',42:'slt'};
+function updDec(){
+  const hex=DEC[Number(document.getElementById('decSel').value)].hex;
+  const w=parseInt(hex,16)>>>0;
+  const bin=w.toString(2).padStart(32,'0');
+  const op=parseInt(bin.slice(0,6),2);
+  const rs=parseInt(bin.slice(6,11),2);
+  const rt=parseInt(bin.slice(11,16),2);
+  const bitsEl=document.getElementById('decBits');
+  bitsEl.innerHTML='';
+  let asm,fmt,mean,fields;
+  if(op===0){
+    const rd=parseInt(bin.slice(16,21),2);
+    const fu=parseInt(bin.slice(26,32),2);
+    const m=FUN[fu]||'?';
+    fmt='R';
+    asm='<span class="k">'+m+'</span>  <span class="r">'+RN[rd]+'</span>, <span class="r">'+RN[rs]+'</span>, <span class="r">'+RN[rt]+'</span>';
+    mean=RN[rd]+' gets '+RN[rs]+' '+(m==='add'?'+':m==='sub'?'−':m)+' '+RN[rt];
+    fields=[['op',bin.slice(0,6),'opcode 0 → R',6],['rs',bin.slice(6,11),'rs '+RN[rs],5],['rt',bin.slice(11,16),'rt '+RN[rt],5],
+            ['rd',bin.slice(16,21),'rd '+RN[rd],5],['sh',bin.slice(21,26),'shamt',5],['fu',bin.slice(26,32),'funct '+fu+' = '+m,6]];
+  }else{
+    let imm=parseInt(bin.slice(16,32),2);
+    if(imm>32767)imm-=65536;
+    const OPS={35:'lw',43:'sw',8:'addi',4:'beq',5:'bne'};
+    const m=OPS[op]||'?';
+    fmt='I';
+    if(m==='lw'||m==='sw'){
+      asm='<span class="k">'+m+'</span>   <span class="r">'+RN[rt]+'</span>, <span class="n">'+imm+'</span>(<span class="r">'+RN[rs]+'</span>)';
+      mean=(m==='lw'?RN[rt]+' gets Mem['+RN[rs]+' + '+imm+']':'Mem['+RN[rs]+' + '+imm+'] gets '+RN[rt]);
+    }else{
+      asm='<span class="k">'+m+'</span> <span class="r">'+RN[rt]+'</span>, <span class="r">'+RN[rs]+'</span>, <span class="n">'+imm+'</span>';
+      mean=RN[rt]+' gets '+RN[rs]+' + '+imm+(imm<0?' (two\u2019s complement!)':'');
+    }
+    fields=[['op',bin.slice(0,6),'opcode '+op+' = '+m,6],['rs',bin.slice(6,11),'rs '+RN[rs],5],
+            ['rt',bin.slice(11,16),'rt '+RN[rt],5],['im',bin.slice(16,32),'imm = '+imm,16]];
+  }
+  fields.forEach(([cls,val,lab,wd])=>{
+    const d=document.createElement('div');d.className='bf '+cls;d.style.flex=String(wd);
+    d.innerHTML='<div class="fv">'+val+'</div><div class="fl">'+lab+'</div>';
+    bitsEl.appendChild(d);
+  });
+  document.getElementById('decAsm').innerHTML=asm;
+  document.getElementById('decFmt').textContent=fmt+'-format';
+  document.getElementById('decMean').innerHTML=mean;
+}
+document.getElementById('decSel').addEventListener('change',updDec);updDec();
+
+/* ============ SLIDE 5: array pocket compiler ============ */
+const ARR=[3,8,2,9,5,7,1,6];
+function updArr(){
+  const i=Number(document.getElementById('aiSlider').value);
+  const j=Number(document.getElementById('ajSlider').value);
+  const k=Number(document.getElementById('akSlider').value);
+  document.getElementById('aiOut').textContent=String(i);
+  document.getElementById('ajOut').textContent=String(j);
+  document.getElementById('akOut').textContent=String(k);
+  document.getElementById('arrAsm').innerHTML=
+    '<span class="c"># A['+i+'] = A['+j+'] + A['+k+']</span>\n'+
+    '<span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">'+(4*j)+'</span>(<span class="r">$s3</span>)   <span class="c"># A['+j+'] = '+ARR[j]+'</span>\n'+
+    '<span class="k">lw</span>   <span class="r">$t1</span>, <span class="n">'+(4*k)+'</span>(<span class="r">$s3</span>)   <span class="c"># A['+k+'] = '+ARR[k]+'</span>\n'+
+    '<span class="k">add</span>  <span class="r">$t2</span>, <span class="r">$t0</span>, <span class="r">$t1</span>   <span class="c"># '+ARR[j]+' + '+ARR[k]+' = '+(ARR[j]+ARR[k])+'</span>\n'+
+    '<span class="k">sw</span>   <span class="r">$t2</span>, <span class="n">'+(4*i)+'</span>(<span class="r">$s3</span>)   <span class="c"># into A['+i+']</span>';
+  const strip=document.getElementById('arrStrip');
+  strip.innerHTML='';
+  for(let x=0;x<8;x++){
+    const c=document.createElement('div');
+    c.className='mcell'+(x===0?' base':'')+((x===j||x===k)?' hit':'')+(x===i?' base':'');
+    c.innerHTML='<div class="ma">off '+(4*x)+(x===i?' ←dest':'')+'</div><div class="mv">A['+x+']='+ARR[x]+'</div>';
+    strip.appendChild(c);
+  }
+  document.getElementById('arrRes').textContent='A['+i+'] ← '+(ARR[j]+ARR[k]);
+}
+['aiSlider','ajSlider','akSlider'].forEach(id=>document.getElementById(id).addEventListener('input',updArr));
+updArr();
+
+/* ============ SLIDE 8: loop tracer ============ */
+const LARR=[3,8,2,9,5,7,1,6];
+let L;
+function loopReset(){
+  L={i:0,ic:0,done:false};
+  paintLoop('Press STEP to run the first iteration.');
+}
+function paintLoop(msg){
+  const kIdx=Number(document.getElementById('kSlider').value);
+  const kVal=LARR[kIdx];
+  document.getElementById('kOut').textContent=String(kVal);
+  document.getElementById('loopAsm').innerHTML=
+    '<span class="c"># while (A[i] != k) i++;</span>\n'+
+    '<span class="l">Loop:</span> <span class="k">sll</span>  <span class="r">$t1</span>, <span class="r">$s0</span>, <span class="n">2</span>\n'+
+    '      <span class="k">add</span>  <span class="r">$t1</span>, <span class="r">$t1</span>, <span class="r">$s6</span>\n'+
+    '      <span class="k">lw</span>   <span class="r">$t0</span>, <span class="n">0</span>(<span class="r">$t1</span>)\n'+
+    '      <span class="k">beq</span>  <span class="r">$t0</span>, <span class="r">$s5</span>, <span class="l">Exit</span>\n'+
+    '      <span class="k">addi</span> <span class="r">$s0</span>, <span class="r">$s0</span>, <span class="n">1</span>\n'+
+    '      <span class="k">j</span>    <span class="l">Loop</span>\n'+
+    '<span class="l">Exit:</span>';
+  const strip=document.getElementById('loopStrip');
+  strip.innerHTML='';
+  for(let x=0;x<8;x++){
+    const c=document.createElement('div');
+    c.className='mcell'+(x===L.i&&!L.done?' hit':'')+(x<L.i?' done':'')+(L.done&&x===L.i?' hit':'');
+    c.innerHTML='<div class="ma">A['+x+']</div><div class="mv">'+LARR[x]+'</div>';
+    strip.appendChild(c);
+  }
+  document.getElementById('loopI').textContent=String(L.i);
+  document.getElementById('loopIC').textContent=String(L.ic);
+  document.getElementById('loopV').textContent=L.done?'FOUND — exited':'searching…';
+  document.getElementById('loopSay').textContent=msg;
+}
+document.getElementById('loopStep').onclick=()=>{
+  if(L.done){paintLoop('Loop already exited — A['+L.i+'] matched k. RESET to search for a new k.');return;}
+  const kVal=LARR[Number(document.getElementById('kSlider').value)];
+  const v=LARR[L.i];
+  if(v===kVal){
+    L.ic+=4;L.done=true;
+    paintLoop('Iteration: sll, add, lw fetch A['+L.i+'] = '+v+' → beq TAKEN (equals k = '+kVal+') → Exit. 4 instructions this pass.');
+  }else{
+    L.ic+=6;
+    paintLoop('Iteration: fetch A['+L.i+'] = '+v+' ≠ k = '+kVal+' → beq falls through → i++ → j Loop. 6 instructions this pass.');
+    L.i++;
+  }
+};
+document.getElementById('loopReset').onclick=loopReset;
+document.getElementById('kSlider').addEventListener('input',()=>{loopReset();});
+loopReset();
+
+/* ============ SLIDE 10: iron law biller ============ */
+function fmtN(n){
+  if(n>=1e9)return (n/1e9).toPrecision(3)+' × 10⁹';
+  if(n>=1e6)return (n/1e6).toPrecision(3)+' × 10⁶';
+  if(n>=1e3)return (n/1e3).toPrecision(3)+' × 10³';
+  return String(n);
+}
+function fmtTime(t){
+  if(t>=1)return t.toFixed(2)+' s';
+  if(t>=1e-3)return (t*1e3).toFixed(2)+' ms';
+  if(t>=1e-6)return (t*1e6).toFixed(2)+' µs';
+  return (t*1e9).toFixed(2)+' ns';
+}
+function updBill(){
+  const N=Math.pow(10,Number(document.getElementById('nSlider').value));
+  const f=Number(document.getElementById('fSlider').value)*1e9;
+  document.getElementById('nOut').textContent=N.toLocaleString('en-US');
+  document.getElementById('fOut').textContent=(f/1e9).toFixed(1)+' GHz';
+  const ic=8*N+4;
+  const cyc=11*N+4;      // 7×1 + 4 per pass, +4 setup/exit approx
+  const time=cyc/f;
+  document.getElementById('icOut').textContent=fmtN(ic);
+  document.getElementById('cycOut').textContent=fmtN(cyc);
+  document.getElementById('timeOut').textContent=fmtTime(time);
+  document.getElementById('cpiOut').textContent=(cyc/ic).toFixed(2);
+}
+['nSlider','fSlider'].forEach(id=>document.getElementById(id).addEventListener('input',updBill));
+updBill();
+
+/* ============ QUIZ ============ */
+document.querySelectorAll('.q').forEach(q=>{
+  q.querySelectorAll('.qopt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      q.querySelectorAll('.qopt').forEach(o=>{
+        o.classList.remove('correct','wrong');
+        if(o.dataset.ok==='1')o.classList.add('correct');
+      });
+      if(btn.dataset.ok!=='1')btn.classList.add('wrong');
+      q.querySelector('.qexp').classList.add('shown');
+    });
+  });
+});
+</script>
+</body>
+</html>
