@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC-283 · Final Exam Review</title>
+<style>
+  :root{
+    --bg:#0a0f0d; --panel:#101915; --panel2:#0d1512; --line:#1e3328;
+    --green:#46e08c; --green-dim:#2a8f5c; --amber:#ffb648; --red:#ff5964;
+    --ink:#d9e6de; --dim:#7c948a; --mono:ui-monospace,'SF Mono','Cascadia Code','JetBrains Mono',Consolas,monospace;
+    --sans:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100%}
+  body{background-image:
+    linear-gradient(rgba(70,224,140,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70,224,140,.03) 1px, transparent 1px);
+    background-size:28px 28px;}
+  .wrap{max-width:880px;margin:0 auto;padding:22px 16px 60px}
+  /* header */
+  header{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:14px 18px;margin-bottom:18px;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .brand .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--green);text-transform:uppercase}
+  .brand h1{font-size:20px;font-weight:700;letter-spacing:.02em;margin-top:2px}
+  .brand h1 span{color:var(--amber)}
+  .hud{font-family:var(--mono);font-size:12px;color:var(--dim);text-align:right;line-height:1.6}
+  .hud b{color:var(--green);font-weight:600}
+  .hud .timer{color:var(--amber)}
+  /* progress signal */
+  .signal{height:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);overflow:hidden;margin-bottom:18px}
+  .signal i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green-dim),var(--green));transition:width .3s}
+  /* panels */
+  .panel{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:22px}
+  .hidden{display:none!important}
+  /* start screen */
+  .intro p{color:var(--dim);line-height:1.65;margin-bottom:16px;font-size:15px}
+  h2.sec{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--green);margin:18px 0 10px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){.modes{grid-template-columns:1fr}}
+  .mode{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:16px;cursor:pointer;text-align:left;color:var(--ink);transition:border-color .15s, transform .1s}
+  .mode:hover,.mode:focus-visible{border-color:var(--green);outline:none;transform:translateY(-1px)}
+  .mode h3{font-size:16px;margin-bottom:6px}
+  .mode h3 .tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--amber);border:1px solid var(--amber);border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:2px}
+  .mode p{font-size:13px;color:var(--dim);line-height:1.5}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);
+    border-radius:99px;padding:6px 12px;cursor:pointer;transition:.15s}
+  .chip.on{border-color:var(--green);color:var(--green);background:rgba(70,224,140,.08)}
+  .chip:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  .startnote{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:14px}
+  /* question card */
+  .qmeta{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:12px;gap:10px;flex-wrap:wrap}
+  .qmeta .topic{color:var(--amber)}
+  .qtext{font-size:18px;line-height:1.55;margin-bottom:14px}
+  .formula{font-family:var(--mono);font-size:13px;color:var(--amber);border:1px dashed rgba(255,182,72,.5);
+    background:rgba(255,182,72,.06);border-radius:8px;padding:9px 12px;margin-bottom:16px;line-height:1.6}
+  .formula .flabel{font-size:10px;letter-spacing:.16em;color:var(--dim);display:block;margin-bottom:2px}
+  .pts{color:var(--dim)}
+  .opts{display:grid;gap:10px}
+  .opt{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);background:var(--panel2);
+    border-radius:10px;padding:12px 14px;cursor:pointer;color:var(--ink);text-align:left;font-size:15px;line-height:1.5;transition:.15s;width:100%}
+  .opt:hover:not(:disabled),.opt:focus-visible{border-color:var(--green);outline:none}
+  .opt .key{font-family:var(--mono);font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:5px;
+    min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+  .opt.sel{border-color:var(--amber)}
+  .opt.sel .key{border-color:var(--amber);color:var(--amber)}
+  .opt.correct{border-color:var(--green);background:rgba(70,224,140,.09)}
+  .opt.correct .key{border-color:var(--green);color:var(--green)}
+  .opt.wrong{border-color:var(--red);background:rgba(255,89,100,.08)}
+  .opt.wrong .key{border-color:var(--red);color:var(--red)}
+  .opt:disabled{cursor:default}
+  .feedback{margin-top:16px;border-left:3px solid var(--green);background:var(--panel2);border-radius:0 8px 8px 0;padding:12px 14px;font-size:14px;line-height:1.6;color:var(--ink)}
+  .feedback.bad{border-left-color:var(--red)}
+  .feedback b{font-family:var(--mono);letter-spacing:.08em;font-size:12px;text-transform:uppercase}
+  .feedback.good b{color:var(--green)} .feedback.bad b{color:var(--red)}
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:10px;flex-wrap:wrap}
+  .btn{font-family:var(--mono);font-size:13px;letter-spacing:.06em;border:1px solid var(--green);color:var(--green);
+    background:transparent;border-radius:8px;padding:10px 18px;cursor:pointer;transition:.15s}
+  .btn:hover:not(:disabled),.btn:focus-visible{background:rgba(70,224,140,.1);outline:none}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.ghost{border-color:var(--line);color:var(--dim)}
+  .btn.warn{border-color:var(--amber);color:var(--amber)}
+  .kbd{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .kbd code{border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:var(--panel2)}
+  /* results */
+  .score-line{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  .score-big{font-family:var(--mono);font-size:52px;color:var(--green)}
+  .score-big.mid{color:var(--amber)} .score-big.low{color:var(--red)}
+  .verdict{color:var(--dim);font-size:15px;margin-bottom:18px;line-height:1.6}
+  .tbl{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tbl td.num{font-family:var(--mono)}
+  .bar{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;min-width:100px}
+  .bar i{display:block;height:100%;background:var(--green)}
+  .bar i.mid{background:var(--amber)} .bar i.low{background:var(--red)}
+  .miss{border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:14px;margin-bottom:12px}
+  .miss .mq{font-size:15px;margin-bottom:8px}
+  .miss .mline{font-size:13px;line-height:1.6}
+  .miss .you{color:var(--red)} .miss .right{color:var(--green)}
+  .miss .why{color:var(--dim);margin-top:6px;font-size:13px;line-height:1.6}
+  footer{margin-top:22px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.8}
+  footer a{color:var(--green-dim);text-decoration:none}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="eyebrow">MAC-283 · Computer Architecture &amp; Assembler</div>
+      <h1>Final Exam Review <span>· Fall 2 2026</span></h1>
+    </div>
+    <div class="hud" id="hud">STATUS: <b>STANDBY</b></div>
+  </header>
+  <div class="signal" aria-hidden="true"><i id="sig"></i></div>
+
+  <!-- START -->
+  <section class="panel intro" id="scrStart">
+    <p>The official <b style="color:var(--amber)">Fall 2 2026 final exam review</b> — all 35 questions, worth 100 points total, covering hardware &amp; the von Neumann model, number systems, two's complement, binary fractions, bitwise operations, octal &amp; hex, Boolean algebra, and CPU clock mathematics. Questions that require a formula show it in an amber box, exactly the formula you should walk in knowing.</p>
+    <h2 class="sec">01 · Choose a mode</h2>
+    <div class="modes">
+      <button class="mode" id="btnPractice">
+        <h3>Practice Mode</h3>
+        <p>Instant feedback after every answer, with a full explanation. Filter by topic below. Miss a question and it goes back into the queue until you get it right.</p>
+      </button>
+      <button class="mode" id="btnExam">
+        <h3>Exam Simulation <span class="tag">TIMED</span></h3>
+        <p>All 35 questions, shuffled, 60-minute countdown, no feedback until the end. Finish with your score out of 100 points, a per-topic breakdown, and a review of everything you missed.</p>
+      </button>
+    </div>
+    <h2 class="sec">02 · Topics (practice mode)</h2>
+    <div class="chips" id="chips"></div>
+    <p class="startnote">TIP → answer with keys <b>1–4</b> or <b>A–D</b> · advance with <b>Enter</b> / <b>→</b></p>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="panel hidden" id="scrQuiz">
+    <div class="qmeta">
+      <span id="qCount">Q 01 / 35</span>
+      <span class="pts" id="qPts"></span>
+      <span class="topic" id="qTopic"></span>
+    </div>
+    <div class="qtext" id="qText"></div>
+    <div class="formula hidden" id="qFormula"></div>
+    <div class="opts" id="qOpts"></div>
+    <div class="feedback hidden" id="qFeed"></div>
+    <div class="nav">
+      <button class="btn ghost" id="btnQuit">✕ QUIT</button>
+      <span class="kbd">keys <code>1</code>–<code>4</code> answer · <code>Enter</code> next</span>
+      <button class="btn" id="btnNext" disabled>NEXT →</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="panel hidden" id="scrResults">
+    <h2 class="sec">Session report</h2>
+    <div class="score-line"><span class="score-big" id="rScore">0%</span><span class="hud" id="rRaw"></span></div>
+    <p class="verdict" id="rVerdict"></p>
+    <h2 class="sec">Per-topic signal</h2>
+    <table class="tbl"><thead><tr><th>Topic</th><th>Correct</th><th style="width:40%">Strength</th></tr></thead><tbody id="rTopics"></tbody></table>
+    <div id="rMissWrap">
+      <h2 class="sec">Missed questions — study these</h2>
+      <div id="rMiss"></div>
+    </div>
+    <div class="nav">
+      <button class="btn warn" id="btnRetryMiss">RETRY MISSED ONLY</button>
+      <button class="btn" id="btnRestart">↺ BACK TO START</button>
+    </div>
+  </section>
+
+  <footer>
+    MAC-283 · Computer Architecture &amp; Assembler Language · Prof. Khalid Kassou · LaGuardia CC — MEC<br>
+    Companion to the interactive lecture decks · progress is per-session and never leaves this page
+  </footer>
+</div>
+
+<script>
+const BANK = [
+{"n":1,"pts":2.85,"topic":"Computer Systems","q":"What does the Program Counter (PC) store?","opts":["The result of the last arithmetic operation","The memory address of the next instruction to be executed","The number of programs currently running","The clock frequency of the CPU"],"ans":1,"exp":"The PC is the CPU's bookmark \u2014 it always holds the address of the next instruction to fetch from memory."},
+{"n":2,"pts":2.85,"topic":"Computer Systems","q":"Which component of the CPU performs mathematical calculations and logical operations such as AND, OR, and NOT?","opts":["Control Unit (CU)","Program Counter (PC)","Arithmetic Logic Unit (ALU)","Cache"],"ans":2,"exp":"The ALU does the actual computation; the CU directs traffic, the PC tracks the next address, and cache stores frequently used data."},
+{"n":3,"pts":2.85,"topic":"Computer Systems","q":"RAM is called \u201cvolatile\u201d memory because:","opts":["It is faster than long-term storage","Its contents are lost when the power is turned off","It heats up under heavy use","It can only be written to once"],"ans":1,"exp":"Volatile means power off \u2192 data gone. Storage (SSD/HDD) is non-volatile and keeps data without power."},
+{"n":4,"pts":2.85,"topic":"Computer Systems","q":"Which lists the stages of the instruction cycle in the correct order?","opts":["Decode \u2192 Fetch \u2192 Execute \u2192 Store","Fetch \u2192 Decode \u2192 Execute \u2192 Store","Fetch \u2192 Execute \u2192 Decode \u2192 Store","Execute \u2192 Fetch \u2192 Store \u2192 Decode"],"ans":1,"exp":"Fetch the instruction at the PC, decode it in the Control Unit, execute in the ALU, then store the result and update the PC."},
+{"n":5,"pts":2.85,"topic":"Computer Systems","q":"The von Neumann bottleneck exists because:","opts":["The CPU has too few registers","Instructions and data share one memory and one bus, so they cannot be accessed at the same time","RAM is volatile","The ALU is slower than the Control Unit"],"ans":1,"exp":"With a single shared path to one memory, an instruction fetch delays a data access and vice versa \u2014 that traffic jam is the bottleneck."},
+{"n":6,"pts":2.85,"topic":"Computer Systems","q":"The Harvard architecture avoids the von Neumann bottleneck by:","opts":["Using vacuum tubes instead of transistors","Removing the Control Unit","Giving instructions and data separate memories and dedicated buses so both can be accessed simultaneously","Executing instructions out of order"],"ans":2,"exp":"Two memories, two buses: the CU fetches instructions while the ALU accesses data \u2014 no interference. Common in microcontrollers and DSP chips."},
+{"n":7,"pts":2.85,"topic":"Computer Systems","q":"A 64-bit bus can:","opts":["Store 64 bytes of data","Transfer 64 bits at one time, because it has 64 wires","Run at 64 GHz","Address only 64 memory locations"],"ans":1,"formula":"bus width = number of wires = bits moved per transfer","exp":"Each wire carries 1 bit at a time, so a wider bus moves more data per trip."},
+{"n":8,"pts":2.85,"topic":"Data Representation","q":"How many different values can one byte (8 bits) represent?","opts":["8","100","255","256"],"ans":3,"formula":"n bits \u2192 2\u207f values (range 0 \u2026 2\u207f\u22121)","exp":"2\u2078 = 256 patterns, giving the range 0\u2013255. (255 is the largest value, but the count of values includes 0.)"},
+{"n":9,"pts":2.85,"topic":"Data Representation","q":"The binary number 10110110 equals which decimal value?","opts":["166","178","182","190"],"ans":2,"formula":"value = \u03a3 bit \u00d7 2\u1d56\u1d52\u02e2 \u2014 places: 128 \u00b7 64 \u00b7 32 \u00b7 16 \u00b7 8 \u00b7 4 \u00b7 2 \u00b7 1","exp":"Add the lit place values: 128 + 32 + 16 + 4 + 2 = 182."},
+{"n":10,"pts":2.85,"topic":"Data Representation","q":"Decimal 19 in binary is:","opts":["10111","10011","11001","10101"],"ans":1,"formula":"divide by 2 repeatedly \u2192 read the remainders bottom-to-top","exp":"19 = 16 + 2 + 1 = 10011. Or: 19\u00f72=9 r1, 9\u00f72=4 r1, 4\u00f72=2 r0, 2\u00f72=1 r0, 1\u00f72=0 r1 \u2192 read up: 10011."},
+{"n":11,"pts":2.85,"topic":"Data Representation","q":"In binary arithmetic, 1 + 1 =","opts":["2","1","10","11"],"ans":2,"exp":"Just like 9 + 1 rolls over in decimal, 1 + 1 rolls over in binary: write 0, carry the 1 \u2014 giving 10\u2082 (decimal 2)."},
+{"n":12,"pts":2.85,"topic":"Data Representation","q":"The ASCII code for the uppercase letter 'A' is:","opts":["65 \u2192 01000001","97 \u2192 01100001","41 \u2192 00101001","64 \u2192 01000000"],"ans":0,"exp":"'A' = 65 = 01000001. Lowercase 'a' is 97, and '@' is 64."},
+{"n":13,"pts":2.85,"topic":"Data Representation","q":"How are the keyboard character '2' and the numeric value 2 stored?","opts":["Both are stored identically as 00000010","'2' is stored as ASCII 50 (00110010); the value 2 is stored as 00000010","'2' is stored as 00000010; the value 2 as ASCII 50","Both are stored as ASCII 50"],"ans":1,"exp":"The symbol '2' is a character (ASCII 50); the value 2 is a number for math. Context decides which \u2014 mixing them up is a classic bug."},
+{"n":14,"pts":2.85,"topic":"Data Representation","q":"Computers use base 2 rather than base 10 because:","opts":["Binary math is more accurate than decimal","Two clearly separated voltage states (on/off) are far more reliable to detect than ten levels","Early programmers only knew two digits","Base 10 requires too much memory"],"ans":1,"exp":"A transistor is a switch with two stable states. Detecting \u201cvoltage / no voltage\u201d is reliable; distinguishing ten voltage levels would be error-prone."},
+{"n":15,"pts":2.85,"topic":"Data Representation","q":"One hexadecimal digit corresponds to exactly:","opts":["2 bits","3 bits","4 bits (a nibble)","8 bits"],"ans":2,"formula":"16 = 2\u2074 \u2192 1 hex digit = 4 bits \u00b7 1 byte = 2 hex digits","exp":"16 = 2\u2074, so one hex digit = 4 bits. That's why one byte is exactly two hex digits (00\u2013FF)."},
+{"n":16,"pts":2.85,"topic":"Signed Numbers & Fractions","q":"The recipe to negate a number in two's complement is:","opts":["Flip the leftmost bit only","Flip every bit","Flip every bit, then add 1","Add 1, then flip every bit"],"ans":2,"exp":"Flip-only is one's complement; flipping just the sign bit is sign-magnitude. Two's complement = flip all bits, then add 1."},
+{"n":17,"pts":2.85,"topic":"Signed Numbers & Fractions","q":"\u22125 in 8-bit two's complement is:","opts":["10000101","11111010","11111011","00000101"],"ans":2,"formula":"\u2212x = flip every bit of x, then add 1","exp":"+5 = 00000101 \u2192 flip \u2192 11111010 \u2192 add 1 \u2192 11111011. (10000101 is sign-magnitude; 11111010 is one's complement.)"},
+{"n":18,"pts":2.85,"topic":"Signed Numbers & Fractions","q":"Two's complement became the standard in every modern CPU mainly because:","opts":["It is the easiest for humans to read","It has exactly one zero and lets the same adder circuit do both addition and subtraction","It stores larger positive numbers than other methods","It never overflows"],"ans":1,"exp":"Sign-magnitude and one's complement waste a pattern on \u22120 and need extra hardware. Two's complement has one zero and one adder for + and \u2212."},
+{"n":19,"pts":2.85,"topic":"Signed Numbers & Fractions","q":"The range of an 8-bit two's complement number is:","opts":["\u2212127 to +127","\u2212128 to +127","0 to 255","\u2212128 to +128"],"ans":1,"formula":"n-bit range: \u22122\u207f\u207b\u00b9 \u2026 +2\u207f\u207b\u00b9 \u2212 1","exp":"For n = 8: \u22122\u2077 to 2\u2077\u22121 = \u2212128 to +127. The negative side reaches one further because the single zero lives on the positive half."},
+{"n":20,"pts":2.85,"topic":"Signed Numbers & Fractions","q":"The binary fraction 0.101\u2082 equals which decimal value?","opts":["0.5","0.625","0.75","0.875"],"ans":1,"formula":"places after the point: 2\u207b\u00b9 = 0.5 \u00b7 2\u207b\u00b2 = 0.25 \u00b7 2\u207b\u00b3 = 0.125","exp":"Add the lit place values: 0.5 + 0 + 0.125 = 0.625."},
+{"n":21,"pts":2.85,"topic":"Signed Numbers & Fractions","q":"Why can't decimal 0.1 be stored exactly in binary?","opts":["0.1 is an irrational number","Its binary expansion repeats forever, because its denominator is not a power of 2","Binary cannot represent fractions at all","Computers round every fraction to the nearest integer"],"ans":1,"formula":"a fraction terminates in binary only if its denominator is a power of 2","exp":"0.1 = 0.000110011\u2026\u2082 with the block 0011 repeating endlessly \u2014 this is why 0.1 + 0.2 \u2260 0.3 with floats."},
+{"n":22,"pts":2.85,"topic":"Bitwise Operations","q":"12 & 10 = ?  (12 = 1100, 10 = 1010)","opts":["6","8","14","2"],"ans":1,"formula":"AND: result bit = 1 only where BOTH bits are 1","exp":"1100 & 1010 = 1000 = 8."},
+{"n":23,"pts":2.85,"topic":"Bitwise Operations","q":"12 ^ 10 = ?  (12 = 1100, 10 = 1010)","opts":["6","8","14","4"],"ans":0,"formula":"XOR: result bit = 1 only where the bits DIFFER","exp":"1100 ^ 1010 = 0110 = 6."},
+{"n":24,"pts":2.85,"topic":"Bitwise Operations","q":"3 << 2 = ?","opts":["6","9","12","1"],"ans":2,"formula":"x << n = x \u00d7 2\u207f \u00b7 x >> n = \u230ax \u00f7 2\u207f\u230b","exp":"Each left shift doubles the value: 3 << 2 = 3 \u00d7 2\u00b2 = 3 \u00d7 4 = 12."},
+{"n":25,"pts":2.85,"topic":"Octal & Hexadecimal","q":"Binary 111101010 in octal is:  (group into threes from the right)","opts":["725\u2088","752\u2088","572\u2088","762\u2088"],"ans":1,"formula":"8 = 2\u00b3 \u2192 1 octal digit = 3 bits \u00b7 group from the RIGHT","exp":"111 | 101 | 010 \u2192 7, 5, 2 \u2192 752\u2088. No arithmetic needed \u2014 just group and read."},
+{"n":26,"pts":2.85,"topic":"Octal & Hexadecimal","q":"2AF\u2081\u2086 in decimal is:","opts":["687","671","702","655"],"ans":0,"formula":"value = \u03a3 digit \u00d7 16\u1d56\u1d52\u02e2 \u00b7 A=10, B=11 \u2026 F=15 \u00b7 places: 1, 16, 256 \u2026","exp":"2\u00d7256 + A(10)\u00d716 + F(15)\u00d71 = 512 + 160 + 15 = 687."},
+{"n":27,"pts":2.85,"topic":"Octal & Hexadecimal","q":"The octal number 10\u2088 equals which decimal value?","opts":["10","2","8","16"],"ans":2,"formula":"octal place values: \u2026 64, 8, 1 \u2014 after 7 the ones column carries","exp":"Octal has no digit 8 or 9. Octal \u201c10\u201d means one eight and zero ones = decimal 8. (Hex \u201c10\u201d would be 16.)"},
+{"n":28,"pts":2.85,"topic":"Boolean Algebra & K-Maps","q":"In Boolean algebra, 1 + 1 =","opts":["2","10","1","0"],"ans":2,"exp":"+ means OR, and there is no \u201c2\u201d in this universe: output is 1 if at least one input is 1, so 1 + 1 = 1."},
+{"n":29,"pts":2.85,"topic":"Boolean Algebra & K-Maps","q":"By DeMorgan's Law, (A \u00b7 B)' =","opts":["A' \u00b7 B'","A' + B'","A + B","(A + B)'"],"ans":1,"exp":"Break the NOT and flip the operator: (A\u00b7B)' = A' + B'. Pushing the NOT inside without flipping \u00b7 into + is the classic mistake."},
+{"n":30,"pts":2.85,"topic":"Boolean Algebra & K-Maps","q":"The XOR operation outputs 1 when:","opts":["Both inputs are 1","At least one input is 1","The two inputs are different","Both inputs are 0"],"ans":2,"exp":"XOR = exclusive OR: 1 only where the inputs differ. Both the same (00 or 11) gives 0 \u2014 the home-alarm pattern from lecture."},
+{"n":31,"pts":2.85,"topic":"CPU Clock & Performance","q":"A CPU runs at 2.5 GHz. Its clock period T is:","opts":["2.5 ns","0.25 ns","0.4 ns","4 ns"],"ans":2,"formula":"T = 1 / f \u00b7 f = 1 / T \u00b7 shortcut: at X GHz, T = (1/X) ns","exp":"T = 1 / (2.5\u00d710\u2079) = 0.4\u00d710\u207b\u2079 s = 0.4 ns."},
+{"n":32,"pts":2.85,"topic":"CPU Clock & Performance","q":"A program executes IC = 6\u00d710\u2079 instructions with CPI = 2 on a 4 GHz CPU. Execution time is:","opts":["1.5 s","3.0 s","12 s","0.75 s"],"ans":1,"formula":"Iron Law: CPU Time = IC \u00d7 CPI \u00d7 T\u1d04 = IC \u00d7 CPI / f","exp":"Time = (6\u00d710\u2079 \u00d7 2) / (4\u00d710\u2079) = 12/4 = 3.0 s."},
+{"n":33,"pts":2.85,"topic":"CPU Clock & Performance","q":"You speed up 50% of a program by a factor of 100\u00d7. The best possible overall speedup is:","opts":["\u2248 100\u00d7","\u2248 50\u00d7","Just under 2\u00d7","Exactly 4\u00d7"],"ans":2,"formula":"Amdahl's Law: S = 1 / ((1\u2212p) + p/s) \u00b7 ceiling = 1 / (1\u2212p)","exp":"S = 1 / ((1\u22120.5) + 0.5/100) = 1/0.505 \u2248 1.98\u00d7. The untouched half caps you at 2\u00d7 no matter what."},
+{"n":34,"pts":2.85,"topic":"CPU Clock & Performance","q":"A 5-stage pipeline runs 200 instructions with no hazards. Total cycles needed:","opts":["1000","200","204","205"],"ans":2,"formula":"pipeline cycles = k + n \u2212 1  (k stages, n instructions)","exp":"5 + 200 \u2212 1 = 204 cycles. Without pipelining it would take k \u00d7 n = 1000 cycles."},
+{"n":35,"pts":3.1,"topic":"CPU Clock & Performance","q":"A cache has hit time = 1 cycle, miss rate = 10%, miss penalty = 50 cycles. The AMAT is:","opts":["51 cycles","6 cycles","5 cycles","11 cycles"],"ans":1,"formula":"AMAT = hit time + miss rate \u00d7 miss penalty","exp":"AMAT = 1 + 0.10 \u00d7 50 = 6 cycles. The rare event dominates the bill."}
+];
+const LET = ['A','B','C','D'];
+const TOPICS = [...new Set(BANK.map(q=>q.topic))];
+const EXAM_SECONDS = 60*60;
+
+const $ = id => document.getElementById(id);
+const scr = {start:$('scrStart'), quiz:$('scrQuiz'), res:$('scrResults')};
+function show(name){ for(const k in scr) scr[k].classList.toggle('hidden', k!==name); }
+
+let S = null; // session state
+let timerId = null;
+let activeTopics = new Set(TOPICS);
+
+/* ---------- topic chips ---------- */
+const chipsEl = $('chips');
+TOPICS.forEach(t=>{
+  const b = document.createElement('button');
+  b.className = 'chip on'; b.textContent = t;
+  b.onclick = ()=>{
+    if(b.classList.contains('on') && activeTopics.size===1) return; // keep at least one
+    b.classList.toggle('on');
+    b.classList.contains('on') ? activeTopics.add(t) : activeTopics.delete(t);
+  };
+  chipsEl.appendChild(b);
+});
+
+/* ---------- helpers ---------- */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function makeItems(pool){
+  return shuffle(pool).map(q=>{
+    const order = shuffle([0,1,2,3]);
+    return { q, order, picked:null };
+  });
+}
+
+function fmt(n){ return String(n).padStart(2,'0'); }
+function fmtTime(s){ const m=Math.floor(s/60), ss=s%60; return `${fmt(m)}:${fmt(ss)}`; }
+
+function setHUD(){
+  const h = $('hud');
+  if(!S){ h.innerHTML = 'STATUS: <b>STANDBY</b>'; return; }
+  const right = S.items.filter(it=>it.picked!==null && it.order[it.picked]===it.q.ans).length;
+  const answered = S.items.filter(it=>it.picked!==null).length;
+  let txt = `MODE: <b>${S.mode==='exam'?'EXAM SIM':'PRACTICE'}</b> · SCORE: <b>${right}/${answered}</b>`;
+  if(S.mode==='exam') txt += ` · <span class="timer">⏱ ${fmtTime(S.timeLeft)}</span>`;
+  h.innerHTML = txt;
+}
+function setSignal(){
+  const done = S ? S.idx / S.items.length : 0;
+  $('sig').style.width = (done*100)+'%';
+}
+
+/* ---------- session flow ---------- */
+function startSession(mode, poolOverride){
+  let pool;
+  if(poolOverride) pool = poolOverride;
+  else if(mode==='practice') pool = BANK.filter(q=>activeTopics.has(q.topic));
+  else pool = BANK;
+  if(!pool.length) return;
+  S = { mode, items: makeItems(pool), idx:0, answered:false, requeue:[], timeLeft:EXAM_SECONDS };
+  if(mode==='exam'){
+    clearInterval(timerId);
+    timerId = setInterval(()=>{
+      S.timeLeft--; setHUD();
+      if(S.timeLeft<=0){ clearInterval(timerId); finish(); }
+    },1000);
+  }
+  show('quiz'); render();
+}
+
+function render(){
+  const it = S.items[S.idx];
+  $('qCount').textContent = `Q ${fmt(S.idx+1)} / ${fmt(S.items.length)}`;
+  $('qPts').textContent = it.q.pts ? it.q.pts + ' pts' : '';
+  $('qTopic').textContent = it.q.topic;
+  $('qText').textContent = it.q.q;
+  const fx = $('qFormula');
+  if(it.q.formula){
+    fx.innerHTML = '<span class="flabel">FORMULA</span>' + esc(it.q.formula);
+    fx.classList.remove('hidden');
+  } else fx.classList.add('hidden');
+  const box = $('qOpts'); box.innerHTML='';
+  it.order.forEach((origIdx, pos)=>{
+    const b = document.createElement('button');
+    b.className='opt';
+    b.innerHTML = `<span class="key">${LET[pos]}</span><span>${esc(it.q.opts[origIdx])}</span>`;
+    b.onclick = ()=>pick(pos);
+    box.appendChild(b);
+  });
+  $('qFeed').classList.add('hidden');
+  $('btnNext').disabled = true;
+  $('btnNext').textContent = (S.idx===S.items.length-1 && !(S.mode==='practice'&&S.requeue.length)) ? 'FINISH ✓' : 'NEXT →';
+  S.answered=false;
+  setHUD(); setSignal();
+}
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function pick(pos){
+  const it = S.items[S.idx];
+  if(S.answered) return;
+  it.picked = pos;
+  S.answered = true;
+  const btns = [...$('qOpts').children];
+  const correctPos = it.order.indexOf(it.q.ans);
+  if(S.mode==='practice'){
+    btns.forEach((b,i)=>{
+      b.disabled=true;
+      if(i===correctPos) b.classList.add('correct');
+      else if(i===pos) b.classList.add('wrong');
+    });
+    const good = pos===correctPos;
+    const f = $('qFeed');
+    f.className = 'feedback ' + (good?'good':'bad');
+    f.innerHTML = `<b>${good?'✓ CORRECT':'✗ INCORRECT — answer: '+LET[correctPos]}</b><br>${esc(it.q.exp)}`;
+    f.classList.remove('hidden');
+    if(!good) S.requeue.push(it.q);
+  } else {
+    btns.forEach((b,i)=>{ b.classList.toggle('sel', i===pos); });
+  }
+  $('btnNext').disabled = false;
+  setHUD();
+}
+
+function next(){
+  if(!S.answered) return;
+  if(S.idx < S.items.length-1){ S.idx++; render(); return; }
+  // end of list
+  if(S.mode==='practice' && S.requeue.length){
+    // requeue missed until mastered
+    S.items = makeItems(S.requeue);
+    S.requeue = [];
+    S.idx = 0;
+    render();
+    return;
+  }
+  finish();
+}
+
+function finish(){
+  clearInterval(timerId);
+  // For exam: score all items. For practice: report first-pass performance stored on BANK order — simpler: aggregate everything answered this session.
+  const answered = S.items.filter(it=>it.picked!==null);
+  const graded = S.mode==='exam' ? S.items : S.allGraded || answered;
+  // collect per-question first results across session (practice may have requeues; we track misses via S.missLog)
+  const results = (S.missLog) ? S.missLog : S.items.map(it=>({
+    q: it.q,
+    right: it.picked!==null && it.order[it.picked]===it.q.ans,
+    pickedText: it.picked===null ? '(no answer)' : it.q.opts[it.order[it.picked]]
+  }));
+  const right = results.filter(r=>r.right).length;
+  const ptsEarned = results.reduce((s,r)=>s + (r.right ? (r.q.pts||0) : 0), 0);
+  const ptsTotal  = results.reduce((s,r)=>s + (r.q.pts||0), 0);
+  const pct = Math.round(100*right/results.length);
+  const sb = $('rScore');
+  sb.textContent = pct + '%';
+  sb.className = 'score-big ' + (pct>=80?'':'mid') ;
+  if(pct<60) sb.className='score-big low';
+  $('rRaw').textContent = `${right} / ${results.length} correct · ${ptsEarned.toFixed(2).replace(/\.00$/,'')} / ${ptsTotal.toFixed(0)} points` + (S.mode==='exam' ? ` · time used ${fmtTime(EXAM_SECONDS-S.timeLeft)}` : '');
+  $('rVerdict').textContent =
+    pct>=90 ? 'Signal locked. You are ready — walk into the final like you own the lab.' :
+    pct>=80 ? 'Strong trace. Review the missed questions below and you are exam-ready.' :
+    pct>=60 ? 'Partial lock. The per-topic table shows where the noise is — reopen those lecture decks, then retry the missed questions.' :
+              'Weak signal. Do not panic: retry the missed questions below, then rerun the full set. Every explanation points back to a lecture concept.';
+  // per topic
+  const tb = $('rTopics'); tb.innerHTML='';
+  TOPICS.forEach(t=>{
+    const rs = results.filter(r=>r.q.topic===t);
+    if(!rs.length) return;
+    const rr = rs.filter(r=>r.right).length;
+    const p = Math.round(100*rr/rs.length);
+    const cls = p>=80?'':(p>=60?'mid':'low');
+    tb.insertAdjacentHTML('beforeend',
+      `<tr><td>${esc(t)}</td><td class="num">${rr}/${rs.length}</td><td><div class="bar"><i class="${cls}" style="width:${p}%"></i></div></td></tr>`);
+  });
+  // missed
+  const missed = results.filter(r=>!r.right);
+  const mw = $('rMissWrap'), mbox = $('rMiss'); mbox.innerHTML='';
+  mw.classList.toggle('hidden', missed.length===0);
+  missed.forEach(r=>{
+    mbox.insertAdjacentHTML('beforeend',
+      `<div class="miss"><div class="mq">${esc(r.q.q)}</div>
+        <div class="mline"><span class="you">Your answer:</span> ${esc(r.pickedText)}</div>
+        <div class="mline"><span class="right">Correct:</span> ${esc(r.q.opts[r.q.ans])}</div>
+        ${r.q.formula ? '<div class="formula" style="margin:8px 0 0"><span class="flabel">FORMULA</span>'+esc(r.q.formula)+'</div>' : ''}
+        <div class="why">${esc(r.q.exp)}</div></div>`);
+  });
+  $('btnRetryMiss').classList.toggle('hidden', missed.length===0);
+  $('btnRetryMiss').onclick = ()=> startSession('practice', missed.map(r=>r.q));
+  S._missedPool = missed.map(r=>r.q);
+  show('res');
+  S = null; setHUD(); $('sig').style.width='100%';
+}
+
+/* Practice sessions requeue missed items, so log first-pass results for the report */
+function attachMissLog(){
+  // wrap pick to record first-pass results in practice
+}
+
+/* Practice first-pass logging: record result the first time each unique question is answered */
+const origPick = pick;
+pick = function(pos){
+  const it = S.items[S.idx];
+  const before = S.answered;
+  origPick(pos);
+  if(before || S.mode!=='practice') return;
+  S.missLog = S.missLog || [];
+  if(!S.missLog.some(r=>r.q===it.q)){
+    S.missLog.push({
+      q: it.q,
+      right: it.order[pos]===it.q.ans,
+      pickedText: it.q.opts[it.order[pos]]
+    });
+  }
+  if(S.mode==='practice' && S.idx===S.items.length-1 && S.requeue.length){
+    $('btnNext').textContent = 'NEXT →';
+  }
+};
+
+/* ---------- events ---------- */
+$('btnPractice').onclick = ()=>startSession('practice');
+$('btnExam').onclick = ()=>startSession('exam');
+$('btnNext').onclick = next;
+$('btnQuit').onclick = ()=>{ clearInterval(timerId); S=null; setHUD(); $('sig').style.width='0'; show('start'); };
+$('btnRestart').onclick = ()=>{ show('start'); $('sig').style.width='0'; setHUD(); };
+
+document.addEventListener('keydown', e=>{
+  if(scr.quiz.classList.contains('hidden')) return;
+  const k = e.key.toLowerCase();
+  const map = {'1':0,'2':1,'3':2,'4':3,'a':0,'b':1,'c':2,'d':3};
+  if(k in map){ const btns=$('qOpts').children; if(btns[map[k]]) btns[map[k]].click(); }
+  else if(k==='enter' || k==='arrowright'){ if(!$('btnNext').disabled) next(); }
+});
+</script>
+</body>
+</html>
