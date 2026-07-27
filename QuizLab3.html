@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC283 — Lab 07: The Cycle Budget Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#050a0b;
+  --board:#0b1416;
+  --panel:#101d20;
+  --trace:#1d3238;
+  --edge:#26454d;
+  --phos:#7dfbc4;
+  --amber:#ffb648;
+  --cyan:#4fd9ff;
+  --red:#ff6b6b;
+  --ink:#dff0ec;
+  --dim:#7e9a99;
+  --display:'Chakra Petch',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--void);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:15.5px;
+  line-height:1.62;
+  background-image:
+    linear-gradient(rgba(125,251,196,.030) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(125,251,196,.030) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 20px 100px}
+
+/* ---------- rail (signature element) ---------- */
+#rail{
+  position:sticky;top:0;z-index:60;
+  background:rgba(5,10,11,.93);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--edge);
+}
+.rail-in{max-width:1000px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:14px}
+.rail-tag{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--dim);white-space:nowrap}
+.rail-tag b{color:var(--phos);font-weight:600}
+#scope{flex:1;height:26px;min-width:120px}
+.rail-btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+  background:transparent;color:var(--cyan);border:1px solid var(--edge);
+  padding:5px 10px;border-radius:2px;cursor:pointer
+}
+.rail-btn:hover{border-color:var(--cyan);background:rgba(79,217,255,.08)}
+
+/* ---------- header ---------- */
+header{padding:52px 0 26px;border-bottom:1px solid var(--trace)}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.28em;color:var(--amber);text-transform:uppercase}
+h1{font-family:var(--display);font-size:clamp(30px,6vw,54px);line-height:1.02;margin:14px 0 10px;letter-spacing:-.01em}
+h1 span{color:var(--phos)}
+.sub{color:var(--dim);max-width:66ch}
+.meta-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;border:1px solid var(--edge);
+  padding:5px 11px;border-radius:2px;color:var(--dim)}
+.chip b{color:var(--ink);font-weight:500}
+
+/* ---------- id gate ---------- */
+.card{background:var(--panel);border:1px solid var(--edge);border-radius:4px;padding:22px;margin:26px 0}
+.card h3{font-family:var(--display);font-size:19px;margin:0 0 6px;letter-spacing:.01em}
+.field-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px}
+.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:210px}
+label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+input[type=text],input[type=password],textarea{
+  background:var(--void);border:1px solid var(--edge);color:var(--ink);
+  font-family:var(--mono);font-size:14px;padding:9px 11px;border-radius:2px;width:100%
+}
+input:focus,textarea:focus,button:focus-visible,select:focus{outline:2px solid var(--cyan);outline-offset:1px}
+textarea{min-height:130px;font-family:var(--body);line-height:1.6;resize:vertical}
+.btn{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--phos);color:#04100c;border:none;padding:11px 20px;border-radius:2px;
+  cursor:pointer;font-weight:600
+}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--edge)}
+.btn.ghost:hover{border-color:var(--cyan);background:rgba(79,217,255,.07)}
+.btn.warn{background:var(--amber);color:#1a1000}
+.btn[disabled]{opacity:.4;cursor:not-allowed;filter:none}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+
+/* ---------- stations ---------- */
+.station{border:1px solid var(--trace);border-radius:4px;margin:30px 0;background:linear-gradient(180deg,var(--board),#080f11)}
+.st-head{display:flex;align-items:baseline;gap:14px;padding:18px 22px;border-bottom:1px solid var(--trace);flex-wrap:wrap}
+.st-code{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--amber)}
+.st-head h2{font-family:var(--display);font-size:23px;margin:0;flex:1;min-width:200px}
+.st-time{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.08em}
+.st-body{padding:22px}
+.brief{border-left:2px solid var(--amber);padding:2px 0 2px 16px;margin:0 0 20px;color:#c8ded9}
+.brief b{color:var(--ink)}
+.spec{
+  font-family:var(--mono);font-size:13px;background:#081113;border:1px solid var(--trace);
+  border-radius:3px;padding:14px 16px;margin:16px 0;color:var(--phos)
+}
+.spec div{display:flex;justify-content:space-between;gap:16px;padding:2px 0;border-bottom:1px dotted rgba(125,251,196,.13)}
+.spec div:last-child{border-bottom:none}
+.spec span:first-child{color:var(--dim)}
+
+/* ---------- questions ---------- */
+.q{padding:16px 0;border-top:1px dashed var(--trace)}
+.q:first-of-type{border-top:none}
+.q-head{display:flex;gap:12px;align-items:baseline}
+.q-id{font-family:var(--mono);font-size:12px;color:var(--cyan);font-weight:600;min-width:42px}
+.q-text{flex:1}
+.q-pts{font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap}
+.ans{display:flex;align-items:center;gap:10px;margin:10px 0 0 54px;flex-wrap:wrap}
+.ans input[type=text]{max-width:230px}
+.unit{font-family:var(--mono);font-size:13px;color:var(--amber)}
+.hintbtn{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:11px;
+  text-decoration:underline dotted;cursor:pointer;padding:0}
+.hint{margin:8px 0 0 54px;font-size:13.5px;color:var(--dim);border-left:1px solid var(--trace);padding-left:12px;display:none}
+.hint.on{display:block}
+.choices{margin:10px 0 0 54px;display:flex;flex-direction:column;gap:7px}
+.choice{display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-size:14.5px;
+  border:1px solid transparent;padding:5px 8px;border-radius:3px}
+.choice:hover{border-color:var(--trace);background:rgba(125,251,196,.03)}
+.choice input{accent-color:var(--phos);margin-top:4px}
+.q.done .q-id{color:var(--phos)}
+code,.k{font-family:var(--mono);color:var(--phos);font-size:.92em}
+.fx{font-family:var(--mono);color:var(--cyan)}
+
+/* ---------- report ---------- */
+.report{display:none}
+.report.on{display:block}
+.score-big{font-family:var(--display);font-size:56px;line-height:1;color:var(--phos)}
+.grade-tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:16px}
+.grade-tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);text-align:left;border-bottom:1px solid var(--edge);padding:7px 8px}
+.grade-tbl td{padding:7px 8px;border-bottom:1px solid var(--trace);vertical-align:top;font-family:var(--mono);font-size:12.5px}
+.ok{color:var(--phos)}
+.no{color:var(--red)}
+.payload{font-family:var(--mono);font-size:10.5px;word-break:break-all;background:#081113;
+  border:1px solid var(--trace);padding:12px;border-radius:3px;color:var(--dim);line-height:1.5}
+.banner{border:1px solid var(--amber);background:rgba(255,182,72,.07);padding:14px 16px;border-radius:3px;
+  font-family:var(--mono);font-size:12.5px;color:var(--amber);margin:16px 0}
+.muted{color:var(--dim);font-size:13.5px}
+footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--trace);
+  font-family:var(--mono);font-size:11.5px;color:var(--dim);letter-spacing:.06em}
+.hide{display:none !important}
+.print-only{display:none}
+.locked input,.locked textarea{opacity:.75;pointer-events:none}
+.locked .choice{pointer-events:none;opacity:.8}
+
+@media (max-width:640px){
+  .ans{margin-left:0}.hint,.choices,.fbar{margin-left:0}
+  .rail-tag.opt{display:none}
+}
+
+/* ---------- print / PDF ---------- */
+@media print{
+  @page{margin:14mm 12mm}
+  body{background:#fff !important;color:#000;font-size:10.5pt;line-height:1.42;background-image:none}
+  .wrap{max-width:none;padding:0}
+  #rail,.noprint,.hintbtn,.hint{display:none !important}
+  .print-only{display:block}
+  header{padding:0 0 10px;border-color:#000}
+  h1{font-size:22pt;color:#000}
+  h1 span{color:#000}
+  .eyebrow,.st-code,.q-id,.unit,.fx,code,.k{color:#000 !important}
+  .card,.station,.spec{background:#fff !important;border:1px solid #999;break-inside:avoid}
+  .station{margin:10px 0}
+  .st-head{padding:8px 10px;border-color:#999}
+  .st-body{padding:10px}
+  .brief{color:#222;border-color:#666}
+  .spec{color:#000;border-color:#999}
+  .q{break-inside:avoid;padding:7px 0}
+  .sub,.muted,.q-pts,.st-time{color:#333}
+  input,textarea{display:none !important}
+  .print-answer{display:inline-block !important;font-family:var(--mono);font-weight:600;
+    border-bottom:1px solid #000;min-width:120px;padding:0 4px;color:#000}
+  .choice{padding:1px 0}
+  .choice input{display:none !important}
+  .payload{color:#000;border-color:#666;font-size:7.5pt}
+  .score-big{color:#000}
+  .grade-tbl th,.grade-tbl td{border-color:#999;color:#000}
+  .ok,.no{color:#000 !important;font-weight:700}
+  .banner{color:#000;border-color:#666;background:none}
+  .fbar{margin-left:54px}
+  .fbar code{color:#000 !important}
+  .flab{color:#444;border-color:#999}
+  .refcard{background:#fff !important;border-color:#999;break-inside:avoid}
+  .refbox h4,.refbox p{color:#000 !important}
+  footer{color:#333}
+}
+
+.fbar{display:flex;gap:9px;align-items:baseline;margin:8px 0 0 54px;flex-wrap:wrap}
+.flab{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--dim);
+  border:1px solid var(--trace);padding:2px 6px;border-radius:2px;white-space:nowrap}
+.fbar code{font-family:var(--mono);font-size:12.2px;color:var(--cyan);line-height:1.5}
+.fbar.cv code{color:var(--amber)}
+.fbar.cv .flab{border-color:rgba(255,182,72,.32)}
+.refcard{background:#081113;border:1px solid var(--edge);border-radius:4px;padding:20px;margin:26px 0}
+.refgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:16px;margin-top:14px}
+.refbox h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--amber);
+  margin:0 0 7px;text-transform:uppercase;font-weight:500}
+.refbox p{margin:0;font-family:var(--mono);font-size:12.3px;color:var(--ink);line-height:1.75}
+.print-answer{display:none}
+</style>
+</head>
+<body>
+
+<div id="rail">
+  <div class="rail-in">
+    <div class="rail-tag">MAC283 · <b>LAB 07</b></div>
+    <svg id="scope" viewBox="0 0 400 26" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" y1="13" x2="400" y2="13" stroke="#1d3238" stroke-width="1"/>
+      <path id="wave" d="" fill="none" stroke="#7dfbc4" stroke-width="2" stroke-linejoin="miter"/>
+    </svg>
+    <div class="rail-tag opt">CYCLES BUDGETED <b id="railCount">0 / 0</b></div>
+    <button class="rail-btn noprint" id="btnPdfTop">SAVE PDF</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Lab 07 · companion to “The CPU as a Clock”</div>
+  <h1>The Cycle Budget <span>Audit</span></h1>
+  <p class="sub">You have been hired for two hours as a performance engineer. Eight work orders land on your desk — a trading floor, a game studio, a compiler team, a purchasing committee, an ML cluster, a pipeline retrofit, and a data-center power review. Every one of them is the same equation wearing a different costume. Bring a calculator; bring units.</p>
+  <div class="meta-strip">
+    <div class="chip">DURATION <b>120 min</b></div>
+    <div class="chip">POINTS <b id="chipPts">—</b></div>
+    <div class="chip">TOLERANCE <b>±1.5%</b></div>
+    <div class="chip">PARAMETERS <b>per-student</b></div>
+    <div class="chip">SUBMIT <b>PDF + code</b></div>
+  </div>
+</header>
+
+<!-- ============ IDENTITY GATE ============ -->
+<div class="card noprint" id="gate">
+  <h3>Step 1 — Draw your parameter set</h3>
+  <p class="muted" style="margin:6px 0 0">Every student gets different numbers, generated from your name and CUNY EMPLID. Type them exactly as they appear in CUNYfirst — if you retype them differently later, you will get a different lab. Nothing is sent anywhere; everything runs in this page.</p>
+  <div class="field-row">
+    <div class="field"><label for="sName">Full name</label><input type="text" id="sName" autocomplete="off" placeholder="Last, First"></div>
+    <div class="field"><label for="sId">EMPLID (8 digits)</label><input type="text" id="sId" autocomplete="off" placeholder="12345678"></div>
+    <div class="field"><label for="sSec">Section</label><input type="text" id="sSec" autocomplete="off" placeholder="MAC283-D01"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="btnStart">Generate my lab</button>
+    <button class="btn ghost" id="btnInstr">Instructor console</button>
+  </div>
+</div>
+
+<div class="print-only" id="printHead"></div>
+
+<!-- ============ INSTRUCTOR CONSOLE ============ -->
+<div class="card noprint hide" id="console">
+  <h3>Instructor console</h3>
+  <p class="muted" style="margin:6px 0 0">Enter the passcode, then paste a student's submission code to grade it. The code carries the student's identity and every answer, so the report regenerates that student's exact parameter set and grades it here.</p>
+  <div class="field-row">
+    <div class="field" style="max-width:260px"><label for="pcode">Passcode</label><input type="password" id="pcode" autocomplete="off"></div>
+  </div>
+  <div class="field" style="margin-top:14px"><label for="payIn">Submission code</label><textarea id="payIn" placeholder="MAC283-L07::…" style="min-height:96px;font-family:var(--mono);font-size:12px"></textarea></div>
+  <div class="btn-row">
+    <button class="btn warn" id="btnGrade">Grade submission</button>
+    <button class="btn ghost" id="btnCloseConsole">Close</button>
+  </div>
+  <div id="consoleMsg" class="muted" style="margin-top:12px"></div>
+</div>
+
+<!-- ============ LAB BODY ============ -->
+<div id="lab" class="hide"></div>
+
+<!-- ============ SUBMIT ============ -->
+<div class="card hide" id="submitCard">
+  <h3>Step 3 — Lock and submit</h3>
+  <p class="muted" style="margin:6px 0 0">Locking freezes your answers and produces a submission code. Save the PDF, then paste the code into the Brightspace text box. Your score is not shown here — your instructor unlocks it.</p>
+  <div class="btn-row noprint">
+    <button class="btn" id="btnLock">Lock my answers</button>
+    <button class="btn ghost" id="btnPdf">Save as PDF</button>
+    <button class="btn ghost" id="btnCopy">Copy submission code</button>
+    <button class="btn ghost" id="btnUnlockInstr">Instructor: reveal score</button>
+  </div>
+  <div id="lockOut"></div>
+</div>
+
+<!-- ============ REPORT ============ -->
+<div class="card report" id="report"></div>
+
+<footer>
+  MAC283 · COMPUTER ARCHITECTURE &amp; ASSEMBLER LANGUAGE · LAGUARDIA COMMUNITY COLLEGE — MEC DEPARTMENT<br>
+  PROF. K. KASSOU · LAB 07 · BUILT ON LECTURE “THE CPU AS A CLOCK: THE MATHEMATICS OF TIME”
+</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ================================================================
+   CONFIG — instructor settings
+   ================================================================ */
+const CONFIG = {
+  PASSCODE: "kkq2",          // change this before publishing
+  SALT: "MAC283-L07-2026",   // changes the whole parameter draw for a new term
+  TOL: 0.015,                // 1.5% relative tolerance on numeric answers
+  TITLE: "MAC283 — Lab 07: The Cycle Budget Audit"
+};
+
+/* ================================================================
+   UTILITIES
+   ================================================================ */
+function hashStr(s){
+  let h = 2166136261 >>> 0;
+  for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function norm(s){ return String(s||"").trim().toLowerCase().replace(/\s+/g," "); }
+function b64e(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64d(str){ return decodeURIComponent(escape(atob(str))); }
+function fmt(x, d){
+  d = (d===undefined) ? 4 : d;
+  if (!isFinite(x)) return "—";
+  const a = Math.abs(x);
+  if (x !== 0 && (a >= 1e6 || a < 1e-3)) return x.toExponential(3);
+  return String(+x.toPrecision(d));
+}
+function parseNum(raw){
+  if (raw === null || raw === undefined) return null;
+  let s = String(raw).trim().replace(/,/g,"").replace(/\s/g,"").replace(/[×x]10\^?/gi,"e").replace(/\^/g,"e");
+  s = s.replace(/^\+/,"");
+  if (s === "") return null;
+  const v = Number(s);
+  return isFinite(v) ? v : null;
+}
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+/* ================================================================
+   PARAMETER DRAW — seeded per student
+   ================================================================ */
+function buildParams(seed){
+  const r = mulberry32(seed);
+  const rn = (a,b,step)=>{ const n = Math.round((b-a)/step); return +(a + step*Math.floor(r()*(n+1))).toFixed(6); };
+  const pick = arr => arr[Math.floor(r()*arr.length)];
+  const P = {};
+
+  // A — clock fundamentals
+  P.fA = rn(2.6,4.4,0.1);            // GHz
+  P.win = pick([1.5,2,2.5,3,4]);     // microseconds
+  P.vf  = pick([0.58,0.60,0.62,0.65]); // signal velocity factor on PCB
+
+  // B — critical path / binning
+  P.tpcq = rn(30,70,5); P.tlogic = rn(150,270,10);
+  P.tset = rn(25,55,5); P.tskew = rn(5,25,5);
+  P.kSplit = pick([2,3,4]);
+
+  // C — frame budget
+  P.fps = pick([60,90,120]);
+  P.fC = rn(2.8,4.2,0.1);
+  P.cpiC = rn(1.10,1.80,0.05);
+  P.icFrame = rn(26,58,2);           // millions of instructions per frame
+
+  // D — instruction mix
+  P.mLoad = rn(18,30,1); P.mStore = rn(8,16,1); P.mBranch = rn(12,22,1);
+  P.mALU = 100 - P.mLoad - P.mStore - P.mBranch;
+  P.cLoad = pick([3,4,5]); P.cStore = pick([2,3,4]); P.cBranch = pick([2,3]);
+  P.dIC = rn(1.5,4.0,0.1);           // ×10^9
+  P.dF  = rn(2.4,3.6,0.2);           // GHz
+  P.dCut = pick([30,40,50]);         // % of loads eliminated
+
+  // E — machine comparison + MIPS trap
+  P.eFA = rn(3.0,4.2,0.2); P.eCPIA = rn(1.00,1.40,0.05); P.eICA = rn(3.0,6.0,0.5);
+  P.eFB = rn(2.4,3.2,0.2); P.eCPIB = rn(1.9,2.6,0.1);
+  const tA = P.eICA*1e9*P.eCPIA/(P.eFA*1e9);
+  const factor = pick([0.82,0.85,0.88,0.90]);
+  P.eICB = +(((tA*factor)*(P.eFB*1e9)/P.eCPIB)/1e9).toFixed(2);
+
+  // F — Amdahl / GPU purchase
+  P.p = rn(0.65,0.90,0.05);
+  P.s = pick([4,6,8,10,12,16]);
+  P.runH = rn(6,14,0.5);
+  const ceil = 1/(1-P.p);
+  P.target = Math.round(ceil*0.72*2)/2;
+  P.price = pick([45000,60000,90000,120000]);
+  P.runs = pick([12,16,20,24]);
+  P.rate = pick([40,55,70]);         // $ per cluster-hour
+
+  // G — pipeline retrofit
+  P.tSingle = rn(900,1600,20);       // ps
+  P.k = pick([4,5,6]);
+  P.treg = rn(25,60,5);              // ps
+  P.n = pick([200,400,500,800])*1e6; // instructions
+  P.brF = rn(12,22,1);               // % branches
+  P.brP = pick([1,2,3]);             // stall cycles per branch
+
+  // H — memory + power
+  P.hit = pick([1,2,3]);
+  P.mr = rn(2,8,0.5);                // %
+  P.pen = rn(80,200,10);             // cycles
+  P.mem = rn(1.15,1.45,0.05);        // memory accesses per instruction
+  P.cpiB = rn(1.0,1.4,0.1);
+  P.hF = rn(2.6,3.8,0.2);
+  P.hIC = rn(2,6,0.5);               // ×10^9
+  P.f2 = +(P.hF + pick([0.6,0.8,1.0])).toFixed(2);
+  P.v1 = rn(0.95,1.10,0.05);
+  P.v2 = +(P.v1 + pick([0.15,0.20,0.25])).toFixed(2);
+  P.tdp = pick([65,95,125]);
+  P.srv = pick([24,40,60,100]);
+  P.kwh = pick([0.18,0.22,0.26]);
+  P.hrs = pick([6000,7000,8760]);
+  return P;
+}
+
+/* ================================================================
+   LAB CONTENT — stations and questions
+   ================================================================ */
+function buildLab(P){
+  const S = [];
+  const num = (id,text,answer,unit,hint,opt) => Object.assign(
+    {id,type:"num",text,answer,unit,hint,pts:2,tol:CONFIG.TOL}, opt||{});
+  const mc = (id,text,choices,correct,hint,opt) => Object.assign(
+    {id,type:"mc",text,choices,correct,hint,pts:2}, opt||{});
+
+  const C_IRON = "Time = IC × CPI × T_C = IC × CPI / f";
+  const C_ICF  = "IC ×10⁹ divided by f ×10⁹ — the exponents cancel, answer lands in seconds";
+
+  /* ---------- STATION A ---------- */
+  const aT = 1000/P.fA;                       // ps
+  const aCycles = P.fA*1e9 * P.win*1e-6;
+  const aDist = (P.vf*2.998e10) * (1/(P.fA*1e9)); // cm per cycle
+  S.push({
+    code:"WORK ORDER A", title:"Trading-Floor Commissioning", time:"12 min",
+    brief:`A low-latency trading firm just racked a server whose CPU holds a locked boost clock of <b>${P.fA} GHz</b>. Before it goes live you must certify its timing envelope. The exchange's matching engine sends a burst every <b>${P.win} µs</b>, and the firm's hardware team needs to know how far a signal physically travels in one tick — on this board, signals move at <b>${P.vf}c</b>.`,
+    spec:[["Locked clock frequency f", P.fA+" GHz"],["Burst interval", P.win+" µs"],
+          ["Signal velocity on PCB", P.vf+"c  (c = 2.998×10¹⁰ cm/s)"]],
+    qs:[
+      num("A1",`What is the clock period <span class="fx">T</span> of this CPU, in <b>picoseconds</b>?`, aT, "ps",
+        "T = 1/f. At X GHz the period is (1/X) ns — then convert ns → ps.",
+        {f:"T = 1 / f", c:"GHz → Hz: ×10⁹  ·  s → ps: ×10¹²  ·  shortcut: T[ps] = 1000 ÷ f[GHz]"}),
+      num("A2",`How many complete clock cycles elapse between two bursts (${P.win} µs apart)?`, aCycles, "cycles",
+        "cycles = f × t. Put both in base units before multiplying.",
+        {f:"N = f × t", c:"µs → s: ×10⁻⁶  ·  GHz → Hz: ×10⁹  ·  the product is a plain count, no unit"}),
+      num("A3",`How far does a signal travel along a board trace during <b>one</b> clock cycle, in <b>centimeters</b>?`, aDist, "cm",
+        "distance = velocity × time, where velocity is the fraction of c given in the spec.",
+        {f:"d = v × T,  where v = (velocity factor) × c", c:"c = 2.998×10¹⁰ cm/s (already in cm)  ·  T must be in seconds, not ps"}),
+      mc("A4",`The firm wants to move a co-processor <b>${(aDist*0.9).toFixed(1)} cm</b> away from the CPU and still get a reply in one cycle. Your verdict?`,
+        ["Fine — that distance is well inside one cycle of travel.",
+         "Impossible — the round trip is roughly twice that distance, so the reply arrives after the capture edge.",
+         "Fine, as long as the clock frequency is raised to compensate.",
+         "Impossible — but adding more cache on the co-processor fixes it."],
+        1, "A reply has to get there and come back. Raising f makes the cycle shorter, not longer.",
+        {f:"round-trip distance = 2 × separation, compared against your A3 answer"})
+    ]
+  });
+
+  /* ---------- STATION B ---------- */
+  const bTc = P.tpcq+P.tlogic+P.tset+P.tskew;
+  const bF = 1000/bTc;
+  const bTc2 = P.tpcq + P.tlogic/P.kSplit + P.tset + P.tskew;
+  const bF2 = 1000/bTc2;
+  const bin = bF >= 4.2 ? 0 : (bF >= 3.4 ? 1 : (bF >= 2.8 ? 2 : 3));
+  S.push({
+    code:"WORK ORDER B", title:"The Silicon Lottery", time:"15 min",
+    brief:`You run the binning bench at a fabrication plant. A die comes off the wafer and the tester reports its critical-path components. Your job: decide which product this die ships as. Then the design team asks what happens if they cut the combinational block into <b>${P.kSplit} balanced stages</b> with a register between each — the register overhead (clock-to-Q, setup, skew) is paid again in every stage.`,
+    spec:[["t_pcq (clock-to-Q)", P.tpcq+" ps"],["t_logic (combinational)", P.tlogic+" ps"],
+          ["t_setup", P.tset+" ps"],["t_skew", P.tskew+" ps"],["Proposed pipeline depth", P.kSplit+" stages"]],
+    qs:[
+      num("B1",`Minimum legal clock period <span class="fx">T_C</span> for this die, in <b>picoseconds</b>?`, bTc, "ps",
+        "Add all four timing terms. The critical path is the sum, not the maximum.",
+        {f:"T_C ≥ t_pcq + t_logic + t_setup + t_skew", c:"all four terms are already in ps — no conversion needed"}),
+      num("B2",`Maximum frequency <span class="fx">f_max</span> of the die as-is, in <b>GHz</b>?`, bF, "GHz",
+        "Reciprocal of the period you just computed.",
+        {f:"f_max = 1 / T_C", c:"ps → GHz: f[GHz] = 1000 ÷ T[ps]  (because 1 ps = 10⁻¹² s and 1 GHz = 10⁹ Hz)"}),
+      num("B3",`After splitting the logic into ${P.kSplit} balanced stages, what is the new <span class="fx">T_C</span> per stage, in <b>picoseconds</b>?`, bTc2, "ps",
+        "Only t_logic gets divided by the stage count. The three overhead terms are paid in full by every stage.",
+        {f:"T_C = t_pcq + (t_logic ÷ k) + t_setup + t_skew", c:"ps throughout — divide only the logic term"}),
+      num("B4",`What is the new <span class="fx">f_max</span> after the split, in <b>GHz</b>?`, bF2, "GHz",
+        "Same reciprocal as B2, applied to the new period.",
+        {f:"f_max = 1 / T_C", c:"f[GHz] = 1000 ÷ T[ps]"}),
+      num("B5",`By what factor did the clock frequency improve? Give the ratio f_new / f_old.`, bF2/bF, "×",
+        "It will be less than the stage count — the overhead terms never shrink. That gap is the whole story of pipelining.",
+        {f:"gain = f_new / f_old = T_old / T_new", c:"dimensionless — the GHz units cancel, so report a bare number"}),
+      mc("B6",`Using the <b>as-tested</b> f_max (before any redesign) and the price list — <b>Flagship ≥ 4.2 GHz · Performance 3.4–4.19 · Mainstream 2.8–3.39 · Value &lt; 2.8</b> — this die ships as:`,
+        ["Flagship","Performance","Mainstream","Value"], bin,
+        "Compare your B2 answer against the bin table. This is literally how CPU pricing works.",
+        {f:"bin the die by its B2 value of f_max"})
+    ]
+  });
+
+  /* ---------- STATION C ---------- */
+  const cBudgetMs = 1000/P.fps;
+  const cCycAvail = P.fC*1e9/P.fps;
+  const cCycNeed = P.icFrame*1e6*P.cpiC;
+  const cTimeMs = cCycNeed/(P.fC*1e9)*1000;
+  const cOver = cTimeMs - cBudgetMs;
+  const cMaxIC = cCycAvail/P.cpiC;
+  S.push({
+    code:"WORK ORDER C", title:"The Frame Budget", time:"16 min",
+    brief:`A studio's engine is missing its frame target and the lead wants numbers, not opinions. The build runs on a <b>${P.fC} GHz</b> console core, ships at <b>${P.fps} fps</b>, and the profiler says each frame executes about <b>${P.icFrame} million instructions</b> at an average <b>CPI of ${P.cpiC}</b>. Find out whether the frame fits, and by how much.`,
+    spec:[["Target frame rate", P.fps+" fps"],["Core clock", P.fC+" GHz"],
+          ["Instructions per frame", P.icFrame+" × 10⁶"],["Average CPI", P.cpiC]],
+    qs:[
+      num("C1",`How many milliseconds does one frame get at ${P.fps} fps?`, cBudgetMs, "ms",
+        "One second divided by the frame rate.",
+        {f:"budget = 1 / fps", c:"s → ms: ×10³  (e.g. 1/60 s = 0.01667 s = 16.67 ms)"}),
+      num("C2",`How many clock cycles are available inside that frame budget?`, cCycAvail, "cycles",
+        "cycles = f × budget. Keep the budget in seconds.",
+        {f:"cycles = f × budget", c:"GHz → Hz: ×10⁹  ·  ms → s: ×10⁻³  ·  or simply f ÷ fps"}),
+      num("C3",`How many clock cycles does the frame actually <b>need</b>?`, cCycNeed, "cycles",
+        "Iron Law, first two factors only.",
+        {f:"cycles = IC × CPI", c:"IC is given in millions — multiply by 10⁶ first"}),
+      num("C4",`How long does the frame actually take, in <b>milliseconds</b>?`, cTimeMs, "ms",
+        "Turn cycles into seconds with the clock, then scale to ms.",
+        {f:"t = cycles / f", c:"f in Hz gives seconds  ·  s → ms: ×10³"}),
+      num("C5",`By how many milliseconds does the frame <b>overrun</b> its budget? (A negative number means it fits with room to spare.)`, cOver, "ms",
+        "Actual minus budget. Watch the sign.",
+        {abs:0.02, f:"Δ = t_actual − t_budget", c:"both terms in ms before subtracting — mixing ms and s here is the classic error"}),
+      num("C6",`Holding CPI and clock fixed, what is the largest instruction count per frame that would still hit ${P.fps} fps? Answer in <b>millions of instructions</b>.`, cMaxIC/1e6, "× 10⁶ instr",
+        "Rearrange the Iron Law to solve for IC.",
+        {f:"IC_max = cycles_available / CPI", c:"divide your result by 10⁶ to report it in millions"}),
+      mc("C7",`The lead offers three fixes. Which one is <b>not</b> described by the Iron Law's three factors?`,
+        ["Rewrite the physics loop to execute fewer instructions per frame",
+         "Ship on a console revision with a higher clock",
+         "Reduce cache misses so the average CPI drops",
+         "Increase the monitor's refresh rate to 240 Hz"],
+        3, "IC, CPI, T_C. The display panel does not appear anywhere in the equation.",
+        {f:C_IRON})
+    ]
+  });
+
+  /* ---------- STATION D ---------- */
+  const dCPI = (P.mALU*1 + P.mLoad*P.cLoad + P.mStore*P.cStore + P.mBranch*P.cBranch)/100;
+  const dTime = P.dIC*1e9*dCPI/(P.dF*1e9);
+  const nLoad = P.mLoad*(1-P.dCut/100);
+  const nALU = P.mALU + P.mLoad*(P.dCut/100);
+  const dCPI2 = (nALU*1 + nLoad*P.cLoad + P.mStore*P.cStore + P.mBranch*P.cBranch)/100;
+  const dTime2 = P.dIC*1e9*dCPI2/(P.dF*1e9);
+  const dSpeed = dTime/dTime2;
+  const dSaved = (1 - dTime2/dTime)*100;
+  S.push({
+    code:"WORK ORDER D", title:"The Optimizer's Claim", time:"16 min",
+    brief:`A compiler team claims their new register allocator makes programs "up to 30% faster." You get the profile of the benchmark: <b>${P.dIC} × 10⁹ instructions</b> on a <b>${P.dF} GHz</b> machine. Their optimization keeps values in registers and eliminates <b>${P.dCut}% of all load instructions</b>, replacing each one with an ALU operation. Instruction count is unchanged — only the mix moves. Audit the claim.`,
+    spec:[["ALU ops (CPI 1)", P.mALU+"%"],["Loads (CPI "+P.cLoad+")", P.mLoad+"%"],
+          ["Stores (CPI "+P.cStore+")", P.mStore+"%"],["Branches (CPI "+P.cBranch+")", P.mBranch+"%"],
+          ["Instruction count", P.dIC+" × 10⁹"],["Clock", P.dF+" GHz"]],
+    qs:[
+      num("D1",`Weighted average CPI of the original build?`, dCPI, "cycles/instr",
+        "Same arithmetic as a GPA: cost × weight, summed.",
+        {f:"CPI = Σ (CPI_i × frac_i)", c:"percent → fraction: ÷100  ·  the four fractions must sum to 1.00"}),
+      num("D2",`Execution time of the original build, in <b>seconds</b>?`, dTime, "s",
+        "Iron Law with the CPI you just computed.",
+        {f:C_IRON, c:C_ICF}),
+      num("D3",`After the optimization, what percentage of the instruction mix is <b>loads</b>?`, nLoad, "%",
+        `Start from ${P.mLoad}% and remove ${P.dCut}% of that share.`,
+        {f:"loads_new = loads_old × (1 − cut)", c:"cut is a percent — use ÷100 inside the parentheses; report the answer as a percent"}),
+      num("D4",`New weighted CPI after the optimization?`, dCPI2, "cycles/instr",
+        "Same weighted average, new weights. Loads went down; ALU ops went up by exactly the same amount.",
+        {f:"CPI = Σ (CPI_i × frac_i)", c:"the mix must still total 100% — whatever loads lost, ALU gained"}),
+      num("D5",`New execution time, in <b>seconds</b>?`, dTime2, "s",
+        "Same IC, same clock, new CPI.",
+        {f:C_IRON, c:C_ICF}),
+      num("D6",`Speedup of the optimized build over the original?`, dSpeed, "×",
+        "With IC and f unchanged, the times reduce to a CPI ratio.",
+        {f:"Speedup = T_old / T_new = CPI_old / CPI_new", c:"dimensionless — a number above 1.00 means faster"}),
+      num("D7",`What <b>percentage of the execution time</b> was eliminated?`, dSaved, "%",
+        "Time saved and speedup are two different numbers. Check which one the marketing claim used.",
+        {abs:0.15, f:"saved% = (1 − T_new / T_old) × 100", c:"this is 1 − 1/Speedup, NOT (Speedup − 1) — a 1.25× speedup saves 20%, not 25%"}),
+      mc("D8",`Is the team's "up to 30% faster" claim honest for this benchmark?`,
+        [`Yes — the time saved is at least 30%.`,
+         `No — the time saved is under 30%, so the claim overstates this benchmark.`,
+         `The claim can't be evaluated without knowing the clock frequency.`,
+         `The claim can't be evaluated because instruction count changed.`],
+        (dSaved >= 30 ? 0 : 1),
+        "Compare your D7 answer to 30%. Instruction count did not change here.",
+        {f:"compare your D7 percentage against the advertised 30%"})
+    ]
+  });
+
+  /* ---------- STATION E ---------- */
+  const eTA = P.eICA*1e9*P.eCPIA/(P.eFA*1e9);
+  const eTB = P.eICB*1e9*P.eCPIB/(P.eFB*1e9);
+  const eMA = 1000*P.eFA/P.eCPIA;
+  const eMB = 1000*P.eFB/P.eCPIB;
+  const eSpeed = eTA/eTB;
+  S.push({
+    code:"WORK ORDER E", title:"The Purchasing Committee", time:"16 min",
+    brief:`A hospital IT committee must buy one of two servers to run the same analytics workload. The vendors ship different compilers and different instruction sets, so the <b>same source program</b> compiles to a different number of machine instructions on each. One vendor's brochure leads with a MIPS rating. The committee has asked you to settle it.`,
+    spec:[["Server A — clock", P.eFA+" GHz"],["Server A — CPI", P.eCPIA],["Server A — instructions executed", P.eICA+" × 10⁹"],
+          ["Server B — clock", P.eFB+" GHz"],["Server B — CPI", P.eCPIB],["Server B — instructions executed", P.eICB+" × 10⁹"]],
+    qs:[
+      num("E1",`Execution time on Server A, in <b>seconds</b>?`, eTA, "s",
+        "Iron Law with Server A's three numbers.",
+        {f:C_IRON, c:C_ICF}),
+      num("E2",`Execution time on Server B, in <b>seconds</b>?`, eTB, "s",
+        "Same formula, Server B's three numbers. Note the instruction count differs.",
+        {f:C_IRON, c:C_ICF}),
+      num("E3",`Speedup of the faster machine over the slower one?`, eSpeed, "×",
+        "Divide the larger time by the smaller one so the answer is above 1.",
+        {f:"Speedup = T_slower / T_faster", c:"dimensionless — seconds cancel"}),
+      num("E4",`Native MIPS rating of Server A?`, eMA, "MIPS",
+        "Instruction rate, not work rate.",
+        {f:"MIPS = f / (CPI × 10⁶)", c:"with f in GHz this collapses to 1000 × f[GHz] ÷ CPI"}),
+      num("E5",`Native MIPS rating of Server B?`, eMB, "MIPS",
+        "Same formula, Server B's clock and CPI.",
+        {f:"MIPS = f / (CPI × 10⁶)", c:"MIPS = 1000 × f[GHz] ÷ CPI"}),
+      mc("E6",`Write the committee's one-line finding.`,
+        ["Server A wins on both MIPS and execution time — buy A.",
+         "Server B wins on both MIPS and execution time — buy B.",
+         "Server A posts the higher MIPS rating, yet Server B finishes the workload sooner — buy B.",
+         "The MIPS ratings are close enough that either machine is equivalent."],
+        2, "Put E1/E2 next to E4/E5. MIPS counts instructions; instructions are not equal units of work across two ISAs.",
+        {f:"rank by execution time (E1 vs E2), then by MIPS (E4 vs E5), and compare the two rankings"}),
+      mc("E7",`A committee member asks why the MIPS number misled them. The best explanation:`,
+        ["MIPS was measured on a different benchmark than execution time.",
+         "Server A executes more, cheaper instructions to do the same job, inflating its instruction rate without doing more work.",
+         "MIPS ignores clock frequency entirely.",
+         "MIPS is only valid for machines above 3 GHz."],
+        1, "Compare the two instruction counts for the identical program.",
+        {f:"MIPS = f / (CPI × 10⁶) — notice IC never appears in it"})
+    ]
+  });
+
+  /* ---------- STATION F ---------- */
+  const fS = 1/((1-P.p)+P.p/P.s);
+  const fCeil = 1/(1-P.p);
+  const fNewH = P.runH/fS;
+  const fReqS = P.p/(1/P.target - (1-P.p));
+  const fSavedH = P.runH - fNewH;
+  const fMonthly = fSavedH*P.runs*P.rate;
+  const fPayback = P.price/fMonthly;
+  S.push({
+    code:"WORK ORDER F", title:"The Accelerator Purchase", time:"18 min",
+    brief:`An ML team wants to buy a <b>$${P.price.toLocaleString()}</b> accelerator. Their training job currently takes <b>${P.runH} hours</b> per run, and profiling shows <b>${(P.p*100).toFixed(0)}%</b> of that time is the parallel math the accelerator speeds up by <b>${P.s}×</b>; the rest is data loading and Python glue that the accelerator does not touch. They run the job <b>${P.runs} times a month</b>, and cluster time bills at <b>$${P.rate}/hour</b>. Finance wants a payback period. Management separately wants an overall <b>${P.target}×</b> speedup and asks what accelerator would deliver it.`,
+    spec:[["Baseline run time", P.runH+" h"],["Fraction improved p", (P.p*100).toFixed(0)+"%"],
+          ["Accelerator speedup s", P.s+"×"],["Runs per month", P.runs],
+          ["Cluster rate", "$"+P.rate+"/h"],["Hardware price", "$"+P.price.toLocaleString()],
+          ["Management's target overall speedup", P.target+"×"]],
+    qs:[
+      num("F1",`Overall speedup delivered by the accelerator?`, fS, "×",
+        "Amdahl's Law. The untouched fraction is the anchor.",
+        {f:"S = 1 / ((1 − p) + p/s)", c:"p is a fraction, not a percent: "+(P.p*100).toFixed(0)+"% → "+P.p}),
+      num("F2",`New run time, in <b>hours</b>?`, fNewH, "h",
+        "Baseline divided by the overall speedup.",
+        {f:"T_new = T_old / S", c:"stay in hours; no unit change needed"}),
+      num("F3",`If a future accelerator made the parallel part infinitely fast, what is the <b>ceiling</b> on overall speedup?`, fCeil, "×",
+        "Let s → ∞ and the p/s term vanishes.",
+        {f:"S_max = 1 / (1 − p)", c:"1 − p = "+(1-P.p).toFixed(2)+" here — the serial fraction is the whole answer"}),
+      num("F4",`What accelerator speedup <span class="fx">s</span> would be required to hit management's ${P.target}× overall target?`, fReqS, "×",
+        "Solve Amdahl's Law for s instead of for S.",
+        {f:"s = p / ( 1/S_target − (1 − p) )", c:"if the denominator comes out ≤ 0, the target sits above the ceiling and no accelerator can reach it"}),
+      num("F5",`Cluster-hours saved <b>per month</b>?`, fSavedH*P.runs, "h",
+        "Hours saved on one run, times runs per month.",
+        {f:"hours saved = (T_old − T_new) × runs per month", c:"hours × (runs/month) = hours per month"}),
+      num("F6",`Payback period for the purchase, in <b>months</b>?`, fPayback, "months",
+        "Price divided by the money the savings generate each month.",
+        {f:"payback = price / (hours saved per month × $ per hour)", c:"$ ÷ ($/month) = months — check that the dollars cancel"}),
+      mc("F7",`The team proposes buying a second identical accelerator to double s to ${P.s*2}×. Your recommendation:`,
+        [`Approve — overall speedup will roughly double as well.`,
+         `Approve — the serial fraction shrinks proportionally with each accelerator added.`,
+         `Decline — overall speedup rises only to about ${(1/((1-P.p)+P.p/(P.s*2))).toFixed(2)}×, well short of double, because the untouched ${((1-P.p)*100).toFixed(0)}% now dominates.`,
+         `Decline — Amdahl's Law does not apply to hardware accelerators.`],
+        2, "Recompute F1 with s doubled and compare it against the ceiling from F3.",
+        {f:"S = 1 / ((1 − p) + p/s) with s = "+(P.s*2)})
+    ]
+  });
+
+  /* ---------- STATION G ---------- */
+  const gTpipe = P.tSingle/P.k + P.treg;
+  const gFpipe = 1000/gTpipe;
+  const gCycles = P.k + P.n - 1;
+  const gTimePipe = gCycles*gTpipe*1e-12;
+  const gTimeSingle = P.n*P.tSingle*1e-12;
+  const gSpeedIdeal = gTimeSingle/gTimePipe;
+  const gCPIreal = 1 + (P.brF/100)*P.brP;
+  const gTimeReal = P.n*gCPIreal*gTpipe*1e-12;
+  const gSpeedReal = gTimeSingle/gTimeReal;
+  S.push({
+    code:"WORK ORDER G", title:"The Pipeline Retrofit", time:"16 min",
+    brief:`An embedded-controller design currently uses a single-cycle datapath with a <b>${P.tSingle} ps</b> cycle. The proposal on your desk splits it into <b>${P.k} balanced stages</b>, each paying <b>${P.treg} ps</b> of pipeline-register overhead. The benchmark firmware executes <b>${(P.n/1e6)} million instructions</b>. Marketing has already printed "${P.k}× faster" on the slide deck. Check it — and then check it again after hazards, since <b>${P.brF}%</b> of the instructions are branches and each mispredicted branch costs <b>${P.brP} stall cycle${P.brP>1?"s":""}</b>.`,
+    spec:[["Single-cycle period", P.tSingle+" ps"],["Pipeline depth k", P.k+" stages"],
+          ["Register overhead per stage", P.treg+" ps"],["Instructions n", (P.n/1e6)+" × 10⁶"],
+          ["Branch frequency", P.brF+"%"],["Stalls per branch", P.brP]],
+    qs:[
+      num("G1",`Pipelined clock period, in <b>picoseconds</b>?`, gTpipe, "ps",
+        "Divide the logic by the stage count, then add the register toll once.",
+        {f:"T_pipe = (t_single ÷ k) + t_reg", c:"ps throughout — only the logic term is divided"}),
+      num("G2",`Pipelined clock frequency, in <b>GHz</b>?`, gFpipe, "GHz",
+        "Reciprocal of T_pipe.",
+        {f:"f = 1 / T_pipe", c:"f[GHz] = 1000 ÷ T[ps]"}),
+      num("G3",`Total cycles to execute all ${(P.n/1e6)} million instructions, hazard-free?`, gCycles, "cycles",
+        "Fill the pipe, then one instruction per cycle.",
+        {f:"cycles = k + n − 1", c:"n is given in millions — multiply by 10⁶ before adding k − 1"}),
+      num("G4",`Hazard-free execution time on the pipelined design, in <b>seconds</b>?`, gTimePipe, "s",
+        "Cycles times the period.",
+        {f:"t = cycles × T_pipe", c:"ps → s: ×10⁻¹²  (a forgotten 10⁻¹² is the single most common error on this station)"}),
+      num("G5",`Execution time on the original single-cycle design, in <b>seconds</b>?`, gTimeSingle, "s",
+        "One cycle per instruction, at the long period.",
+        {f:"t = n × t_single", c:"ps → s: ×10⁻¹²"}),
+      num("G6",`Hazard-free speedup of the retrofit?`, gSpeedIdeal, "×",
+        `It will be under ${P.k}× — the register overhead is the toll you pay at every stage boundary.`,
+        {f:"Speedup = t_single-cycle / t_pipelined", c:"dimensionless"}),
+      num("G7",`With branch stalls included, what is the real <b>CPI</b>?`, gCPIreal, "cycles/instr",
+        "A perfect pipeline has CPI 1; stalls are added on top.",
+        {f:"CPI_real = 1 + (branch fraction × stalls per branch)", c:"percent → fraction: ÷100  ·  the answer must come out just above 1"}),
+      num("G8",`Real execution time with stalls, in <b>seconds</b>?`, gTimeReal, "s",
+        "Now every instruction costs CPI_real cycles instead of one.",
+        {f:"t = n × CPI_real × T_pipe", c:"ps → s: ×10⁻¹²"}),
+      num("G9",`Real speedup delivered to the customer?`, gSpeedReal, "×",
+        "Single-cycle time over the honest pipelined time.",
+        {f:"Speedup = t_single-cycle / t_real", c:"dimensionless"}),
+      mc("G10",`Marketing's "${P.k}× faster" slide. Your correction:`,
+        [`The claim is accurate once the pipeline is full.`,
+         `The real figure is about ${gSpeedReal.toFixed(2)}×: register overhead shortens the gain, and branch stalls raise CPI above 1.`,
+         `The claim is understated — pipelining also reduces instruction count.`,
+         `The claim is unverifiable without knowing the cache miss rate.`],
+        1, "Compare G9 against the printed number. Two separate effects eat the difference.",
+        {f:"compare your G9 result with the advertised "+P.k+"×"})
+    ]
+  });
+
+  /* ---------- STATION H ---------- */
+  const hAMAT = P.hit + (P.mr/100)*P.pen;
+  const hCPI = P.cpiB + P.mem*(P.mr/100)*P.pen;
+  const hTime = P.hIC*1e9*hCPI/(P.hF*1e9);
+  const hCPI2 = P.cpiB + P.mem*(P.mr/200)*P.pen;
+  const hTime2 = P.hIC*1e9*hCPI2/(P.hF*1e9);
+  const hCacheSpeed = hTime/hTime2;
+  const hPowRatio = (P.v2*P.v2*P.f2)/(P.v1*P.v1*P.hF);
+  const hNewW = P.tdp*hPowRatio;
+  const hDeltaW = hNewW - P.tdp;
+  const hCost = hDeltaW*P.srv*P.hrs/1000*P.kwh;
+  const hClockSpeed = P.f2/P.hF;
+  S.push({
+    code:"WORK ORDER H", title:"Data-Center Review: Cache vs. Clock", time:"18 min",
+    brief:`A fleet of <b>${P.srv}</b> servers runs one workload around the clock. Base CPI is <b>${P.cpiB.toFixed(1)}</b>, each instruction makes <b>${P.mem.toFixed(2)}</b> memory accesses on average, the L1 hit costs <b>${P.hit} cycle${P.hit>1?"s":""}</b>, the miss rate is <b>${P.mr}%</b>, and a miss costs <b>${P.pen} cycles</b>. Two proposals are on the table. <b>Proposal 1:</b> double the cache, which halves the miss rate at no power cost. <b>Proposal 2:</b> overclock from ${P.hF} GHz to ${P.f2} GHz, which requires raising V from ${P.v1} V to ${P.v2} V. Each server's package power is <b>${P.tdp} W</b> today, they run <b>${P.hrs} hours a year</b>, and electricity costs <b>$${P.kwh}/kWh</b>. Recommend one.`,
+    spec:[["Base CPI", P.cpiB.toFixed(1)],["Memory accesses per instruction", P.mem.toFixed(2)],
+          ["Hit time", P.hit+" cycles"],["Miss rate", P.mr+"%"],["Miss penalty", P.pen+" cycles"],
+          ["Clock / instruction count", P.hF+" GHz  ·  "+P.hIC+" × 10⁹"],
+          ["Overclock target", P.f2+" GHz at "+P.v2+" V (from "+P.v1+" V)"],
+          ["Fleet", P.srv+" servers · "+P.hrs+" h/yr · $"+P.kwh+"/kWh · "+P.tdp+" W each"]],
+    qs:[
+      num("H1",`AMAT for a single memory access, in <b>cycles</b>?`, hAMAT, "cycles",
+        "The expected-value formula: guaranteed cost plus probability times price of the bad event.",
+        {f:"AMAT = hit time + (miss rate × miss penalty)", c:"percent → fraction: ÷100  ·  everything stays in cycles"}),
+      num("H2",`Real CPI including memory stalls?`, hCPI, "cycles/instr",
+        "Stall cycles per instruction get added to the base CPI.",
+        {f:"CPI_real = CPI_base + (accesses/instr × miss rate × miss penalty)", c:"miss rate as a fraction  ·  do not add the hit time here — it is already inside CPI_base"}),
+      num("H3",`Execution time of the workload today, in <b>seconds</b>?`, hTime, "s",
+        "Iron Law with the real CPI.",
+        {f:C_IRON, c:C_ICF}),
+      num("H4",`Under Proposal 1 (miss rate halved to ${(P.mr/2)}%), what is the new real CPI?`, hCPI2, "cycles/instr",
+        "Same stall formula with half the miss rate. Base CPI is unchanged.",
+        {f:"CPI_real = CPI_base + (accesses/instr × miss rate × miss penalty)", c:"use "+(P.mr/2)+"% → "+(P.mr/200)+" as a fraction"}),
+      num("H5",`Speedup delivered by Proposal 1 (the cache upgrade)?`, hCacheSpeed, "×",
+        "IC and f are fixed, so this reduces to a CPI ratio.",
+        {f:"Speedup = CPI_old / CPI_new", c:"dimensionless"}),
+      num("H6",`Under Proposal 2, what is the power multiplier relative to today? (Assume α and C are unchanged.)`, hPowRatio, "×",
+        "Voltage is squared — that term does most of the damage.",
+        {f:"P = α C V² f  ⇒  ratio = (V₂² × f₂) / (V₁² × f₁)", c:"α and C cancel  ·  GHz cancels too, so leave f in GHz  ·  V stays in volts"}),
+      num("H7",`Additional watts per server under Proposal 2?`, hDeltaW, "W",
+        "New package power minus current package power.",
+        {f:"ΔP = (P_base × ratio) − P_base = P_base × (ratio − 1)", c:"watts in, watts out"}),
+      num("H8",`Additional <b>annual electricity cost</b> for the whole fleet under Proposal 2, in <b>dollars</b>? (Ignore cooling.)`, hCost, "$",
+        "Turn extra watts into kilowatt-hours, then into dollars.",
+        {f:"cost = ΔP × servers × hours ÷ 1000 × price per kWh", c:"W → kW: ÷1000  ·  kW × hours = kWh  ·  kWh × $/kWh = $"}),
+      num("H9",`Speedup delivered by Proposal 2 (the overclock), assuming CPI is unchanged?`, hClockSpeed, "×",
+        "With IC and CPI fixed, time scales with 1/f.",
+        {f:"Speedup = f_new / f_old", c:"dimensionless — GHz cancels"}),
+      mc("H10",`Your recommendation to the facilities director:`,
+        [`Proposal 2 — the raw clock gain always beats a cache change.`,
+         `Proposal 1 — it delivers ${hCacheSpeed.toFixed(2)}× against Proposal 2's ${hClockSpeed.toFixed(2)}×, and it costs nothing in power, while the overclock adds about $${Math.round(hCost).toLocaleString()} a year before cooling.`,
+         `Neither — both improvements are inside the margin of error.`,
+         `Both, in sequence — the power cost is negligible at fleet scale.`],
+        1, "Put H5, H9 and H8 side by side. Also recall which proposal eats into the timing margin from Work Order B.",
+        {f:"compare H5 vs H9 for performance, then weigh H8 as the cost"}),
+      {id:"H11", type:"text", pts:6,
+       f:"Time = IC × CPI × T_C  ·  P = α C V² f  ·  T_C ≥ t_pcq + t_logic + t_setup + t_skew",
+       c:"cite your own numbers with their units — a speedup is a bare ×, a cost is in $/year",
+       text:`<b>Memo (4–6 sentences).</b> Write the recommendation you would actually send. It must (a) name the winning proposal and cite your own two speedup numbers, (b) explain in terms of the Iron Law which factor each proposal changes, and (c) name one risk of the overclock that is not on the balance sheet — think about what raising f does to the timing margin you computed in Work Order B, and what the power wall does to sustained clocks.`,
+       keywords:[["cpi"],["iron law","ic ×","ic x","instruction count","cycle time","clock cycle"],
+                 ["power","watt","heat","thermal","cool"],["critical path","timing margin","setup","throttl","stab","error","f_max","fmax","overclock"]],
+       hint:"Graded on whether the required elements are present, and read by your instructor. Write in plain professional English — no formula dump."}
+    ]
+  });
+
+  return S;
+}
+
+/* ================================================================
+   STATE
+   ================================================================ */
+let STATE = { name:"", id:"", sec:"", seed:0, P:null, stations:[], flat:[], answers:{}, locked:false, ts:"" };
+
+function flatten(stations){
+  const out=[]; stations.forEach(s=>s.qs.forEach(q=>out.push(q))); return out;
+}
+function totalPoints(flat){ return flat.reduce((a,q)=>a+q.pts,0); }
+
+/* ================================================================
+   RENDER
+   ================================================================ */
+function renderLab(){
+  const lab = document.getElementById("lab");
+  let html = `<div class="refcard">
+    <h3 style="font-family:var(--display);font-size:19px;margin:0">Field reference — keep this open</h3>
+    <p class="muted" style="margin:6px 0 0">Every answer on this lab is one of these formulas plus a prefix change. Each question restates its own formula and the conversion it needs; this card is the whole toolkit in one place.</p>
+    <div class="refgrid">
+      <div class="refbox"><h4>Clock</h4><p>T = 1 / f&nbsp; · &nbsp;f = 1 / T<br>T_C ≥ t_pcq + t_logic + t_setup + t_skew<br>f[GHz] = 1000 ÷ T[ps]</p></div>
+      <div class="refbox"><h4>Iron Law</h4><p>Time = IC × CPI × T_C<br>Time = IC × CPI / f<br>CPI = Σ (CPI_i × frac_i)</p></div>
+      <div class="refbox"><h4>Comparison</h4><p>Speedup = T_old / T_new<br>saved% = (1 − T_new/T_old) × 100<br>MIPS = f / (CPI × 10⁶)</p></div>
+      <div class="refbox"><h4>Amdahl</h4><p>S = 1 / ((1−p) + p/s)<br>ceiling = 1 / (1−p)<br>s = p / (1/S − (1−p))</p></div>
+      <div class="refbox"><h4>Pipeline</h4><p>T_pipe = t_logic/k + t_reg<br>cycles = k + n − 1<br>CPI_real = 1 + stalls per instr</p></div>
+      <div class="refbox"><h4>Memory &amp; power</h4><p>AMAT = hit + miss% × penalty<br>CPI_real = CPI_base + acc × miss% × pen<br>P = α C V² f</p></div>
+      <div class="refbox"><h4>Frequency prefixes</h4><p>1 kHz = 10³ Hz<br>1 MHz = 10⁶ Hz<br>1 GHz = 10⁹ Hz</p></div>
+      <div class="refbox"><h4>Time prefixes</h4><p>1 ms = 10⁻³ s&nbsp; · &nbsp;1 µs = 10⁻⁶ s<br>1 ns = 10⁻⁹ s&nbsp; · &nbsp;1 ps = 10⁻¹² s<br>1 ns = 1000 ps</p></div>
+      <div class="refbox"><h4>Traps to avoid</h4><p>% → fraction: ÷ 100<br>ps → s: × 10⁻¹²<br>saved% ≠ (speedup − 1) × 100<br>IC ×10⁹ ÷ f ×10⁹ → exponents cancel</p></div>
+    </div></div>`;
+  STATE.stations.forEach(st=>{
+    html += `<section class="station"><div class="st-head">
+      <div class="st-code">${st.code}</div><h2>${st.title}</h2><div class="st-time">≈ ${st.time}</div></div>
+      <div class="st-body"><p class="brief">${st.brief}</p>
+      <div class="spec">${st.spec.map(r=>`<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join("")}</div>`;
+    st.qs.forEach(q=>{
+      html += `<div class="q" id="q-${q.id}"><div class="q-head">
+        <div class="q-id">${q.id}</div><div class="q-text">${q.text}</div>
+        <div class="q-pts">${q.pts} pt${q.pts>1?"s":""}</div></div>`;
+      if (q.f) html += `<div class="fbar"><span class="flab">FORMULA</span><code>${q.f}</code></div>`;
+      if (q.c) html += `<div class="fbar cv"><span class="flab">CONVERT</span><code>${q.c}</code></div>`;
+      if (q.type === "num"){
+        html += `<div class="ans"><input type="text" inputmode="decimal" data-q="${q.id}" placeholder="numeric answer" autocomplete="off">
+          <span class="unit">${q.unit||""}</span><span class="print-answer" id="pa-${q.id}"></span>
+          <button class="hintbtn noprint" data-hint="${q.id}">approach</button></div>`;
+      } else if (q.type === "mc"){
+        html += `<div class="choices">` + q.choices.map((c,i)=>
+          `<label class="choice"><input type="radio" name="mc-${q.id}" data-q="${q.id}" value="${i}"><span>${c}</span></label>`).join("") + `</div>
+          <div class="ans"><span class="print-answer" id="pa-${q.id}"></span>
+          <button class="hintbtn noprint" data-hint="${q.id}">approach</button></div>`;
+      } else {
+        html += `<div class="ans" style="display:block"><textarea data-q="${q.id}" placeholder="Your memo…"></textarea>
+          <div class="print-answer" id="pa-${q.id}" style="display:none;white-space:pre-wrap;min-height:70px;width:100%"></div>
+          <button class="hintbtn noprint" data-hint="${q.id}" style="margin-top:8px">approach</button></div>`;
+      }
+      if (q.hint) html += `<div class="hint" id="h-${q.id}">${q.hint}</div>`;
+      html += `</div>`;
+    });
+    html += `</div></section>`;
+  });
+  lab.innerHTML = html;
+  lab.classList.remove("hide");
+  document.getElementById("submitCard").classList.remove("hide");
+
+  lab.addEventListener("input", e=>{
+    const el = e.target.closest("[data-q]"); if(!el) return;
+    setAnswer(el.dataset.q, el.value);
+  });
+  lab.addEventListener("change", e=>{
+    const el = e.target.closest("[data-q]"); if(!el || el.type!=="radio") return;
+    setAnswer(el.dataset.q, el.value);
+  });
+  lab.addEventListener("click", e=>{
+    const b = e.target.closest("[data-hint]"); if(!b) return;
+    document.getElementById("h-"+b.dataset.hint).classList.toggle("on");
+  });
+  updateProgress();
+}
+
+function setAnswer(id, val){
+  STATE.answers[id] = val;
+  const q = STATE.flat.find(x=>x.id===id);
+  const pa = document.getElementById("pa-"+id);
+  if (pa){
+    if (q.type==="mc"){ pa.textContent = val===""?"":("Selected: "+String.fromCharCode(65+Number(val))); }
+    else pa.textContent = val;
+  }
+  const box = document.getElementById("q-"+id);
+  if (box) box.classList.toggle("done", String(val).trim()!=="");
+  updateProgress();
+  save();
+}
+
+function updateProgress(){
+  const done = STATE.flat.filter(q=>String(STATE.answers[q.id]||"").trim()!=="").length;
+  const total = STATE.flat.length;
+  document.getElementById("railCount").textContent = done+" / "+total;
+  // signature: square wave that fills as the lab is completed
+  const frac = total? done/total : 0;
+  const cycles = 14, W=400, H=26, top=5, bot=21;
+  let d = "M0,"+bot;
+  for (let i=0;i<cycles;i++){
+    const x0 = i*W/cycles, x1 = (i+0.5)*W/cycles, x2 = (i+1)*W/cycles;
+    d += ` L${x0.toFixed(1)},${bot} L${x0.toFixed(1)},${top} L${x1.toFixed(1)},${top} L${x1.toFixed(1)},${bot} L${x2.toFixed(1)},${bot}`;
+  }
+  const wave = document.getElementById("wave");
+  wave.setAttribute("d", d);
+  const len = wave.getTotalLength();
+  wave.style.strokeDasharray = len;
+  wave.style.strokeDashoffset = len*(1-frac);
+  wave.setAttribute("stroke", frac>=1 ? "#ffb648" : "#7dfbc4");
+}
+
+/* ================================================================
+   PERSISTENCE (best effort)
+   ================================================================ */
+function storeKey(){ return "mac283_l07_" + hashStr(norm(STATE.name)+"|"+norm(STATE.id)); }
+function save(){
+  try{ localStorage.setItem(storeKey(), JSON.stringify({
+    n:STATE.name,i:STATE.id,s:STATE.sec,a:STATE.answers,l:STATE.locked,t:STATE.ts})); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(storeKey()); if(!raw) return;
+    const o = JSON.parse(raw);
+    STATE.answers = o.a||{}; STATE.locked = !!o.l; STATE.ts = o.t||"";
+  }catch(e){}
+}
+function restoreInputs(){
+  STATE.flat.forEach(q=>{
+    const v = STATE.answers[q.id]; if(v===undefined||v==="") return;
+    if (q.type==="mc"){
+      const el = document.querySelector(`input[name="mc-${q.id}"][value="${v}"]`); if(el) el.checked=true;
+    } else {
+      const el = document.querySelector(`[data-q="${q.id}"]`); if(el) el.value=v;
+    }
+    setAnswer(q.id, v);
+  });
+}
+
+/* ================================================================
+   GRADING
+   ================================================================ */
+function gradeOne(q, raw){
+  const val = raw===undefined?"":String(raw);
+  if (q.type==="num"){
+    const v = parseNum(val);
+    if (v===null) return {earned:0, correct:false, shown:val||"—", expect:fmt(q.answer)+" "+(q.unit||"")};
+    const tol = Math.max(Math.abs(q.answer)*(q.tol||CONFIG.TOL), q.abs||0);
+    const ok = Math.abs(v-q.answer) <= tol;
+    return {earned: ok?q.pts:0, correct:ok, shown:val, expect:fmt(q.answer)+" "+(q.unit||"")};
+  }
+  if (q.type==="mc"){
+    const ok = String(val)===String(q.correct);
+    return {earned: ok?q.pts:0, correct:ok,
+      shown: val===""?"—":String.fromCharCode(65+Number(val)),
+      expect: String.fromCharCode(65+q.correct)};
+  }
+  // text — keyword rubric
+  const t = norm(val);
+  let hits = 0;
+  q.keywords.forEach(group=>{ if (group.some(k=>t.includes(k))) hits++; });
+  const wordy = t.split(" ").filter(Boolean).length >= 40;
+  const per = q.pts/(q.keywords.length+1);
+  const earned = Math.round((hits*per + (wordy?per:0))*10)/10;
+  return {earned: Math.min(earned,q.pts), correct: earned>=q.pts*0.75,
+    shown: val||"—", expect: hits+"/"+q.keywords.length+" required elements"+(wordy?" + length":" (short)"),
+    isText:true};
+}
+function gradeAll(flat, answers){
+  const rows = flat.map(q=>{
+    const g = gradeOne(q, answers[q.id]);
+    return {id:q.id, pts:q.pts, earned:g.earned, correct:g.correct, shown:g.shown, expect:g.expect, isText:g.isText};
+  });
+  const earned = rows.reduce((a,r)=>a+r.earned,0);
+  const total = totalPoints(flat);
+  return {rows, earned:Math.round(earned*10)/10, total, pct: total? earned/total*100 : 0};
+}
+
+/* ================================================================
+   SUBMISSION CODE
+   ================================================================ */
+function makePayload(){
+  const obj = { v:1, n:STATE.name, i:STATE.id, s:STATE.sec, t:STATE.ts, a:{} };
+  STATE.flat.forEach(q=>{ obj.a[q.id] = STATE.answers[q.id]===undefined?"":String(STATE.answers[q.id]); });
+  const body = b64e(JSON.stringify(obj));
+  const chk = hashStr(body + CONFIG.SALT).toString(36).toUpperCase();
+  return "MAC283-L07::" + chk + "::" + body;
+}
+function readPayload(code){
+  const parts = String(code).trim().split("::");
+  if (parts.length!==3 || parts[0]!=="MAC283-L07") throw new Error("This is not a MAC283 Lab 07 submission code.");
+  const chk = hashStr(parts[2] + CONFIG.SALT).toString(36).toUpperCase();
+  if (chk !== parts[1]) throw new Error("Checksum mismatch — the code was edited or truncated in transit.");
+  return JSON.parse(b64d(parts[2]));
+}
+function shortCode(payload){
+  const h = hashStr(payload).toString(36).toUpperCase().padStart(7,"0");
+  return "K283-" + h.slice(0,4) + "-" + h.slice(4,7);
+}
+
+/* ================================================================
+   FLOW
+   ================================================================ */
+function startLab(){
+  const name = document.getElementById("sName").value.trim();
+  const id   = document.getElementById("sId").value.trim();
+  const sec  = document.getElementById("sSec").value.trim();
+  if (name.length < 3 || id.length < 4){
+    alert("Enter your full name and your EMPLID to draw your parameter set.");
+    return;
+  }
+  STATE.name=name; STATE.id=id; STATE.sec=sec;
+  STATE.seed = hashStr(norm(name)+"|"+norm(id)+"|"+CONFIG.SALT);
+  STATE.P = buildParams(STATE.seed);
+  STATE.stations = buildLab(STATE.P);
+  STATE.flat = flatten(STATE.stations);
+  document.getElementById("chipPts").textContent = totalPoints(STATE.flat)+" pts";
+  load();
+  renderLab();
+  restoreInputs();
+  document.getElementById("gate").classList.add("hide");
+  document.getElementById("printHead").innerHTML =
+    `<div class="spec" style="margin:0 0 12px"><div><span>Student</span><span>${esc(name)}</span></div>
+     <div><span>EMPLID</span><span>${esc(id)}</span></div>
+     <div><span>Section</span><span>${esc(sec||"—")}</span></div>
+     <div><span>Parameter set</span><span>#${STATE.seed.toString(36).toUpperCase()}</span></div></div>`;
+  if (STATE.locked) applyLock();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function applyLock(){
+  STATE.locked = true;
+  document.getElementById("lab").classList.add("locked");
+  document.querySelectorAll("#lab input,#lab textarea").forEach(el=>el.setAttribute("disabled","disabled"));
+  document.querySelectorAll("#lab textarea").forEach(el=>{
+    const pa = el.parentElement.querySelector(".print-answer");
+    if (pa) pa.textContent = el.value;
+  });
+  document.getElementById("btnLock").disabled = true;
+  const payload = makePayload();
+  document.getElementById("lockOut").innerHTML =
+    `<div class="banner">SUBMISSION LOCKED · ${STATE.ts} · RECEIPT ${shortCode(payload)}<br>
+      Score withheld until your instructor unlocks it.</div>
+     <label style="display:block;margin-bottom:6px">Submission code — paste this into Brightspace</label>
+     <div class="payload" id="payloadBox">${payload}</div>`;
+  save();
+}
+
+function lockAnswers(){
+  const blanks = STATE.flat.filter(q=>String(STATE.answers[q.id]||"").trim()==="").length;
+  const msg = blanks ? `${blanks} question${blanks>1?"s are":" is"} still blank. Lock anyway? Blanks score zero.`
+                     : "Lock your answers? This cannot be undone in this browser.";
+  if (!confirm(msg)) return;
+  STATE.ts = new Date().toLocaleString();
+  applyLock();
+  document.getElementById("submitCard").scrollIntoView({behavior:"smooth"});
+}
+
+function renderReport(who, result, answersObj, flat){
+  const r = document.getElementById("report");
+  const letter = result.pct>=90?"A":result.pct>=80?"B":result.pct>=70?"C":result.pct>=60?"D":"F";
+  let rows = result.rows.map(row=>{
+    const cls = row.correct?"ok":"no";
+    const shown = row.isText ? esc(String(row.shown).slice(0,600)) : esc(row.shown);
+    return `<tr><td>${row.id}</td>
+      <td class="${cls}">${row.correct?"✓":"✗"}</td>
+      <td>${shown}</td><td>${esc(row.expect)}</td>
+      <td>${row.earned} / ${row.pts}</td></tr>`;
+  }).join("");
+  r.innerHTML = `
+    <h3>Graded report</h3>
+    <div class="spec" style="margin-top:10px">
+      <div><span>Student</span><span>${esc(who.n||"—")}</span></div>
+      <div><span>EMPLID</span><span>${esc(who.i||"—")}</span></div>
+      <div><span>Section</span><span>${esc(who.s||"—")}</span></div>
+      <div><span>Submitted</span><span>${esc(who.t||"—")}</span></div>
+      <div><span>Parameter set</span><span>#${hashStr(norm(who.n)+"|"+norm(who.i)+"|"+CONFIG.SALT).toString(36).toUpperCase()}</span></div>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:18px;margin:20px 0 4px;flex-wrap:wrap">
+      <div class="score-big">${result.pct.toFixed(1)}%</div>
+      <div class="muted">${result.earned} of ${result.total} points · letter ${letter}</div>
+    </div>
+    <table class="grade-tbl"><thead><tr><th>Item</th><th>OK</th><th>Student answer</th><th>Expected</th><th>Score</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="btn-row noprint"><button class="btn ghost" onclick="window.print()">Print this report</button></div>`;
+  r.classList.add("on");
+  r.scrollIntoView({behavior:"smooth"});
+}
+
+/* ---- instructor: reveal score on the student's own machine ---- */
+function instructorReveal(){
+  const pc = prompt("Instructor passcode:");
+  if (pc === null) return;
+  if (pc !== CONFIG.PASSCODE){ alert("Passcode not recognized."); return; }
+  const result = gradeAll(STATE.flat, STATE.answers);
+  renderReport({n:STATE.name,i:STATE.id,s:STATE.sec,t:STATE.ts||"not locked"}, result, STATE.answers, STATE.flat);
+}
+
+/* ---- instructor: grade a pasted submission code ---- */
+function gradeFromCode(){
+  const msg = document.getElementById("consoleMsg");
+  if (document.getElementById("pcode").value !== CONFIG.PASSCODE){
+    msg.innerHTML = `<span style="color:var(--red)">Passcode not recognized.</span>`; return;
+  }
+  let obj;
+  try { obj = readPayload(document.getElementById("payIn").value); }
+  catch(e){ msg.innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`; return; }
+  const seed = hashStr(norm(obj.n)+"|"+norm(obj.i)+"|"+CONFIG.SALT);
+  const flat = flatten(buildLab(buildParams(seed)));
+  const result = gradeAll(flat, obj.a||{});
+  msg.innerHTML = `<span class="ok">Graded ${esc(obj.n)} — ${result.earned} / ${result.total}.</span>`;
+  renderReport(obj, result, obj.a, flat);
+}
+
+/* ================================================================
+   WIRING
+   ================================================================ */
+document.getElementById("btnStart").addEventListener("click", startLab);
+document.getElementById("btnLock").addEventListener("click", lockAnswers);
+document.getElementById("btnPdf").addEventListener("click", ()=>window.print());
+document.getElementById("btnPdfTop").addEventListener("click", ()=>window.print());
+document.getElementById("btnUnlockInstr").addEventListener("click", instructorReveal);
+document.getElementById("btnCopy").addEventListener("click", ()=>{
+  if (!STATE.locked){ alert("Lock your answers first — the code is generated at lock time."); return; }
+  const txt = document.getElementById("payloadBox").textContent;
+  navigator.clipboard.writeText(txt).then(
+    ()=>alert("Submission code copied. Paste it into Brightspace."),
+    ()=>alert("Copy failed — select the code block and copy manually."));
+});
+document.getElementById("btnInstr").addEventListener("click", ()=>{
+  document.getElementById("console").classList.toggle("hide");
+});
+document.getElementById("btnCloseConsole").addEventListener("click", ()=>{
+  document.getElementById("console").classList.add("hide");
+});
+document.getElementById("btnGrade").addEventListener("click", gradeFromCode);
+document.getElementById("sId").addEventListener("keydown", e=>{ if(e.key==="Enter") startLab(); });
+updateProgress();
+</script>
+</body>
+</html>
